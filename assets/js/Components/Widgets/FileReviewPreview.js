@@ -15,7 +15,7 @@ export default function FixIssuesContentPreview({
   isDisabled
 }) {
 
-  const [fileReferenceHolder, setFileReferenceHolder] = useState([])
+  const [fileReferenceHolder, setFileReferenceHolder] = useState({})
   const [currentFile, setCurrentFile] = useState(null)
   const [oldFile, setOldFile] = useState(null)
 
@@ -48,32 +48,44 @@ export default function FixIssuesContentPreview({
   }, [activeIssue])
 
   const handleFileReference = () => {
-    let tempReferences = []
+    let tempReferences = {}
 
     activeIssue.fileData.replacement?.references?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 1
-      tempReferences.push(tempRef)
+      if(!tempReferences[tempRef.contentItemId]){
+        tempReferences[tempRef.contentItemId] = []
+      }
+      tempReferences[tempRef.contentItemId].push(tempRef)
     })
 
     activeIssue.fileData.replacement?.sectionRefs?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 1
-      tempReferences.push(tempRef)
+      if(!tempReferences[tempRef.contentItemId]){
+        tempReferences[tempRef.contentItemId] = []
+      }
+      tempReferences[tempRef.contentItemId].push(tempRef)
     })
 
 
     activeIssue.fileData.references?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 0
-      tempReferences.push(tempRef)
+      if(!tempReferences[tempRef.contentItemId]){
+        tempReferences[tempRef.contentItemId] = []
+      }
+      tempReferences[tempRef.contentItemId].push(tempRef)
     })
 
 
     activeIssue.fileData.sectionRefs?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 0
-      tempReferences.push(tempRef)
+      if(!tempReferences[tempRef.contentItemId]){
+        tempReferences[tempRef.contentItemId] = []
+      }
+      tempReferences[tempRef.contentItemId].push(tempRef)
     })
     
     setFileReferenceHolder(tempReferences)
@@ -123,7 +135,7 @@ export default function FixIssuesContentPreview({
             </>
           ))}
 
-          { fileReferenceHolder.length > 0 ? (
+          { Object.keys(fileReferenceHolder).length > 0 ? (
             <>
               <div className="strong-caps mt-3">{t('form.file.instances.label')}</div>
               <div className="mt-2 rounded-table-wrapper">
@@ -135,11 +147,11 @@ export default function FixIssuesContentPreview({
                     </tr>
                   </thead>
                   <tbody>
-                    { fileReferenceHolder?.map((ref, index) => (
+                    { Object.keys(fileReferenceHolder)?.map((contentId, index) => (
                       <tr key={index}>
                         <td>
-                          <a href={ref.contentType == "quiz_question" ? ref.contentItemUrl.replace(/\/questions.*/, "/edit#questions_tab") : ref.contentItemUrl} target='_blank' className='location-link flex-row align-items-center'>
-                            {ref.contentItemTitle}
+                          <a href={fileReferenceHolder[contentId][0].contentType == "quiz_question" ? fileReferenceHolder[contentId][0].contentItemUrl.replace(/\/questions.*/, "/edit#questions_tab") : fileReferenceHolder[contentId][0].contentItemUrl} target='_blank' className='location-link flex-row align-items-center'>
+                            {fileReferenceHolder[contentId][0].contentItemTitle}
                             <ExternalLinkIcon className="link-color align-self-center ms-2 icon-sm"/>
                           </a>
                         </td>
