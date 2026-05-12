@@ -139,10 +139,11 @@ export default function FixIssuesContentPreview({
             <>
               <div className="strong-caps mt-3">{t('form.file.instances.label')}</div>
               <div className="mt-2 rounded-table-wrapper">
-                <table className="udoit-sortable-table first-column-wide">
+                <table className="udoit-sortable-table">
                   <thead>
                     <tr>
                       <th>{t('form.file.location.label')}</th>
+                      <th>{t('form.file.count.label')}</th>
                       <th>{t('form.file.status.label')}</th>
                     </tr>
                   </thead>
@@ -154,6 +155,9 @@ export default function FixIssuesContentPreview({
                             {fileReferenceHolder[contentId][0].contentItemTitle}
                             <ExternalLinkIcon className="link-color align-self-center ms-2 icon-sm"/>
                           </a>
+                        </td>
+                        <td>
+                          <p>{fileReferenceHolder[contentId]?.length}</p>
                         </td>
                         <td>
                           {activeIssue.fileData.replacement ? (
