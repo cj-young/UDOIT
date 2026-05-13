@@ -19,6 +19,9 @@ export default function FixIssuesContentPreview({
   const [currentFile, setCurrentFile] = useState(null)
   const [oldFile, setOldFile] = useState(null)
 
+  const ORIGINAL_LABEL = "-original"
+  const REPLACED_LABEL = "-replaced"
+
   useEffect(() => {
     if(activeIssue){
       handleFileReference()
@@ -53,39 +56,43 @@ export default function FixIssuesContentPreview({
     activeIssue.fileData.replacement?.references?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 1
-      if(!tempReferences[tempRef.contentItemId]){
-        tempReferences[tempRef.contentItemId] = []
+      const refKey = tempRef.contentItemId + REPLACED_LABEL
+      if(!tempReferences[refKey]){
+        tempReferences[refKey] = []
       }
-      tempReferences[tempRef.contentItemId].push(tempRef)
+      tempReferences[refKey].push(tempRef)
     })
 
     activeIssue.fileData.replacement?.sectionRefs?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 1
-      if(!tempReferences[tempRef.contentItemId]){
-        tempReferences[tempRef.contentItemId] = []
+      const refKey = tempRef.contentItemId + REPLACED_LABEL
+      if(!tempReferences[refKey]){
+        tempReferences[refKey] = []
       }
-      tempReferences[tempRef.contentItemId].push(tempRef)
+      tempReferences[refKey].push(tempRef)
     })
 
 
     activeIssue.fileData.references?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 0
-      if(!tempReferences[tempRef.contentItemId]){
-        tempReferences[tempRef.contentItemId] = []
+      const refKey = tempRef.contentItemId + ORIGINAL_LABEL
+      if(!tempReferences[refKey]){
+        tempReferences[refKey] = []
       }
-      tempReferences[tempRef.contentItemId].push(tempRef)
+      tempReferences[refKey].push(tempRef)
     })
 
 
     activeIssue.fileData.sectionRefs?.forEach((ref) => {
       let tempRef = JSON.parse(JSON.stringify(ref))
       tempRef.status  = 0
-      if(!tempReferences[tempRef.contentItemId]){
-        tempReferences[tempRef.contentItemId] = []
+      const refKey = tempRef.contentItemId + ORIGINAL_LABEL
+      if(!tempReferences[refKey]){
+        tempReferences[refKey] = []
       }
-      tempReferences[tempRef.contentItemId].push(tempRef)
+      tempReferences[refKey].push(tempRef)
     })
     
     setFileReferenceHolder(tempReferences)
@@ -148,19 +155,19 @@ export default function FixIssuesContentPreview({
                     </tr>
                   </thead>
                   <tbody>
-                    { Object.keys(fileReferenceHolder)?.map((contentId, index) => (
+                    { Object.keys(fileReferenceHolder)?.map((key, index) => (
                       <tr key={index}>
                         <td>
-                          <a href={fileReferenceHolder[contentId][0].contentType == "quiz_question" ? fileReferenceHolder[contentId][0].contentItemUrl.replace(/\/questions.*/, "/edit#questions_tab") : fileReferenceHolder[contentId][0].contentItemUrl} target='_blank' className='location-link flex-row align-items-center'>
-                            {fileReferenceHolder[contentId][0].contentItemTitle}
+                          <a href={fileReferenceHolder[key][0].contentType == "quiz_question" ? fileReferenceHolder[key][0].contentItemUrl.replace(/\/questions.*/, "/edit#questions_tab") : fileReferenceHolder[key][0].contentItemUrl} target='_blank' className='location-link flex-row align-items-center'>
+                            {fileReferenceHolder[key][0].contentItemTitle}
                             <ExternalLinkIcon className="link-color align-self-center ms-2 icon-sm"/>
                           </a>
                         </td>
                         <td>
-                          <p>{fileReferenceHolder[contentId]?.length}</p>
+                          <p>{fileReferenceHolder[key]?.length}</p>
                         </td>
                         <td>
-                          {activeIssue.fileData.replacement ? (
+                          {key.includes(REPLACED_LABEL)  ? (
                             <div className='file-label-pill file-new'>{t('form.file.new.label')}</div>
                           ) : (
                             <div className='file-label-pill'>{t('form.file.original.label')}</div>
