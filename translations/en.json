@@ -509,7 +509,6 @@
   "form.file.instances.label": "Instances of this file",
   "form.file.content.label": "Content",
   "form.file.location.label": "Location",
-  "form.file.count.label": "Count",
   "form.file.status.label": "Status",
   "form.file.external_url.label": "External URL",
   "form.file.no_ref.label": "There are no instances of this file being used in this course. Consider deleting it if it is no longer needed.",

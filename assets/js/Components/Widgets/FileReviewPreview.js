@@ -143,7 +143,7 @@ export default function FixIssuesContentPreview({
                   <thead>
                     <tr>
                       <th>{t('form.file.location.label')}</th>
-                      <th>{t('form.file.count.label')}</th>
+                      <th>{t('fix.label.references')}</th>
                       <th>{t('form.file.status.label')}</th>
                     </tr>
                   </thead>
