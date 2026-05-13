@@ -201,7 +201,7 @@ export default function FileForm ({
 
   return (
     <>
-    { activeFile.reviewed && activeFile.replacement && 
+    { activeFile.reviewed && activeFile.replacement && activeFile.references?.length == 0 &&
       <div className='flex-column gap-1'>
         <div className={`resolve-option ${activeOption === FORM_OPTIONS.MARK_DELETE ? 'selected' : ''}`}>
             <label className={`option-label` + (isDisabled ? ' disabled' : '')}>
@@ -239,6 +239,25 @@ export default function FileForm ({
       </div>
     }
 
+    {activeFile.reviewed && activeFile.replacement && activeFile.references?.length > 0 && 
+            <div className={`resolve-option ${activeOption === FORM_OPTIONS.MARK_REVERT ? 'selected' : ''}`}>
+              <label className={`option-label` + (isDisabled ? ' disabled' : '')}>
+              <input
+                type="radio"
+                id={FORM_OPTIONS.MARK_REVERT}
+                name="altTextOption"
+                tabIndex="0"
+                checked={activeOption === FORM_OPTIONS.MARK_REVERT}
+                disabled={isDisabled}
+                onChange={() => {
+                  handleOptionChange(FORM_OPTIONS.MARK_REVERT)
+                }} />
+                {t('form.file.revert_label')}
+              </label>
+              {activeOption === FORM_OPTIONS.MARK_REVERT && <div className='instructions'>{t('form.file.revert_instructions', {file: activeFile.fileName})}</div>}
+        </div>
+    }
+    
     {!activeFile.reviewed && activeFile.replacement &&
       <>
         <div className={`resolve-option ${activeOption === FORM_OPTIONS.MARK_AS_REVIEWED ? 'selected' : ''}`}>
