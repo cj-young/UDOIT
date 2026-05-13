@@ -239,6 +239,33 @@ export default function FileForm ({
       </div>
     }
 
+    {!activeFile.reviewed && activeFile.replacement &&
+      <>
+        <div className={`resolve-option ${activeOption === FORM_OPTIONS.MARK_AS_REVIEWED ? 'selected' : ''}`}>
+            <label className={`option-label` + (isDisabled ? ' disabled' : '')}>
+            <input
+              type="radio"
+              id={FORM_OPTIONS.MARK_AS_REVIEWED}
+              name="altTextOption"
+              tabIndex="0"
+              checked={activeOption === FORM_OPTIONS.MARK_AS_REVIEWED}
+              disabled={isDisabled}
+              onChange={() => {
+                handleOptionChange(FORM_OPTIONS.MARK_AS_REVIEWED)
+              }} />
+              {t('form.file.mark_review')}
+            </label>
+        </div>
+        <div className='callout-container'>
+          <div className='p-2 flex-column justify-content-center align-items-center text-center'>
+              <h3 className="mt-0">{t('form.file.failed_replacement')}</h3>
+              <div className="instructions">{t('form.file.failed_instruction')}</div>
+          </div>
+        </div>
+
+      </>
+    }
+
     {activeFile.reviewed && !activeFile.replacement && 
       <div className='callout-container'>
         <div className='p-2 flex-column justify-content-center align-items-center text-center'>
