@@ -644,7 +644,11 @@ class CanvasLms implements LmsInterface {
                 if($contentItem){
                     $normalizedContent = [];
                     if($response['status'] == 200){
-                        $normalizedContent = $this->normalizeLmsContent($contentItem->getCourse(), $response['type'], json_decode(json_encode($response['content']), true));
+                        $lmsContentNew = json_decode(json_encode($response['content']), true);
+                        if ($response['type'] == 'syllabus') {
+                            $lmsContentNew['syllabus_body'] = $option['fullPageHtml'];
+                        }
+                        $normalizedContent = $this->normalizeLmsContent($contentItem->getCourse(), $response['type'], $lmsContentNew);
                         $contentItem->update($normalizedContent);
                         $this->entityManager->flush();
                     }
@@ -900,6 +904,13 @@ class CanvasLms implements LmsInterface {
     protected function createLmsPostOptionsWithHtml($type, $fullPageHtml){
         $options = [];
         switch($type){
+            case('syllabus'):
+                $options = [
+                    'course' => [
+                        'syllabus_body' => $fullPageHtml,
+                    ],
+                ];
+                break;
             case('page'):
                 $options = [
                         'wiki_page' => [

@@ -521,13 +521,18 @@ useEffect(() => {
     }
   }
 
-  const extractUrl = (url) => {
+  const extractUrl = (url, contentType) => {
   if(!url) return ''
   
   const idx = url.indexOf('courses/');
   if (idx !== -1) {
     // slice from "courses/" onward and strip any leading slashes (defensive)
-    return url.slice(idx).replace(/^\/+/, '');
+    let slicedUrl = url.slice(idx).replace(/^\/+/, '');
+    if(contentType == "syllabus"){
+      const parts = slicedUrl.split("/")
+      slicedUrl = `${parts[0]}/${parts[1]}?include[]=syllabus_body`
+    }
+    return slicedUrl
   }
 
   // if no "courses/" found, remove leading slashes and return the remainder
@@ -614,7 +619,7 @@ useEffect(() => {
   }
 
   const createContentItemPostOptions = (fullPageHtml, contentUrl, contentId, contentType, sectionIds) => {
-      const contentItemOption = {
+    const contentItemOption = {
         fullPageHtml: fullPageHtml,
         contentUrl: contentUrl,
         contentId: contentId,
@@ -646,7 +651,7 @@ useEffect(() => {
         if(reference.contentItemBody){
           newFullPageHtml = replaceFileInHtml(reference.contentItemBody, file.lmsFileId, newFile.metadata.url)
         }
-        postContentItemOptions.push(createContentItemPostOptions(newFullPageHtml, extractUrl(reference.contentItemUrl), reference.contentItemId, reference.contentType, reference.sectionIds))
+        postContentItemOptions.push(createContentItemPostOptions(newFullPageHtml, extractUrl(reference.contentItemUrl, reference.contentType), reference.contentItemId, reference.contentType, reference.sectionIds))
       })
     }
     return postContentItemOptions
@@ -835,6 +840,7 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
     }
     const postContentItemOptions = getContentPostItems(activeFile.replacement, activeFile, contentReferences)
     const postSectionOptions = getSectionPostOptions(activeFile, sectionReferences)
+
 
     if((postContentItemOptions && postContentItemOptions.length > 0) ||  (postSectionOptions && postSectionOptions.length > 0)){
         const responseStatus = await updateAndScanContent(postContentItemOptions, postSectionOptions, activeFile.id)
