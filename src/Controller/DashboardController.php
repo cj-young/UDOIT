@@ -43,8 +43,8 @@ class DashboardController extends AbstractController
         UtilityService $util,
         SessionService $sessionService,
         LmsUserService $lmsUser,
-        LmsApiService $lmsApi): Response
-    {
+        LmsApiService $lmsApi
+    ): Response {
         $this->util = $util;
         $this->session = $sessionService->getSession();
         $this->lmsApi = $lmsApi;
@@ -84,8 +84,8 @@ class DashboardController extends AbstractController
         UtilityService $util,
         SessionService $sessionService,
         LmsApiService $lmsApi,
-        InitialStateService $initialStateService,): JsonResponse
-    {
+        InitialStateService $initialStateService
+    ): JsonResponse {
         $this->util = $util;
         $this->session = $sessionService->getSession();
         $this->lmsApi = $lmsApi;
@@ -100,12 +100,9 @@ class DashboardController extends AbstractController
             return new JsonResponse(['error' => 'Missing LMS course ID'], 400);
         }
 
-        $courseRepo = $this->doctrine->getRepository(Course::class);
-        $course = $courseRepo->findOneBy(['lmsCourseId' => $lmsCourseId]);
+        $courseTitle = $this->session->get('title');
 
-        if (!$course) {
-            $course = $this->createCourse($user->getInstitution(), $lmsCourseId);
-        }
+        $course = $this->createOrUpdateCourse($user->getInstitution(), $lmsCourseId, $courseTitle);
 
         $preferences = $initialStateService->getPreferences($user);
 
@@ -117,13 +114,55 @@ class DashboardController extends AbstractController
         ]);
     }
 
-    
-    protected function createCourse(Institution $institution, $lmsCourseId)
+    protected function getSettings(Course $course): array
     {
-        $course = new Course();
+        /** @var User $user */
+        $user = $this->getUser();
+        /** @var \App\Entity\Institution $institution */
+        $institution = $user->getInstitution();
+
+        $metadata = $institution->getMetadata();
+
+        /** $lang should be two letters, and match an available JSON file in the /translations folder. */
+        $lang = ($_ENV['DEFAULT_LANG'] ? $_ENV['DEFAULT_LANG'] : 'en');
+        $lang = (!empty($metadata['lang'])) ? $metadata['lang'] : $lang;
+        $lang = (array_key_exists("lang", $user->getRoles()) ? $user->getRoles()["lang"] : $lang);
+        $excludedRuleIds = (!empty($metadata['excludedRuleIds'])) ? $metadata['excludedRuleIds'] : '';
+
+        $lms = $this->lmsApi->getLms();
+
+        return [
+            'apiUrl' => !empty($_ENV['BASE_URL']) ? $_ENV['BASE_URL'] : false,
+            'user' => $user,
+            'course' => $course,
+            'institution' => $institution,
+            'roles' => $this->session->get('roles'),
+            'language' => $lang,
+            'labels' => (array) $this->util->getTranslation($lang),
+            'excludedRuleIds' => $excludedRuleIds,
+            'contentTypes' => $lms->getContentTypes(),
+            'backgroundColor' => !empty($_ENV['BACKGROUND_COLOR']) ? $_ENV['BACKGROUND_COLOR'] : '#ffffff',
+            'textColor' => !empty($_ENV['TEXT_COLOR']) ? $_ENV['TEXT_COLOR'] : '#000000',
+            'versionNumber' => !empty($_ENV['VERSION_NUMBER']) ? $_ENV['VERSION_NUMBER'] : '',
+        ];
+    }
+
+    protected function createOrUpdateCourse(Institution $institution, $lmsCourseId, $courseTitle): Course
+    {
+        $courseRepo = $this->doctrine->getRepository(Course::class);
+        $course = $courseRepo->findOneBy(['lmsCourseId' => $lmsCourseId]);
+
+        if (!$course) {
+            $course = new Course();
+        }
+
+        if (!$courseTitle) {
+            $courseTitle = "New Course #{$lmsCourseId}";
+        }
+
         $course->setInstitution($institution);
         $course->setLmsCourseId($lmsCourseId);
-        $course->setTitle("New Course: ID#{$lmsCourseId}");
+        $course->setTitle($courseTitle);
         $course->setActive(true);
         $course->setDirty(false);
 

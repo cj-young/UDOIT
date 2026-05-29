@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
-import SearchIcon from '../Icons/SearchIcon'
+import React, { useState, useEffect } from "react";
+import SearchIcon from "../Icons/SearchIcon";
 
-import '../Widgets/FixIssuesFilters.css'
+import "../Widgets/FixIssuesFilters.css";
 
 export default function AdminFilters({
   t,
@@ -12,67 +12,65 @@ export default function AdminFilters({
   handleFilter,
   loadingContent,
   searchTerm,
-  handleSearchTerm
+  handleSearchTerm,
+  navigation,
 }) {
-  
-  const [accountOptions, setAccountOptions] = useState([])
-  const [termOptions, setTermOptions] = useState([])
-  
-  // When "termInfo" and "accounts" are loaded, create the Account and Term dropdown options
+  const [accountOptions, setAccountOptions] = useState([]);
+  const [termOptions, setTermOptions] = useState([]);
+
+  // When the "termInfo" and "accounts" are loaded, create the Account and Term dropdown options
   useEffect(() => {
     if (accounts) {
-      let tempAccountOptions = []
-      const accountsArr = Object.values(accounts)
-      for (const acct of accountsArr) {
+      let tempAccountOptions = [];
+      for (const acct of Object.values(accounts)) {
         tempAccountOptions.push({
           id: acct.id,
-          name: acct.name
-        })
+          name: acct.name,
+        });
       }
 
-      setAccountOptions(tempAccountOptions)
+      setAccountOptions(tempAccountOptions);
     }
 
     if (termInfo) {
-      let tempTermOptions = []
-      const termsArr = Object.entries(termInfo.terms)
-      for (const [key, val] of termsArr) {
+      let tempTermOptions = [];
+      for (const [key, val] of Object.entries(termInfo.terms)) {
         tempTermOptions.push({
           id: key,
           name: val,
-        })
+        });
       }
-      setTermOptions(tempTermOptions)
+      setTermOptions(tempTermOptions);
     }
-  }, [termInfo, accounts])
+  }, [termInfo, accounts]);
 
   const handleAccountSelect = (newValue) => {
-    handleFilter({ accountId: newValue })
-  }
+    handleFilter({ accountId: newValue });
+  };
 
   const handleTermSelect = (newValue) => {
-    handleFilter({ termId: newValue })
-  }
-
-  const handleIncludeSubaccount = (e) => {
-    handleFilter({ includeSubaccounts: e.target.checked })
-  }
+    handleFilter({ termId: newValue });
+  };
 
   return (
     <div className="filter-container mb-2">
       <div className="flex-row flex-wrap gap-1">
-        <div className="search-group">
-          <input
-            value={searchTerm}
-            type="text"
-            placeholder={t('filter.label.search')}
-            onChange={(e) => handleSearchTerm(e.target.value)}
-          />
-          <SearchIcon className="search-icon icon-sm" />
-        </div>
+        {navigation === "courses" && (
+          <div className="search-group">
+            <input
+              value={searchTerm}
+              type="text"
+              placeholder={t("filter.label.search")}
+              onChange={(e) => handleSearchTerm(e.target.value)}
+            />
+            <SearchIcon className="search-icon icon-sm" />
+          </div>
+        )}
         <div className="flex-row me-3">
           <div className="flex-column justify-content-center">
-            <label htmlFor="inputAccount" className="me-2">{t('filter.label.account')}</label>
+            <label htmlFor="inputAccount" className="me-2">
+              {t("filter.label.account")}
+            </label>
           </div>
           <div className="filter-group">
             <select
@@ -83,57 +81,38 @@ export default function AdminFilters({
             >
               {accountOptions.map((acct, i) => {
                 return (
-                  <option
-                    key={`acct-${i}`}
-                    value={acct.id}
-                  >
+                  <option key={`acct-${i}`} value={acct.id}>
                     {acct.name}
                   </option>
-                )
+                );
               })}
             </select>
           </div>
         </div>
         <div className="flex-row me-3">
           <div className="flex-column justify-content-center">
-            <label htmlFor="inputTerm" className="me-2">{t('filter.label.term')}</label>
+            <label htmlFor="inputTerm" className="me-2">
+              {t("filter.label.term")}
+            </label>
           </div>
           <div className="filter-group">
             <select
               id="inputTerm"
               disabled={loadingContent}
-              value={filters.accountId.toString()}
+              value={filters?.termId?.toString()}
               onChange={(e) => handleTermSelect(e.target.value)}
             >
               {termOptions.map((term, i) => {
                 return (
-                  <option
-                    key={`term-${i}`}
-                    value={term.id}
-                  >
+                  <option key={`term-${i}`} value={term.id}>
                     {term.name}
                   </option>
-                )
+                );
               })}
             </select>
           </div>
         </div>
-        <div className="flex-row">
-          <div className="filter-group flex-column justify-content-center">
-            <input
-              id="inputSubaccounts"
-              type="checkbox"
-              value="on"
-              disabled={loadingContent}
-              checked={filters.includeSubaccounts}
-              onChange={handleIncludeSubaccount}
-            />
-          </div>
-          <div className="flex-column justify-content-center">
-            <label className="ms-2" htmlFor="inputSubaccounts">{t('filter.label.include_subaccounts')}</label>
-          </div>
-        </div>
       </div>
     </div>
-  )
+  );
 }
