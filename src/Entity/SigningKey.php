@@ -25,7 +25,7 @@ class SigningKey
     private string $publicKey;
 
     #[ORM\Column(type: "text")]
-    private string $privateKey;
+    private ?string $privateKey;
 
     #[ORM\Column(type: "string", length: 200)]
     private string $algorithm;
@@ -36,13 +36,11 @@ class SigningKey
 
     public function __construct(
         string $publicKey,
-        string $privateKey,
         string $algorithm,
         ?SigningKeySet $signingKeySet = null
     ) 
     {
         $this->publicKey = $publicKey;
-        $this->privateKey = $privateKey;
         $this->algorithm = $algorithm;
         $this->signingKeySet = $signingKeySet;
     }
@@ -64,12 +62,12 @@ class SigningKey
         return $this;
     }
 
-    public function getPrivateKey(): string
+    public function getPrivateKeyEncrypted(): ?string
     {
         return $this->privateKey;
     }
 
-    public function setPrivateKey(string $privateKey): static
+    public function setPrivateKeyEncrypted(string $privateKey): static
     {
         $this->privateKey = $privateKey;
 

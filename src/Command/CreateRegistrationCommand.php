@@ -8,6 +8,7 @@ use App\Entity\SigningKey;
 use App\Entity\SigningKeySet;
 use App\Repository\SigningKeySetRepository;
 use App\Services\Encryption\RegistrationEncryptionService;
+use App\Services\Encryption\SigningKeyEncryptionService;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -32,7 +33,8 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
     public function __construct(
         private ManagerRegistry $doctrine,
         private SigningKeySetRepository $signingKeySetRepo,
-        private RegistrationEncryptionService $registrationEncryptionService
+        private RegistrationEncryptionService $registrationEncryptionService,
+        private SigningKeyEncryptionService $signingKeyEncryptionService
     ) {
         parent::__construct();
     }
@@ -306,7 +308,6 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
  
         $this->doctrine->getManager()->persist($institution);
         $this->doctrine->getManager()->persist($registration);
-
         // Save changes after every successful registration. 
         $this->doctrine->getManager()->flush();
     }
@@ -457,10 +458,11 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
         $signingKeySet = new SigningKeySet();
         $signingKey   = new SigningKey(
             $keyPair['publicKey'],
-            $keyPair['privateKey'],
             $keyPair['alg'],
             $signingKeySet,
         );
+
+        $this->signingKeyEncryptionService->setPrivateKey($signingKey, $keyPair['privateKey']);
  
         $this->doctrine->getManager()->persist($signingKeySet);
         $this->doctrine->getManager()->persist($signingKey);
