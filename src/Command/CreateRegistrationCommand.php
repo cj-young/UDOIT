@@ -468,9 +468,10 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
         } 
 
         $iss = $io->ask('Enter issuer');
-        $loginAuthEndpoint = $io->ask('Enter login auth endpoint');
-        $serviceAuthEndpoint = $io->ask('Enter service auth endpoint');
-        $jwkEndpoint = $io->ask('Enter JWK endpoint');
+        $loginAuthEndpoint = $io->ask('Enter the login auth endpoint');
+        $serviceAuthEndpoint = $io->ask('Enter the service auth endpoint');
+        $serviceLoginEndpoint = $io->ask('Enter the login auth endpoint');
+        $jwkEndpoint = $io->ask('Enter the JWK endpoint');
         
         return [
             'issuer'                => $iss,
