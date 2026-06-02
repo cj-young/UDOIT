@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20260528151648 extends AbstractMigration
+final class Version20260602174632 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -21,7 +21,7 @@ final class Version20260528151648 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('CREATE TABLE deployment (id INT AUTO_INCREMENT NOT NULL, lms_deployment_id VARCHAR(2048) NOT NULL, registration_id INT NOT NULL, INDEX IDX_EB1255BE833D8F43 (registration_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci`');
-        $this->addSql('CREATE TABLE registration (id INT AUTO_INCREMENT NOT NULL, issuer VARCHAR(255) NOT NULL, client_id VARCHAR(255) NOT NULL, login_auth_endpoint VARCHAR(2048) NOT NULL, jwks_endpoint VARCHAR(2048) NOT NULL, service_auth_endpoint VARCHAR(2048) NOT NULL, service_login_endpoint VARCHAR(2048) NOT NULL, api_client_id VARCHAR(255) NOT NULL, api_client_secret_encrypted VARCHAR(255) NOT NULL, institution_id INT NOT NULL, signing_key_set_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_62A8A7A710405986 (institution_id), INDEX IDX_62A8A7A7A409F300 (signing_key_set_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci`');
+        $this->addSql('CREATE TABLE registration (id INT AUTO_INCREMENT NOT NULL, issuer VARCHAR(255) NOT NULL, client_id VARCHAR(255) NOT NULL, login_auth_endpoint VARCHAR(2048) NOT NULL, jwks_endpoint VARCHAR(2048) NOT NULL, service_auth_endpoint VARCHAR(2048) NOT NULL, service_login_endpoint VARCHAR(2048) NOT NULL, api_client_id VARCHAR(255) NOT NULL, api_client_secret_encrypted VARCHAR(255) NOT NULL, institution_id INT NOT NULL, signing_key_set_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_62A8A7A710405986 (institution_id), INDEX IDX_62A8A7A7A409F300 (signing_key_set_id), UNIQUE INDEX unique_issuer_client_id_combination (issuer, client_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci`');
         $this->addSql('CREATE TABLE signing_key (id INT AUTO_INCREMENT NOT NULL, public_key LONGTEXT NOT NULL, private_key LONGTEXT NOT NULL, algorithm VARCHAR(200) NOT NULL, signing_key_set_id INT DEFAULT NULL, INDEX IDX_3DAB554EA409F300 (signing_key_set_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci`');
         $this->addSql('CREATE TABLE signing_key_set (id INT AUTO_INCREMENT NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci`');
         $this->addSql('ALTER TABLE deployment ADD CONSTRAINT FK_EB1255BE833D8F43 FOREIGN KEY (registration_id) REFERENCES registration (id)');
