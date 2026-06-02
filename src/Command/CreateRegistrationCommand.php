@@ -9,6 +9,8 @@ use App\Entity\SigningKeySet;
 use App\Repository\SigningKeySetRepository;
 use App\Services\Encryption\RegistrationEncryptionService;
 use App\Services\Encryption\SigningKeyEncryptionService;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -30,12 +32,18 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
     private int $totalFileRegistrations = 0;
     private int $finishedFileRegistrations = 0;
 
+    private EntityManagerInterface $em;
+
     public function __construct(
         private ManagerRegistry $doctrine,
         private SigningKeySetRepository $signingKeySetRepo,
         private RegistrationEncryptionService $registrationEncryptionService,
         private SigningKeyEncryptionService $signingKeyEncryptionService
     ) {
+        $em = $doctrine->getManager();
+        assert($em instanceof EntityManagerInterface);
+        $this->em = $em;
+
         parent::__construct();
     }
 
@@ -114,12 +122,12 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
 
         $institution->setRegistration($registration);
 
-        $this->doctrine->getManager()->persist($institution);
-        $this->doctrine->getManager()->persist($registration);
+        $this->em->persist($institution);
+        $this->em->persist($registration);
         
         // This should be the only flush so that no DB operation is 
         // committed if the user exits the progam before it finishes.
-        $this->doctrine->getManager()->flush();
+        $this->em->flush();
         
         return Command::SUCCESS;
     }
@@ -217,6 +225,10 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
  
             try {
                 $this->validateEntry($entry);
+                if (!$this->em->isOpen()) {
+                    $this->doctrine->resetManager();
+                    $this->em = $this->doctrine->getManager();
+                }
                 $this->createRegistrationFromEntry($entry, $io);
                 $io->success("Created successfully.");
                 $successCount++;
@@ -278,38 +290,55 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
      */
     private function createRegistrationFromEntry(array $entry, SymfonyStyle $io): void
     {
-        $platform = $this->resolvePlatformFromEntry($entry['platform']);
-        $keyset   = $this->resolveKeysetFromEntry($entry['keyset'], $io);
- 
-        $institution = new Institution();
-        $institution->setTitle($entry['title']);
-        $institution->setLmsDomain($entry['lms_domain']);
-        $institution->setLmsId($entry['lms_id']);
-        $institution->setLmsAccountId($entry['lms_account_id']);
-        $institution->setStatus(true);
-        $institution->setVanityUrl($entry['vanity_url']);
-        $institution->setCreated(new \DateTime());
- 
-        $registration = new Registration(
-            $platform['issuer'],
-            $entry['lti_client_id'],
-            $platform['loginAuthEndpoint'],
-            $platform['jwkEndpoint'],
-            $platform['serviceAuthEndpoint'],
-            $platform['serviceLoginEndpoint'],
-            $entry['api_client_id'],
-            $keyset,
-            $institution
-        );
+        $this->em->beginTransaction();
 
-        $this->registrationEncryptionService->setClientSecret($registration, $entry['api_client_secret']);
- 
-        $institution->setRegistration($registration);
- 
-        $this->doctrine->getManager()->persist($institution);
-        $this->doctrine->getManager()->persist($registration);
-        // Save changes after every successful registration. 
-        $this->doctrine->getManager()->flush();
+        try {
+
+        
+            $platform = $this->resolvePlatformFromEntry($entry['platform']);
+            $keyset   = $this->resolveKeysetFromEntry($entry['keyset'], $io);
+    
+            $institution = new Institution();
+            $institution->setTitle($entry['title']);
+            $institution->setLmsDomain($entry['lms_domain']);
+            $institution->setLmsId($entry['lms_id']);
+            $institution->setLmsAccountId($entry['lms_account_id']);
+            $institution->setStatus(true);
+            $institution->setVanityUrl($entry['vanity_url']);
+            $institution->setCreated(new \DateTime());
+    
+            $registration = new Registration(
+                $platform['issuer'],
+                $entry['lti_client_id'],
+                $platform['loginAuthEndpoint'],
+                $platform['jwkEndpoint'],
+                $platform['serviceAuthEndpoint'],
+                $platform['serviceLoginEndpoint'],
+                $entry['api_client_id'],
+                $keyset,
+                $institution
+            );
+
+            $this->registrationEncryptionService->setClientSecret($registration, $entry['api_client_secret']);
+    
+            $institution->setRegistration($registration);
+    
+            $this->em->persist($institution);
+            $this->em->persist($registration);
+
+            // Save changes after every successful registration. 
+            $this->em->flush();
+            $this->em->commit();
+        } catch (UniqueConstraintViolationException $e) {
+
+            $this->em->rollback();
+            $this->em->clear();
+            $io->error('Transaction failed. The pair (issuer, client_id) must be unique.');
+
+            throw $e;
+
+        }
+
     }
 
     /**
@@ -464,8 +493,8 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
 
         $this->signingKeyEncryptionService->setPrivateKey($signingKey, $keyPair['privateKey']);
  
-        $this->doctrine->getManager()->persist($signingKeySet);
-        $this->doctrine->getManager()->persist($signingKey);
+        $this->em->persist($signingKeySet);
+        $this->em->persist($signingKey);
         
         // Don't flush here so that if user cancels the program, the keys
         // won't be saved.

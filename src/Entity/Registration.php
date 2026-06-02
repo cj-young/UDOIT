@@ -8,6 +8,10 @@ use Doctrine\ORM\Mapping as ORM;
 
 
 #[ORM\Entity(repositoryClass: "App\Repository\RegistrationRepository")]
+#[ORM\UniqueConstraint(
+    name: "unique_issuer_client_id_combination",
+    columns: ["issuer", "client_id"]
+)]
 #[ORM\Table(name: 'registration')]
 class Registration
 {
