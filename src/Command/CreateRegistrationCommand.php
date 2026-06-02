@@ -53,7 +53,7 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
             'file',
             'f',
             InputOption::VALUE_REQUIRED,
-            'Path to a JSON or YAML file containing one or more registrations to create in batch'
+            'Path to a YAML file containing one or more registrations to create in batch'
         );
     }
 
@@ -133,41 +133,39 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
     }
 
     /**
-     * Process one or more registrations defined in a JSON or YAML file.
+     * Process one or more registrations defined in a YAML file.
      *
      * Expected top-level structure (array of registration objects):
      *
-     * JSON example (registrations.json):
-     * [
-     *   {
-     *     "title": "My University",
-     *     "lms_domain": "myuniversity.instructure.com",
-     *     "lms_id": "canvas",
-     *     "vanity_url": "myuniversity.instructure.com",
-     *     "lms_account_id": "12345",
-     *     "lti_client_id": "abc123",
-     *     "api_client_id": "def456",
-     *     "api_client_secret": "supersecret",
-     *     "platform": {
-     *       "preset": "Production Canvas"
-     *       // OR supply all four fields manually:
-     *       // "issuer": "https://canvas.instructure.com",
-     *       // "login_auth_endpoint": "...",
-     *       // "service_auth_endpoint": "...",
-     *       // "service_login_endpoint: "...",
-     *       // "jwk_endpoint": "..."
-     *     },
-     *     "keyset": {
-     *       "generate": true 
-     *       // true will ALWAYS generate new set, false only generates if no key available
+     * YAML example (registrations.yaml):
+     * - title: My University
+     *   lms_domain: myuniversity.instructure.com
+     *   lms_id: canvas
+     *   vanity_url: myuniversity.instructure.com
+     *   lms_account_id: "12345"
+     *   lti_client_id: abc123
+     *   api_client_id: def456
+     *   api_client_secret: supersecret
+     *  
+     *   platform:
+     *      preset: Production Canvas
      * 
-     *       // OR use an existing keyset by ID:
-     *       // "existing_id": 7
-     *     }
-     *   }
-     * ]
+     *      # OR supply all fields manually:
+     *      # issuer: https://canvas.instructure.com
+     *      # login_auth_endpoint: https://...
+     *      # service_auth_endpoint: https://...
+     *      # service_login_endpoint: https://...
+     *      # jwk_endpoint: https://...
+     * 
+     *  keyset:
+     *      generate: true
+     * 
+     *      # true will ALWAYS generate a new keyset
+     *      # false only generates if no key is available
+     * 
+     *      # OR use an existing keyset:
+     *      # existing_id: 7
      *
-     * YAML files follow the same structure with YAML syntax.
      * A single object (not wrapped in an array) is also accepted.
      */
     private function runFromFile(string $filePath, SymfonyStyle $io)
@@ -182,10 +180,9 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
  
         try {
             $data = match ($extension) {
-                'json'        => json_decode($content, true, 512, JSON_THROW_ON_ERROR),
                 'yaml', 'yml' => Yaml::parse($content),
                 default       => throw new \InvalidArgumentException(
-                    "Unsupported file extension \".{$extension}\". Use .json, .yaml, or .yml."
+                    "Unsupported file extension \".{$extension}\". Use .yaml or .yml."
                 ),
             };
         } catch (\Throwable $e) {
@@ -194,11 +191,7 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
         }
  
         // Allow a single object or an array of objects.
-        if (isset($data['title'])) {
-            $registrations = [$data];
-        } else {
-            $registrations = $data;
-        }
+        $registrations = isset($data['title']) ? [$data] : $data;
  
         if (empty($registrations) || !is_array($registrations)) {
             $io->error('The file must contain at least one registration entry.');
