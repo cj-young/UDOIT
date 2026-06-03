@@ -93,10 +93,10 @@ admin-panel-retrieve-data: clean-cache
 # ──────────────────────────────────────────────
 
 frontend-fmt: 
-	npm run pretty
+	$(COMPOSE) run yarn yarn pretty
 
 frontend-lint:
-	npm run lint
+	$(COMPOSE) run yarn yarn lint
 # ──────────────────────────────────────────────
 # Institution Seeding
 # ──────────────────────────────────────────────
