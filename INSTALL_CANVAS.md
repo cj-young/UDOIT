@@ -144,7 +144,7 @@ UDOIT is built to support more than one LMS instance. There are two supported me
     - `service_login_endpoint` - The OAuth login endpoint of your LMS (usually `https://sso.canvaslms.com/login/oauth2/auth` if hosted by Canvas). This is the endpoint that the user will be redirected to during the OAuth process to request consent to use their Canvas API key with the tool
     - `jwk_endpoint` - The JWK endpoint of your LMS (usually `https://sso.canvaslms.com/api/lti/security/jwks` if hosted by Canvas)
   - Use a preset
-    - Add a single field called `preset` and populate it with one of the following supported preset options: `Production Canvas`, `Test Canvas`, `Beta Canvas`, `Devhub`
+    - Add a single field called `preset` and populate it with one of the following supported preset options: `Production Canvas`, `Test Canvas`, `Beta Canvas`
     - For example, your `platform` field may look like:
       ```yaml
       platform:
@@ -154,7 +154,7 @@ UDOIT is built to support more than one LMS instance. There are two supported me
   - Specify the following field
     - `generate`: If this field is set to `true`, a new signing keyset will be generated without exception. If it is `false`, the institution's keyset will be set to the keyset in the database with the smallest ID. If no keyset exists, a new one will be created. Use `generate: false` for every institution if you do not want different signing key sets for every institution
     - `existing_id`: The database ID of the keyset that you want to reuse
-4. Run the following command in the UDOIT directory to populate the databse with your institution data
+1. Run the following command in the UDOIT directory to populate the databse with your institution data
    ```bash
    make create-registration FILE="institution.secret.yaml"
    ```

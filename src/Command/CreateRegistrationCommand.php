@@ -424,14 +424,6 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
                 'serviceLoginEndpoint'  => 'https://sso.beta.canvaslms.com/login/oauth2/auth',
                 'jwkEndpoint'           => 'https://sso.beta.canvaslms.com/api/lti/security/jwks',
             ],
-            [
-                'name'                  => 'Devhub',
-                'issuer'                => 'https://canvas.instructure.com',
-                'loginAuthEndpoint'     => 'https://devhub.cdl.ucf.edu/api/lti/authorize_redirect',
-                'serviceAuthEndpoint'   => 'https://devhub.cdl.ucf.edu/login/oauth2/token',
-                'serviceLoginEndpoint'  => 'https://devhub.cdl.ucf.edu/login/oauth2/auth',
-                'jwkEndpoint'           => 'https://devhub.cdl.ucf.edu/api/lti/security/jwks',
-            ],
         ];
     }
 
@@ -494,29 +486,6 @@ class CreateRegistrationCommand extends Command implements SignalableCommandInte
         // won't be saved.
 
         return $signingKeySet;
-    }
-
-
-    private function getIss(SymfonyStyle $io)
-    {
-        $canvasIss = 'https://canvas.instructure.com';
-        $devhubIss = 'https://devhub.cdl.ucf.edu';
-        $customIss = 'Custom';
-
-        $issuerOptions = [
-            $canvasIss,
-            $devhubIss,
-            $customIss,
-        ];
-        
-        $iss = $io->choice('What is the issuer?', $issuerOptions);
-
-        if ($iss === $customIss)
-        {
-            $iss = $io->ask('Enter custom issuer');
-        }
-
-        return $iss;
     }
 
     private function getLtiClientId(SymfonyStyle $io)
