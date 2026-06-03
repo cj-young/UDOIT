@@ -87,6 +87,13 @@ admin-panel-retrieve-data: clean-cache
 		exit 1; \
 	fi
 	$(COMPOSE) run --rm php php bin/console app:admin-panel-retrieval $(foreach table,$(TABLES),--tables=$(table))
+
+# ──────────────────────────────────────────────
+# Formatting and Linting
+# ──────────────────────────────────────────────
+
+frontend-fmt: 
+	npm run pretty
 # ──────────────────────────────────────────────
 # Institution Seeding
 # ──────────────────────────────────────────────
