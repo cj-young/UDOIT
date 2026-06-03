@@ -20,6 +20,7 @@
         "eslint": "^9.39.4",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^7.1.1",
         "globals": "^17.4.0",
         "jest": "^30.0.4",
         "msw": "^2.10.4",
