@@ -23,7 +23,7 @@ down:
 	$(COMPOSE) down
 
 ## Rebuild the containers from the ground up
-build:
+rebuild:
 	$(COMPOSE) up --build
 
 # ──────────────────────────────────────────────
@@ -94,6 +94,9 @@ admin-panel-retrieve-data: clean-cache
 
 frontend-fmt: 
 	npm run pretty
+
+frontend-lint:
+	npm run lint
 # ──────────────────────────────────────────────
 # Institution Seeding
 # ──────────────────────────────────────────────
