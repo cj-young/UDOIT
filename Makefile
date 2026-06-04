@@ -104,12 +104,20 @@ backend-fmt:
 backend-lint:
 	$(COMPOSE) run --rm composer lint
 
+format: frontend-fmt backend-fmt
+
+lint:
+	@frontend_rc=0; backend_rc=0; \
+	$(MAKE) frontend-lint || frontend_rc=$$?; \
+	$(MAKE) backend-lint || backend_rc=$$?; \
+	[ $$frotnend_rc -eq 0 ] && [ $$backend_rc -eq 0 ]
+
 # ──────────────────────────────────────────────
 # Institution Seeding
 # ──────────────────────────────────────────────
 
 ## Insert institution row (MySQL)
-## Reads variables from .ins.env
+## Reads variablems from .ins.env
 ins-mysql:
 	docker exec -it udoit3-db mysql -u root -proot udoit3 \
 		-e "INSERT INTO institution \
