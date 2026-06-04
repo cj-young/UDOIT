@@ -11,7 +11,6 @@ use App\Services\UtilityService;
 use Doctrine\Persistence\ManagerRegistry;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -40,7 +39,6 @@ class LtiController extends AbstractController
         ManagerRegistry $doctrine,
         SessionService $sessionService,
         RegistrationRepository $registrationRepository,
-        private LoggerInterface $logger
     ) {
         $this->doctrine = $doctrine;
         $this->sessionService = $sessionService;
@@ -231,8 +229,6 @@ class LtiController extends AbstractController
         // Remove old sessions
         $sessionService->removeExpiredSessions();
 
-        $this->logger->info(json_encode($this->session));
-        
         $authCookie = Cookie::create('AUTH_TOKEN')
             ->withValue($this->session->getUuid())
             ->withExpires(0)
