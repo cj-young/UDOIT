@@ -97,6 +97,10 @@ frontend-fmt:
 
 frontend-lint:
 	$(COMPOSE) run yarn yarn lint
+
+backend-fmt:
+	$(COMPOSE) run --rm composer ./vendor/bin/php-cs-fixer fix
+
 # ──────────────────────────────────────────────
 # Institution Seeding
 # ──────────────────────────────────────────────
