@@ -97,7 +97,12 @@
     },
     "scripts": {
         "format": "./vendor/bin/php-cs-fixer fix",
-        "lint": "vendor/bin/phpstan analyse src tests"
+        "lint": [
+            "@lint:container",
+            "@lint:phpstan"
+        ],
+        "lint:phpstan": "vendor/bin/phpstan analyse src tests",
+        "lint:container": "php bin/console lint:container"
     },
     "conflict": {
         "symfony/symfony": "*"
