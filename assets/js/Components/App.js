@@ -47,7 +47,7 @@ export default function App(initialData) {
       }
       return translatedText;
     },
-    [labels]
+    [labels],
   );
 
   const scanCourse = useCallback(() => {
@@ -113,7 +113,7 @@ export default function App(initialData) {
   const updateSessionIssue = (
     issueId,
     issueState = null,
-    contentItemId = null
+    contentItemId = null,
   ) => {
     if (issueState === null || issueState === ISSUE_STATE.UNCHANGED) {
       let newSessionIssues = Object.assign({}, sessionIssues);
@@ -137,7 +137,7 @@ export default function App(initialData) {
   const updateSessionFiles = (
     fileId,
     fileState = null,
-    contentItemId = null
+    contentItemId = null,
   ) => {
     if (fileState === null || fileState === ISSUE_STATE.UNCHANGED) {
       let newSessionFiles = Object.assign({}, sessionFiles);
@@ -399,7 +399,7 @@ export default function App(initialData) {
       }
       lang={preferences.lang}
     >
-      {!welcomeClosed ? (
+      {!welcomeClosed ?
         <WelcomePage
           t={t}
           instanceInfo={instanceInfo}
@@ -407,8 +407,7 @@ export default function App(initialData) {
           syncComplete={syncComplete}
           setWelcomeClosed={setWelcomeClosed}
         />
-      ) : (
-        <>
+      : <>
           <Header
             t={t}
             preferences={preferences}
@@ -492,7 +491,7 @@ export default function App(initialData) {
             {"modal" === navigation && <div className="modal">{modal}</div>}
           </main>
         </>
-      )}
+      }
       <MessageTray t={t} preferences={preferences} nextMessage={nextMessage} />
     </div>
   );

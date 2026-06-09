@@ -142,16 +142,16 @@ export default function AdminDashboard({ t, preferences, courses }) {
   }
 
   const scanPercentage =
-    dashboardStats.totalCourses > 0
-      ? (dashboardStats.scannedCourses / dashboardStats.totalCourses) * 100
-      : 0;
+    dashboardStats.totalCourses > 0 ?
+      (dashboardStats.scannedCourses / dashboardStats.totalCourses) * 100
+    : 0;
 
   const instructorAdoption =
-    dashboardStats.totalInstructors > 0
-      ? (dashboardStats.uniqueInstructorsUsingUdoit /
-          dashboardStats.totalInstructors) *
-        100
-      : 0;
+    dashboardStats.totalInstructors > 0 ?
+      (dashboardStats.uniqueInstructorsUsingUdoit /
+        dashboardStats.totalInstructors) *
+      100
+    : 0;
 
   return (
     <>
@@ -280,16 +280,16 @@ export default function AdminDashboard({ t, preferences, courses }) {
                   </p>
                   <p style={{ marginLeft: "20px" }}>
                     Scanned: {stats.scanned} (
-                    {stats.total > 0
-                      ? ((stats.scanned / stats.total) * 100).toFixed(1)
-                      : 0}
+                    {stats.total > 0 ?
+                      ((stats.scanned / stats.total) * 100).toFixed(1)
+                    : 0}
                     %)
                   </p>
                   <p style={{ marginLeft: "20px" }}>
                     Total Issues: {stats.errors}
                   </p>
                 </div>
-              )
+              ),
             )}
           </section>
         )}

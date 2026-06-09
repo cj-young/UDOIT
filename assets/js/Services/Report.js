@@ -307,7 +307,7 @@ export function analyzeReport(report) {
   Object.values(report.contentItems).forEach((contentItem) => {
     contentItem.sections = getSectionsFromContentItem(
       report.contentSections,
-      contentItem
+      contentItem,
     );
     if (contentItem.body) {
       let tempBody = parser.parseFromString(contentItem.body, "text/html");
@@ -356,7 +356,7 @@ export function analyzeReport(report) {
         // In the initial scan, whatever comes back is saved to both the issue.xpath and issue.sourceHtml variables.
         let element = Html.findElementWithIssue(
           parsedDocuments[contentItemId],
-          issue
+          issue,
         );
         if (element) {
           issue.sourceHtml = Html.toString(element);

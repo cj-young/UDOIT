@@ -30,7 +30,7 @@ export default function AdminApp(initialData) {
   const [messages, setMessages] = useState(initialData.messages || []);
   const [preferences, setPreferences] = useState(initialData.preferences ?? {});
   const [instanceInfo, setInstanceInfo] = useState(
-    initialData.instanceInfo ?? {}
+    initialData.instanceInfo ?? {},
   );
   const [termInfo, setTermInfo] = useState(initialData.termInfo || {});
   const [labels, setLabels] = useState(initialData.labels ?? []);
@@ -53,13 +53,13 @@ export default function AdminApp(initialData) {
         Object.keys(values).forEach((valKey) => {
           translatedText = translatedText.replace(
             `{${valKey}}`,
-            values[valKey]
+            values[valKey],
           );
         });
       }
       return translatedText;
     },
-    [labels]
+    [labels],
   );
 
   const loadCourses = (filters) => {
