@@ -3,7 +3,6 @@ ifneq (,$(wildcard ./.ins.env))
     include .ins.env
     export
 endif
-
 # ──────────────────────────────────────────────
 # Variables
 # ──────────────────────────────────────────────
@@ -84,7 +83,7 @@ frontend-install:
 	$(COMPOSE) run --rm yarn yarn install
 
 backend-install:
-	$(COMPOSE) run --rm composer composer install
+	$(COMPOSE) run --rm composer composer install --no-interaction --no-progress --optimize-autoloader
 
 install-deps: frontend-install backend-install
 
@@ -106,24 +105,26 @@ admin-panel-retrieve-data: clean-cache
 # Formatting and Linting
 # ──────────────────────────────────────────────
 
-check-dev:
-	@if [ "$(APP_ENV)" != "dev"]; then \
-		echo "Error: APP_ENV must be 'dev' (current: '$(APP_ENV)')"; \
-		exit 1; \
-	fi
+# All of these commands require dev dependencies to be installed
+# Make sure your APP_ENV is "dev" when you install dependencies
 
-frontend-fmt: check-dev
+# To run these two commands, ensure your node_modules is up to date.
+# If it isn't, run frontend-install
+frontend-fmt:
 	$(COMPOSE) run yarn yarn pretty
 
-frontend-lint: check-dev
+frontend-lint:
 	$(COMPOSE) run yarn yarn lint
 
-backend-fmt: check-dev
+# To run these two commands, ensure your vendor folder is up to date.
+# If it isn't, run backend-install
+backend-fmt:
 	@composer run-script --list | grep -q ''
 	$(COMPOSE) run --rm composer composer format
 
-backend-lint: check-dev
+backend-lint:
 	$(COMPOSE) run --rm composer composer lint
+
 
 format: frontend-fmt backend-fmt
 
