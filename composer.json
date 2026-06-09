@@ -96,7 +96,7 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
-        "format": "./vendor/bin/php-cs-fixer fix",
+        "format": "vendor/bin/php-cs-fixer fix",
         "lint": [
             "@lint:container",
             "@lint:phpstan"
