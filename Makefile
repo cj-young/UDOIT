@@ -123,14 +123,14 @@ lint:
 	@frontend_rc=0; backend_rc=0; \
 	$(MAKE) frontend-lint || frontend_rc=$$?; \
 	$(MAKE) backend-lint || backend_rc=$$?; \
-	[ $$frotnend_rc -eq 0 ] && [ $$backend_rc -eq 0 ]
+	[ $$frontend_rc -eq 0 ] && [ $$backend_rc -eq 0 ]
 
 # ──────────────────────────────────────────────
 # Institution Seeding
 # ──────────────────────────────────────────────
 
 ## Insert institution row (MySQL)
-## Reads variablems from .ins.env
+## Reads variables from .ins.env
 ins-mysql:
 	docker exec -it udoit3-db mysql -u root -proot udoit3 \
 		-e "INSERT INTO institution \
