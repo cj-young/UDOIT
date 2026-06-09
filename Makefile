@@ -78,7 +78,15 @@ clean-cache:
 	rm -rf ./var/cache/prod/
 
 purge-symfony:
-	rm -rf vendor ./var/cache 
+	rm -rf vendor ./var/cache
+
+frontend-install:
+	$(COMPOSE) run --rm yarn yarn install
+
+backend-install:
+	$(COMPOSE) run --rm composer composer install
+
+install-deps: frontend-install backend-install
 
 
 .PHONY: admin-panel-retrieve-data
