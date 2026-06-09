@@ -70,10 +70,16 @@ migrate-down:
 # Utilities
 # ──────────────────────────────────────────────
 
+.PHONY: clean-cache purge-symfony
+
 ## Clear the Symfony cache
 clean-cache:
 	$(COMPOSE) run --rm php bin/console cache:clear
 	rm -rf ./var/cache/prod/
+
+purge-symfony:
+	rm -rf vendor ./var/cache 
+
 
 .PHONY: admin-panel-retrieve-data
 
@@ -92,17 +98,24 @@ admin-panel-retrieve-data: clean-cache
 # Formatting and Linting
 # ──────────────────────────────────────────────
 
-frontend-fmt: 
+check-dev:
+	@if [ "$(APP_ENV)" != "dev"]; then \
+		echo "Error: APP_ENV must be 'dev' (current: '$(APP_ENV)')"; \
+		exit 1; \
+	fi
+
+frontend-fmt: check-dev
 	$(COMPOSE) run yarn yarn pretty
 
-frontend-lint:
+frontend-lint: check-dev
 	$(COMPOSE) run yarn yarn lint
 
-backend-fmt:
-	$(COMPOSE) run --rm composer format
+backend-fmt: check-dev
+	@composer run-script --list | grep -q ''
+	$(COMPOSE) run --rm composer composer format
 
-backend-lint:
-	$(COMPOSE) run --rm composer lint
+backend-lint: check-dev
+	$(COMPOSE) run --rm composer composer lint
 
 format: frontend-fmt backend-fmt
 
