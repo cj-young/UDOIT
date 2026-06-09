@@ -111,10 +111,10 @@ admin-panel-retrieve-data: clean-cache
 # To run these two commands, ensure your node_modules is up to date.
 # If it isn't, run frontend-install
 frontend-fmt:
-	$(COMPOSE) run yarn yarn pretty
+	$(COMPOSE) run --rm yarn yarn pretty
 
 frontend-lint:
-	$(COMPOSE) run yarn yarn lint
+	$(COMPOSE) run --rm yarn yarn lint
 
 # To run these two commands, ensure your vendor folder is up to date.
 # If it isn't, run backend-install
