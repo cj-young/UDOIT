@@ -349,7 +349,6 @@ export default function App({ api, ...initialData }) {
           .then((responseStr) => {
             // Check for HTTP errors before parsing JSON
             if (!responseStr.ok) {
-              processServerError(responseStr);
               return null;
             }
             return responseStr.json();
@@ -402,7 +401,6 @@ export default function App({ api, ...initialData }) {
         .then((responseStr) => {
           // Check for HTTP errors before parsing JSON
           if (!responseStr.ok) {
-            processServerError(responseStr);
             return null;
           }
           return responseStr.json();
