@@ -3,6 +3,7 @@ import SortableTable from "../Widgets/SortableTable";
 import Api from "../../Services/Api";
 import SummaryIcon from "../Icons/SummaryIcon";
 import ReportIcon from "../Icons/ReportIcon";
+import { useApi } from "../../Contexts/ApiContext";
 
 export default function CoursePage({
   t,
@@ -58,6 +59,8 @@ export default function CoursePage({
     },
     { id: "action", text: "", alignText: "end" },
   ];
+
+  const api = useApi();
 
   useEffect(() => {
     let tempFilteredCourses = [];
@@ -229,8 +232,6 @@ export default function CoursePage({
   };
 
   const handleScanClick = (course) => {
-    let api = new Api(settings);
-
     // For unscanned courses, course.id will be the LMS course ID (string/number)
     // and hasReport will be false. We need to create the course in UDOIT first.
     // For scanned courses, course.id is the UDOIT database ID (number).
@@ -343,7 +344,6 @@ export default function CoursePage({
 
   const checkForReport = (course) => {
     const newReportInterval = 5000;
-    let api = new Api(settings);
     const courseId = course.udoitId || course.id;
     const originalId = course.originalId; // Save the original ID for removal
 

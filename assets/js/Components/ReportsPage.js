@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 
-import Api from '../Services/Api'
 import ResolutionsReport from './Reports/ResolutionsReport'
 import ReportsTable from './Reports/ReportsTable'
 import IssuesTable from './Reports/IssuesTable'
@@ -12,6 +11,7 @@ import PrintIcon from './Icons/PrintIcon'
 import RightArrowIcon from './Icons/RightArrowIcon'
 import SortIcon from './Icons/SortIcon'
 import './ReportsPage.css'
+import { useApi } from '../Contexts/ApiContext'
 
 export default function ReportsPage({t, report, settings, quickSearchTerm}) {
 
@@ -20,8 +20,9 @@ export default function ReportsPage({t, report, settings, quickSearchTerm}) {
   const [issues, setIssues] = useState([])
   const [showTable, setShowTable] = useState(false)
 
+  const api = useApi();
+
   const getReportHistory = () => {
-    const api = new Api(settings)
     api.getReportHistory()
       .then((responseStr) => responseStr.json())
       .then((response) => {
