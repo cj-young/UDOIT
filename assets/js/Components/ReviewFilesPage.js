@@ -33,6 +33,7 @@ import './ReviewFilesPage.css'
 import * as Html from '../Services/Html.js'
 import CloseIcon from './Icons/CloseIcon.js'
 import LearnMore from './Widgets/LearnMore.js'
+import { useApi } from '../Contexts/ApiContext.js'
 
 export default function ReviewFilesPage({
   t,
@@ -104,7 +105,8 @@ export default function ReviewFilesPage({
 
   const [isDisabled, setIsDisabled] = useState(false)
   const [showLearnMore, setShowLearnMore] = useState(false)
-
+  
+  const api = useApi();
 
   const formatFileData = (fileData) => {
 
@@ -591,7 +593,6 @@ export default function ReviewFilesPage({
   const handleFileDelete = async () => {
     setIsDisabled(true)
     try{
-      let api = new Api(settings)
       const responseStr = await api.deleteFile(activeIssue.fileData)
       const response = await responseStr.json()
       if(response?.errors && response.errors.length > 0){
@@ -683,7 +684,6 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
   const updateAndScanContent = async (postContentItemOptions, postSectionItemOption, fileId) => {
     const responseStatus = []
     try{
-      let api = new Api(settings)
       const responseStr = await api.updateContent(postContentItemOptions, postSectionItemOption, fileId)
       const response = await responseStr.json()
       if (response.errors && response.errors.length > 0) {
@@ -740,7 +740,6 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
     updateActiveSessionFile(tempFile.id, settings.ISSUE_STATE.SAVING)
     try{
       // File Upload to Canvas
-      let api = new Api(settings)
       const responseStr = await api.postFile(tempFile, newFileData)
       const response = await responseStr.json()
       if(response.errors && response.errors.length > 0) {
@@ -811,7 +810,6 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
         fileData.metadata.replacementFileId = -1
       }
     try{
-      let api = new Api(settings)
       const responseStr = await api.reviewFile(fileData, replace)
       const response = await responseStr.json()
 

@@ -8,7 +8,7 @@ import FixIssuesPage from "./FixIssuesPage";
 import ReviewFilesPage from "./ReviewFilesPage";
 import ReportsPage from "./ReportsPage";
 import SettingsPage from "./SettingsPage";
-import Api from "../Services/Api";
+import ApiContextProvider from "../Contexts/ApiContext";
 import MessageTray from "./Widgets/MessageTray";
 import { analyzeReport } from "../Services/Report";
 import {
@@ -22,7 +22,7 @@ import {
   UFIXIT_OPTIONS,
 } from "../Services/Settings";
 
-export default function App(initialData) {
+export default function App({ api, ...initialData }) {
   const [nextMessage, setNextMessage] = useState("");
   const [untranslatedMessage, setUntranslatedMessage] = useState("");
   const [report, setReport] = useState(initialData.report || null);
@@ -77,12 +77,10 @@ export default function App(initialData) {
   );
 
   const scanCourse = useCallback(() => {
-    let api = new Api(settings);
     return api.scanCourse(settings.course.id);
   }, []);
 
   const fullRescan = useCallback(() => {
-    let api = new Api(settings);
     return api.fullRescan(settings.course.id);
   }, []);
 
@@ -113,7 +111,6 @@ export default function App(initialData) {
     let newSettings = Object.assign({}, settings, { user: newUser });
     setSettings(newSettings);
 
-    let api = new Api(settings);
     api
       .updateUser(newUser)
       .then((response) => response.json())
@@ -194,7 +191,6 @@ export default function App(initialData) {
     const tempReport = analyzeReport(rawReport, settings.ISSUE_STATE);
     setReport(tempReport);
 
-    let api = new Api(settings);
     api
       .setReportData(tempReport.id, {
         scanCounts: tempReport.scanCounts,
@@ -298,6 +294,9 @@ export default function App(initialData) {
         break;
       case 404:
         errorMessage = t("msg.sync.error.not_found");
+        break;
+      case 413:
+        errorMessage = t("msg.file.replace.file_size");
         break;
       case 500:
         errorMessage = "Internal Server Error: Please try again later.";
@@ -419,112 +418,130 @@ export default function App(initialData) {
     }
   }, [initialData.report, scanCourse]);
 
+  useEffect(() => {
+    const processServerResponse = (response) => {
+      if (!response.ok) processServerError(response);
+    }
+
+    api.addResponseListener(processServerResponse);
+
+    return () => {
+      api.removeResponseListener(processServerResponse);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    api.setSettings(settings);
+  }, [settings]);
+
   return (
-    <div
-      id="app-container"
-      style={{ "--text-spacing-percent": Number(textSpacing) }}
-      className={
-        `flex-column flex-grow-1 ` +
-        `${settings?.user?.roles?.font_size || settings.DEFAULT_USER_SETTINGS.FONT_SIZE} ` +
-        `${settings?.user?.roles?.font_family || settings.DEFAULT_USER_SETTINGS.FONT_FAMILY} ` +
-        `${settings?.user?.roles?.dark_mode ? "dark-mode" : ""}`
-      }
-      lang={
-        settings?.user?.roles?.lang || settings.DEFAULT_USER_SETTINGS.LANGUAGE
-      }
-    >
-      {!welcomeClosed ? (
-        <WelcomePage
-          t={t}
-          settings={settings}
-          syncComplete={syncComplete}
-          setWelcomeClosed={setWelcomeClosed}
-        />
-      ) : (
-        <>
-          <Header
+    <ApiContextProvider api={api}>
+      <div
+        id="app-container"
+        style={{ "--text-spacing-percent": Number(textSpacing) }}
+        className={
+          `flex-column flex-grow-1 ` +
+          `${settings?.user?.roles?.font_size || settings.DEFAULT_USER_SETTINGS.FONT_SIZE} ` +
+          `${settings?.user?.roles?.font_family || settings.DEFAULT_USER_SETTINGS.FONT_FAMILY} ` +
+          `${settings?.user?.roles?.dark_mode ? "dark-mode" : ""}`
+        }
+        lang={
+          settings?.user?.roles?.lang || settings.DEFAULT_USER_SETTINGS.LANGUAGE
+        }
+      >
+        {!welcomeClosed ? (
+          <WelcomePage
             t={t}
             settings={settings}
-            modalActive={modalActive}
-            navigation={navigation}
-            handleNavigation={handleNavigation}
             syncComplete={syncComplete}
+            setWelcomeClosed={setWelcomeClosed}
           />
+        ) : (
+          <>
+            <Header
+              t={t}
+              settings={settings}
+              modalActive={modalActive}
+              navigation={navigation}
+              handleNavigation={handleNavigation}
+              syncComplete={syncComplete}
+            />
 
-          <main role="main" id="main-content">
-            {"summary" === navigation && (
-              <HomePage
-                t={t}
-                settings={settings}
-                report={report}
-                hasNewReport={hasNewReport}
-                quickIssues={quickIssues}
-                sessionIssues={sessionIssues}
-                syncComplete={syncComplete}
-                handleFullCourseRescan={handleFullCourseRescan}
-              />
-            )}
-            {"fixIssues" === navigation && (
-              <FixIssuesPage
-                t={t}
-                settings={settings}
-                initialSeverity={initialSeverity}
-                initialSearchTerm={initialSearchTerm}
-                contentItemCache={contentItemCache}
-                addContentItemToCache={addContentItemToCache}
-                report={report}
-                sections={sections}
-                processNewReport={processNewReport}
-                addMessage={addMessage}
-                handleNavigation={handleNavigation}
-                sessionIssues={sessionIssues}
-                updateSessionIssue={updateSessionIssue}
-                processServerError={processServerError}
-                setModalActive={setModalActive}
-              />
-            )}
-            {"reviewFiles" === navigation && (
-              <ReviewFilesPage
-                t={t}
-                settings={settings}
-                contentItemCache={contentItemCache}
-                addContentItemToCache={addContentItemToCache}
-                report={report}
-                sections={sections}
-                processNewReport={processNewReport}
-                addMessage={addMessage}
-                handleNavigation={handleNavigation}
-                sessionFiles={sessionFiles}
-                updateSessionFiles={updateSessionFiles}
-                processServerError={processServerError}
-                setModalActive={setModalActive}
-              />
-            )}
-            {"reports" === navigation && (
-              <ReportsPage
-                t={t}
-                settings={settings}
-                report={report}
-                quickSearchTerm={quickSearchTerm}
-              />
-            )}
-            {"settings" === navigation && (
-              <SettingsPage
-                t={t}
-                settings={settings}
-                updateUserSettings={updateUserSettings}
-                syncComplete={syncComplete}
-                handleFullCourseRescan={handleFullCourseRescan}
-                textSpacing={textSpacing}
-                setTextSpacing={setTextSpacing}
-              />
-            )}
-            {"modal" === navigation && <div className="modal">{modal}</div>}
-          </main>
-        </>
-      )}
-      <MessageTray t={t} settings={settings} nextMessage={nextMessage} />
-    </div>
+            <main role="main" id="main-content">
+              {"summary" === navigation && (
+                <HomePage
+                  t={t}
+                  settings={settings}
+                  report={report}
+                  hasNewReport={hasNewReport}
+                  quickIssues={quickIssues}
+                  sessionIssues={sessionIssues}
+                  syncComplete={syncComplete}
+                  handleFullCourseRescan={handleFullCourseRescan}
+                />
+              )}
+              {"fixIssues" === navigation && (
+                <FixIssuesPage
+                  t={t}
+                  settings={settings}
+                  initialSeverity={initialSeverity}
+                  initialSearchTerm={initialSearchTerm}
+                  contentItemCache={contentItemCache}
+                  addContentItemToCache={addContentItemToCache}
+                  report={report}
+                  sections={sections}
+                  processNewReport={processNewReport}
+                  addMessage={addMessage}
+                  handleNavigation={handleNavigation}
+                  sessionIssues={sessionIssues}
+                  updateSessionIssue={updateSessionIssue}
+                  processServerError={processServerError}
+                  setModalActive={setModalActive}
+                />
+              )}
+              {"reviewFiles" === navigation && (
+                <ReviewFilesPage
+                  t={t}
+                  settings={settings}
+                  contentItemCache={contentItemCache}
+                  addContentItemToCache={addContentItemToCache}
+                  report={report}
+                  sections={sections}
+                  processNewReport={processNewReport}
+                  addMessage={addMessage}
+                  handleNavigation={handleNavigation}
+                  sessionFiles={sessionFiles}
+                  updateSessionFiles={updateSessionFiles}
+                  processServerError={processServerError}
+                  setModalActive={setModalActive}
+                />
+              )}
+              {"reports" === navigation && (
+                <ReportsPage
+                  t={t}
+                  settings={settings}
+                  report={report}
+                  quickSearchTerm={quickSearchTerm}
+                />
+              )}
+              {"settings" === navigation && (
+                <SettingsPage
+                  t={t}
+                  settings={settings}
+                  updateUserSettings={updateUserSettings}
+                  syncComplete={syncComplete}
+                  handleFullCourseRescan={handleFullCourseRescan}
+                  textSpacing={textSpacing}
+                  setTextSpacing={setTextSpacing}
+                />
+              )}
+              {"modal" === navigation && <div className="modal">{modal}</div>}
+            </main>
+          </>
+        )}
+        <MessageTray t={t} settings={settings} nextMessage={nextMessage} />
+      </div>
+    </ApiContextProvider>
   );
 }
 
