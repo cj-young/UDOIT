@@ -108,8 +108,6 @@ export default class Api {
       },
       body: JSON.stringify(data),
     });
-
-    return response;
   }
 
   updateAndGetReport(courseId) {
