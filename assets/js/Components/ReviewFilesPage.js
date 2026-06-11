@@ -8,7 +8,7 @@ import LeftArrowIcon from './Icons/LeftArrowIcon'
 import RightArrowIcon from './Icons/RightArrowIcon'
 import StatusPill from './Widgets/StatusPill'
 import * as Text from '../Services/Text'
-import Api from '../Services/Api'
+import { api } from '../Services/Api'
 
 import './FixIssuesPage.css'
 import './ReviewFilesPage.css'
@@ -33,7 +33,6 @@ import './ReviewFilesPage.css'
 import * as Html from '../Services/Html.js'
 import CloseIcon from './Icons/CloseIcon.js'
 import LearnMore from './Widgets/LearnMore.js'
-import { useApi } from '../Contexts/ApiContext.js'
 
 export default function ReviewFilesPage({
   t,
@@ -106,7 +105,6 @@ export default function ReviewFilesPage({
   const [isDisabled, setIsDisabled] = useState(false)
   const [showLearnMore, setShowLearnMore] = useState(false)
   
-  const api = useApi();
 
   const formatFileData = (fileData) => {
 

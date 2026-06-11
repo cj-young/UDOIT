@@ -59,6 +59,7 @@ export default class Api {
 
   setSettings(settings) {
     this.settings = settings;
+    this.apiUrl = settings.apiUrl;
   }
 
   getReport(reportId) {
@@ -324,3 +325,5 @@ export default class Api {
     });
   }
 }
+
+export const api = new Api();

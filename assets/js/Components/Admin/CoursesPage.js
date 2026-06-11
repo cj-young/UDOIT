@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import SortableTable from "../Widgets/SortableTable";
-import Api from "../../Services/Api";
+import { api } from "../../Services/Api";
 import SummaryIcon from "../Icons/SummaryIcon";
 import ReportIcon from "../Icons/ReportIcon";
-import { useApi } from "../../Contexts/ApiContext";
 
 export default function CoursePage({
   t,
@@ -59,8 +58,6 @@ export default function CoursePage({
     },
     { id: "action", text: "", alignText: "end" },
   ];
-
-  const api = useApi();
 
   useEffect(() => {
     let tempFilteredCourses = [];

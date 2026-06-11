@@ -11,7 +11,7 @@ import PrintIcon from './Icons/PrintIcon'
 import RightArrowIcon from './Icons/RightArrowIcon'
 import SortIcon from './Icons/SortIcon'
 import './ReportsPage.css'
-import { useApi } from '../Contexts/ApiContext'
+import { api } from '../Services/Api'
 
 export default function ReportsPage({t, report, settings, quickSearchTerm}) {
 
@@ -19,8 +19,6 @@ export default function ReportsPage({t, report, settings, quickSearchTerm}) {
   const [fetchedReports, setFetchedReports] = useState(false)
   const [issues, setIssues] = useState([])
   const [showTable, setShowTable] = useState(false)
-
-  const api = useApi();
 
   const getReportHistory = () => {
     api.getReportHistory()

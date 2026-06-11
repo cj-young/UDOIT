@@ -3,7 +3,6 @@ import AdminHeader from "./AdminHeader";
 import AdminDashboard from "./AdminDashboard";
 import CoursesPage from "./CoursesPage";
 import ReportsPage from "./ReportsPage";
-import Api from "../../Services/Api";
 import MessageTray from "../Widgets/MessageTray";
 import AdminFilters from "../Admin/AdminFilters";
 import ProgressIcon from "../Icons/ProgressIcon";
@@ -11,9 +10,8 @@ import ProgressIcon from "../Icons/ProgressIcon";
 import { ISSUE_FILTER } from "../../Services/Settings";
 
 import "../../../css/udoit4-theme.css";
-import ApiContextProvider from "../../Contexts/ApiContext";
 
-export default function AdminApp({ api, ...initialData }) {
+export default function AdminApp(initialData) {
   // If there are multiple accounts available, the first account is the selected accountId
   let accountId = initialData.settings?.accountId;
   if (initialData.settings?.accounts) {
@@ -143,82 +141,80 @@ export default function AdminApp({ api, ...initialData }) {
   }, [settings]);
 
   return (
-    <ApiContextProvider api={api}>
-      <div
-        id="app-container"
-        className={`flex-column flex-grow-1 ${settings?.user?.roles?.font_size || "font-medium"} ${settings?.user?.roles?.font_family || "sans-serif"} ${settings?.user?.roles?.dark_mode ? "dark-mode" : ""}`}
-      >
-        <AdminHeader
-          t={t}
-          settings={settings}
-          navigation={navigation}
-          handleNavigation={handleNavigation}
-        />
+    <div
+      id="app-container"
+      className={`flex-column flex-grow-1 ${settings?.user?.roles?.font_size || "font-medium"} ${settings?.user?.roles?.font_family || "sans-serif"} ${settings?.user?.roles?.dark_mode ? "dark-mode" : ""}`}
+    >
+      <AdminHeader
+        t={t}
+        settings={settings}
+        navigation={navigation}
+        handleNavigation={handleNavigation}
+      />
 
-        <AdminFilters
-          t={t}
-          settings={settings}
-          filters={filters}
-          handleFilter={handleFilter}
-          loadingContent={loadingCourses}
-          searchTerm={searchTerm}
-          handleSearchTerm={setSearchTerm}
-          navigation={navigation}
-        />
+      <AdminFilters
+        t={t}
+        settings={settings}
+        filters={filters}
+        handleFilter={handleFilter}
+        loadingContent={loadingCourses}
+        searchTerm={searchTerm}
+        handleSearchTerm={setSearchTerm}
+        navigation={navigation}
+      />
 
-        <main role="main" className="pt-2">
-          {loadingCourses && (
-            <div className="mt-3 flex-row justify-content-center">
-              <div className="flex-column justify-content-center me-3">
-                <ProgressIcon className="icon-lg udoit-progress spinner" />
-              </div>
-              <div className="flex-column justify-content-center">
-                <h2 className="mt-0 mb-0">{t("report.label.loading")}</h2>
-              </div>
+      <main role="main" className="pt-2">
+        {loadingCourses && (
+          <div className="mt-3 flex-row justify-content-center">
+            <div className="flex-column justify-content-center me-3">
+              <ProgressIcon className="icon-lg udoit-progress spinner" />
             </div>
-          )}
-
-          {!loadingCourses && (
-            <div className="scrollable">
-              {"dashboard" === navigation && (
-                <AdminDashboard
-                  t={t}
-                  settings={settings}
-                  courses={courses}
-                  handleNavigation={handleNavigation}
-                  addMessage={addMessage}
-                />
-              )}
-              {"courses" === navigation && (
-                <CoursesPage
-                  t={t}
-                  settings={settings}
-                  courses={courses}
-                  searchTerm={searchTerm}
-                  addMessage={addMessage}
-                  handleCourseUpdate={handleCourseUpdate}
-                  handleReportClick={handleReportClick}
-                  handleNavigation={handleNavigation}
-                />
-              )}
-              {"reports" === navigation && (
-                <ReportsPage
-                  t={t}
-                  settings={settings}
-                  filters={filters}
-                  selectedCourse={selectedCourse}
-                />
-              )}
+            <div className="flex-column justify-content-center">
+              <h2 className="mt-0 mb-0">{t("report.label.loading")}</h2>
             </div>
-          )}
-        </main>
-        <MessageTray
-          t={t}
-          messages={messages}
-          clearMessages={clearMessages}
-          hasNewReport={true}
-        />
-      </div>
-    </ApiContextProvider>
+          </div>
+        )}
+
+        {!loadingCourses && (
+          <div className="scrollable">
+            {"dashboard" === navigation && (
+              <AdminDashboard
+                t={t}
+                settings={settings}
+                courses={courses}
+                handleNavigation={handleNavigation}
+                addMessage={addMessage}
+              />
+            )}
+            {"courses" === navigation && (
+              <CoursesPage
+                t={t}
+                settings={settings}
+                courses={courses}
+                searchTerm={searchTerm}
+                addMessage={addMessage}
+                handleCourseUpdate={handleCourseUpdate}
+                handleReportClick={handleReportClick}
+                handleNavigation={handleNavigation}
+              />
+            )}
+            {"reports" === navigation && (
+              <ReportsPage
+                t={t}
+                settings={settings}
+                filters={filters}
+                selectedCourse={selectedCourse}
+              />
+            )}
+          </div>
+        )}
+      </main>
+      <MessageTray
+        t={t}
+        messages={messages}
+        clearMessages={clearMessages}
+        hasNewReport={true}
+      />
+    </div>
   );
 }
