@@ -41,7 +41,6 @@ export default function FixIssuesPage({
   addMessage,
   sessionIssues,
   updateSessionIssue,
-  processServerError,
   setModalActive
 })
 {

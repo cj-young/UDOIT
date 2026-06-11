@@ -493,7 +493,6 @@ export default function App({ api, ...initialData }) {
                   handleNavigation={handleNavigation}
                   sessionIssues={sessionIssues}
                   updateSessionIssue={updateSessionIssue}
-                  processServerError={processServerError}
                   setModalActive={setModalActive}
                 />
               )}
@@ -510,7 +509,6 @@ export default function App({ api, ...initialData }) {
                   handleNavigation={handleNavigation}
                   sessionFiles={sessionFiles}
                   updateSessionFiles={updateSessionFiles}
-                  processServerError={processServerError}
                   setModalActive={setModalActive}
                 />
               )}
