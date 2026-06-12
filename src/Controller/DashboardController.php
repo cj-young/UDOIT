@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Course;
 use App\Entity\Institution;
 use App\Entity\UserSession;
+use App\Exception\MissingCourseIdException;
+use App\Exception\UnauthenticatedException;
 use App\Services\LmsApiService;
 use App\Services\LmsUserService;
 use App\Services\SessionService;
@@ -92,12 +94,12 @@ class DashboardController extends AbstractController
 
         $user = $this->getUser();
         if (!$user) {
-            return new JsonResponse(['error' => 'Unauthenticated'], 401);
+            throw new UnauthenticatedException();
         }
 
         $lmsCourseId = $this->session->get('lms_course_id');
         if (!$lmsCourseId) {
-            return new JsonResponse(['error' => 'Missing LMS course ID'], 400);
+            throw new MissingCourseIdException();
         }
 
         $courseTitle = $this->session->get('title');
