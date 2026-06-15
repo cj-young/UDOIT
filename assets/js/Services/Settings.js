@@ -1,3 +1,8 @@
+export const MEDIA_FILE_TYPES = [
+  'audio',
+  'video',
+]
+
 export function findEditURLWithIssue(issue, instanceInfo) {
   if (!issue || !instanceInfo || !instanceInfo.institution) {
     return ''
