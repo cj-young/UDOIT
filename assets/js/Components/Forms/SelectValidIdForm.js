@@ -2,13 +2,11 @@ import React, { useEffect, useState } from 'react'
 import * as Html from '../../Services/Html'
 import FormSaveOrReview from './FormSaveOrReview'
 import './SelectValidIdForm.css'
-import { all } from 'axios'
 
 
 const SelectValidIdForm = (
 {
   t,
-  settings,
   activeIssue,
   handleIssueSave,
   activeContentItem,
@@ -310,7 +308,6 @@ const SelectValidIdForm = (
       
        <FormSaveOrReview
               t={t}
-              settings={settings}
               activeIssue={activeIssue}
               isDisabled={isDisabled}
               handleSubmit={handleLocalSave}
