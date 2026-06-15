@@ -1,3 +1,4 @@
+import { ISSUE_STATE } from "./Constants";
 import * as Html from "./Html";
 
 /** With all of the data inconsistency between the old and new issues, we need to double-check some things:
@@ -118,7 +119,7 @@ const checkTextContrastSufficient = (issue, element, parsedDocument) => {
       while (current && current !== from) {
         let tagName = current.tagName.toLowerCase();
         let siblings = Array.from(current.parentNode.children).filter(
-          (sibling) => sibling.tagName.toLowerCase() === tagName,
+          (sibling) => sibling.tagName.toLowerCase() === tagName
         );
         let index = siblings.indexOf(current) + 1;
         path.unshift(`${tagName}[${index}]`);
@@ -268,7 +269,7 @@ const getReferenceFromSection = (contentSections, sectionId) => {
   return sectionReference;
 };
 
-export function analyzeReport(report, ISSUE_STATE) {
+export function analyzeReport(report) {
   let tempReport = {
     contentFixed: report.contentFixed || 0,
     contentResolved: report.contentResolved || 0,
