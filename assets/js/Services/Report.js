@@ -349,7 +349,9 @@ export function analyzeReport(report) {
       }
 
       // Get all of the iframes with media files (audio, video) in the content item.
-      let mediaLinks = tempBody.getElementsByTagName("iframe");
+      // <source> elements are used in native <video> and <audio> elements. I haven't gotten them to
+      // work in Canvas, but best to account for them being used here.
+      let mediaLinks = tempBody.querySelectorAll("iframe, source");
 
       for (let i = 0; i < mediaLinks.length; i++) {
         let mediaLink = mediaLinks[i];
