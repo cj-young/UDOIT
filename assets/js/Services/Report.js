@@ -290,43 +290,53 @@ export function analyzeReport(report, ISSUE_STATE) {
   const parser = new DOMParser()
   const fileReferences = {}
   const mediaReferences = {}
+  const fileUrlPattern = /\/files\/(\d+)/
+  const mediaFileUrlPattern = /\/media_attachments_iframe\/(\d+)/
 
   // Parse every document only once. Not every content item will have issues, but we need to parse each one anyway
   // so we can scan them for references to course files.
   Object.values(report.contentItems).forEach((contentItem) => {
     contentItem.sections = getSectionsFromContentItem(report.contentSections, contentItem)
     if(contentItem.body) {
+      let contentItemReference = {
+        contentItemId: contentItem.id,
+        contentItemBody: contentItem.body,
+        contentItemTitle: contentItem.title,
+        contentItemUrl: contentItem.url,
+        contentItemLmsId: contentItem.lmsContentId,
+        contentType: contentItem.contentType
+      };
+
       let tempBody = parser.parseFromString(contentItem.body, 'text/html')
 
-      // Get all of the links to files in the content item.
+      // Get all of the links to files in the content item. Links can be to any file, INCLUDING media files.
       let links = tempBody.getElementsByTagName('a')
-      const fileUrlPattern = /\/files\/(\d+)/
 
       for(let i = 0; i < links.length; i++) {
         let link = links[i]
         let href = link.getAttribute('href')
         if(href) {
-          let match = href.match(fileUrlPattern)
-          if(match && match[1]) {
-            let fileId = match[1]
+          let fileMatch = href.match(fileUrlPattern);
+          if(fileMatch && fileMatch[1]) {
+            let fileId = fileMatch[1];
             if(!fileReferences[fileId]) {
               fileReferences[fileId] = []
             }
-            fileReferences[fileId].push({
-              contentItemId: contentItem.id,
-              contentItemBody: contentItem.body,
-              contentItemTitle: contentItem.title,
-              contentItemUrl: contentItem.url,
-              contentItemLmsId: contentItem.lmsContentId,
-              contentType: contentItem.contentType,
-            })
+            fileReferences[fileId].push(contentItemReference);
+          }
+          let mediaMatch = href.match(mediaFileUrlPattern);
+          if(mediaMatch && mediaMatch[1]) {
+            let mediaId = mediaMatch[1];
+            if (!mediaReferences[mediaId]) {
+              mediaReferences[mediaId] = [];
+            }
+            mediaReferences[mediaId].push(contentItemReference);
           }
         }
       }
 
-      // Get all of the links to media files (audio, video) in the content item.
-      let mediaLinks = tempBody.getElementsByTagName("iframe");   
-      const mediaFileUrlPattern = /\/media_attachments_iframe\/(\d+)/   
+      // Get all of the iframes with media files (audio, video) in the content item.
+      let mediaLinks = tempBody.getElementsByTagName("iframe");
 
       for (let i = 0; i < mediaLinks.length; i++) {
         let mediaLink = mediaLinks[i];
@@ -338,14 +348,7 @@ export function analyzeReport(report, ISSUE_STATE) {
             if (!mediaReferences[mediaId]) {
               mediaReferences[mediaId] = [];
             }
-            mediaReferences[mediaId].push({
-              contentItemId: contentItem.id,
-              contentItemBody: contentItem.body,
-              contentItemTitle: contentItem.title,
-              contentItemUrl: contentItem.url,
-              contentItemLmsId: contentItem.lmsContentId,
-              contentType: contentItem.contentType,
-            })
+            mediaReferences[mediaId].push(contentItemReference);
           }
         }
       }
