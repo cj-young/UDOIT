@@ -11,19 +11,29 @@ import * as Html from '../../Services/Html'
 import * as Contrast from '../../Services/Contrast'
 
 export default function ContrastForm({
-  t, 
-  settings,
+  t,
+  instanceInfo, 
   activeIssue,
   isDisabled,
   handleActiveIssue,
   handleIssueSave,
   markAsReviewed,
 }) {
+
+  const GRADIENT_KEYWORDS = new Set([
+    'linear', 'radial', 'repeating-linear', 'repeating-radial', 'gradient',
+    'to', 'top', 'bottom', 'left', 'right', 'circle', 'ellipse', 'at', 'center'
+  ]);
+
   // Extract color strings from gradients
+  // Regex matches color codes and names, keywords are excluded to just leave colors
   const extractColors = (gradientString) => {
-    const colorRegex = /#(?:[0-9a-fA-F]{3,8})\b|(?:rgba?|hsla?)\([^)]*\)/g
-    return gradientString.match(colorRegex) || []
-  }
+    const colorRegex = /#(?:[0-9a-fA-F]{3,8})\b|(?:rgba?|hsla?)\([^)]*\)|\b[a-zA-Z]+\b/g;
+    const matches = gradientString.match(colorRegex) || [];
+    return matches.filter(
+      c => !GRADIENT_KEYWORDS.has(c.toLowerCase())
+    );
+  };
 
   // Get all background colors (including gradients)
   const getBackgroundColors = () => {
@@ -61,8 +71,8 @@ export default function ContrastForm({
     if (tempBackgroundColors.length === 0) {
       tempBackgroundColors.push({
         originalString: '',
-        originalColorString: settings.backgroundColor,
-        hsl: Contrast.toHSL(settings.backgroundColor)
+        originalColorString: instanceInfo.backgroundColor,
+        hsl: Contrast.toHSL(instanceInfo.backgroundColor)
       })
     }
     return tempBackgroundColors
@@ -83,7 +93,7 @@ export default function ContrastForm({
     if (colorEl && colorEl.style && colorEl.style.color) {
       return Contrast.toHSL(colorEl.style.color);
     }
-    return Contrast.toHSL(settings.textColor);
+    return Contrast.toHSL(instanceInfo.textColor);
   }
 
   // Heading tags for contrast threshold

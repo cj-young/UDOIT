@@ -12,7 +12,6 @@ import CloseIcon from '../Icons/CloseIcon'
 
 export default function FileForm ({
   t, 
-  settings,
   activeFile,
   sessionFiles,
   uploadedFile,
@@ -180,6 +179,12 @@ export default function FileForm ({
       setMarkDelete(true)
       setMarkRevert(false)
       setMarkAsReviewed(false)
+      return
+    }
+    else {
+      setMarkRevert(false)
+      setMarkAsReviewed(false)
+      setMarkDelete(false)
       return
     }
   }
