@@ -7,6 +7,6 @@ import { api } from './Services/Api'
 const root = createRoot(document.getElementById('root'))
 
 getInitialData('api/settings').then((data) => {
-  api.setSettings(data.settings);
+  api.setInstanceInfo(data.instanceInfo);
   root.render(<App { ...data } />);
 })

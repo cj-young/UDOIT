@@ -11,6 +11,7 @@ import { formNameFromRule } from '../Services/Ufixit'
 import * as Html from '../Services/Html'
 
 import './FixIssuesPage.css'
+import { ISSUE_STATE, WIDGET_STATE, ISSUE_FILTER as FILTER } from '../Services/Constants'
 import { api } from '../Services/Api'
 
 /** The data for this component can be a bit confusing, so here's a breakdown:
@@ -30,7 +31,8 @@ import { api } from '../Services/Api'
 
 export default function FixIssuesPage({
   t,
-  settings,
+  instanceInfo,
+  preferences,
   initialSeverity = '',
   initialSearchTerm = '',
   contentItemCache,
@@ -45,8 +47,6 @@ export default function FixIssuesPage({
 {
 
   // Define the kinds of filters that will be available to the user
-  const FILTER = settings.ISSUE_FILTER
-
   const defaultFilters = {
     [FILTER.TYPE.SEVERITY]: FILTER.ALL,
     [FILTER.TYPE.PUBLISHED]: FILTER.PUBLISHED,
@@ -62,8 +62,6 @@ export default function FixIssuesPage({
     [FILTER.TYPE.RESOLUTION]: FILTER.ALL,
     [FILTER.TYPE.MODULE]: FILTER.ALL,
   }
-
-  const WIDGET_STATE = settings.WIDGET_STATE
 
   const dialogId = "udoit-issue-dialog"
 
@@ -82,7 +80,7 @@ export default function FixIssuesPage({
   const [unfilteredIssues, setUnfilteredIssues] = useState([])
   const [filteredIssues, setFilteredIssues] = useState([])
   const [groupedList, setGroupedList] = useState([])
-  const [widgetState, setWidgetState] = useState(settings.WIDGET_STATE.LOADING)
+  const [widgetState, setWidgetState] = useState(WIDGET_STATE.LOADING)
   const [liveUpdateToggle, setLiveUpdateToggle] = useState(true)
   const [clickedInfo, setClickedInfo] = useState({})
 
@@ -167,7 +165,7 @@ export default function FixIssuesPage({
       issueResolution = FILTER.FIXEDANDRESOLVED
     }
 
-    let currentState = settings.ISSUE_STATE.UNCHANGED
+    let currentState = ISSUE_STATE.UNCHANGED
     if(sessionIssues && sessionIssues[issue.id]) {
       currentState = sessionIssues[issue.id]
     }
@@ -288,7 +286,7 @@ export default function FixIssuesPage({
     setFilteredIssues(tempFilteredContent)
     setGroupedList(groupList(tempFilteredContent))
 
-    setWidgetState(settings.WIDGET_STATE.LIST)
+    setWidgetState(WIDGET_STATE.LIST)
 
   }, [activeFilters, searchTerm])
 
@@ -354,7 +352,7 @@ export default function FixIssuesPage({
       }
 
       if(holdoverActiveIssue === null) {
-        setWidgetState(settings.WIDGET_STATE.LIST)
+        setWidgetState(WIDGET_STATE.LIST)
       }
     }
 
@@ -488,14 +486,6 @@ export default function FixIssuesPage({
         }
       }
 
-      // Check to see if the user ONLY wants to see issues from published content
-      if(settings?.user?.roles?.view_only_published && issue.issueData) {
-        let tempContentItem = getContentById(issue.issueData.contentItemId)
-        if(tempContentItem && tempContentItem.published === false) {
-          continue
-        }
-      }
-
       // If the issue passes all filters, add it to the list!
       filteredList.push(issue)
     }
@@ -515,16 +505,16 @@ export default function FixIssuesPage({
   const updateActiveSessionIssue = (issueId, state = null, contentItemId = null) => {
     
     if(state === null) {
-      state = settings.ISSUE_STATE.UNCHANGED
+      state = ISSUE_STATE.UNCHANGED
     }
 
     // This updates the counter for the daily progress
     updateSessionIssue(issueId, state, contentItemId)
 
     // Only update the whole list if the issue is saved, resolved, or marked as unresolved.
-    if(state === settings.ISSUE_STATE.SAVED
-      || state === settings.ISSUE_STATE.RESOLVED
-      || state === settings.ISSUE_STATE.UNCHANGED) {
+    if(state === ISSUE_STATE.SAVED
+      || state === ISSUE_STATE.RESOLVED
+      || state === ISSUE_STATE.UNCHANGED) {
 
         let tempUnfilteredIssues = unfilteredIssues.map((issue) => {
           if(issue.id === issueId) {
@@ -583,7 +573,7 @@ export default function FixIssuesPage({
     }
 
     console.log("Test")
-    updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.SAVING)
+    updateActiveSessionIssue(issue.id, ISSUE_STATE.SAVING)
     addItemToBeingScanned(issue.contentItemId)
 
     const specificClassName = `udoit-ignore-${issue.scanRuleId.replaceAll("_", "-")}`
@@ -623,7 +613,7 @@ export default function FixIssuesPage({
       .then((responseStr) => {
         // Check for HTTP errors before parsing JSON
           if (!responseStr.ok) {
-            updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.ERROR)
+            updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
             removeItemFromBeingScanned(issue.contentItemId)
             return null
           }
@@ -633,7 +623,7 @@ export default function FixIssuesPage({
 
         // If the save falied, show the relevant error message
         if (response.data.failed) {
-          updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.ERROR)
+          updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
           removeItemFromBeingScanned(issue.contentItemId)
           response.messages.forEach((msg) => addMessage(msg))
             
@@ -665,7 +655,7 @@ export default function FixIssuesPage({
             const newIssue = Object.assign({}, issue, response.data.issue)
             // const formattedData = formatIssueData(newIssue)
             // setActiveIssue(formattedData)
-            updateActiveSessionIssue(newIssue.id, settings.ISSUE_STATE.SAVED)
+            updateActiveSessionIssue(newIssue.id, ISSUE_STATE.SAVED)
 
             api.scanContent(newIssue.contentItemId)
               .then((responseStr) => responseStr.json())
@@ -677,14 +667,14 @@ export default function FixIssuesPage({
           }
           else {
             // setActiveIssue(formatIssueData(issue))
-            updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.SAVED)
+            updateActiveSessionIssue(issue.id, ISSUE_STATE.SAVED)
             removeItemFromBeingScanned(issue.contentItemId)
           }
         }
       })
     } catch (error) {
       console.error(error)
-      updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.ERROR)
+      updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
     }
 
 
@@ -698,7 +688,7 @@ export default function FixIssuesPage({
 
     let issue = tempActiveIssue.issueData
 
-    updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.SAVING)
+    updateActiveSessionIssue(issue.id, ISSUE_STATE.SAVING)
     addItemToBeingScanned(issue.contentItemId)
 
     const specificClassName = `udoit-ignore-${issue.scanRuleId.replaceAll("_", "-")}`
@@ -730,7 +720,7 @@ export default function FixIssuesPage({
     try {
       const saveResponse = await api.saveIssue(issue, fullPageHtml, markAsReviewed)
       if(!saveResponse.ok){
-        updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.ERROR)
+        updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
         removeItemFromBeingScanned(issue.contentItemId)
         throw Error('Save returned invalid server response.')
       }
@@ -738,7 +728,7 @@ export default function FixIssuesPage({
       const saveResponseJson = await saveResponse.json()
 
       if(saveResponseJson?.errors && saveResponseJson.errors.length > 0) {
-        updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.ERROR)
+        updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
         removeItemFromBeingScanned(issue.contentItemId)
         saveResponseJson.messages.forEach((msg) => addMessage(msg))
 
@@ -761,7 +751,7 @@ export default function FixIssuesPage({
 
       // If there isn't a new issue created, we're done.
       if(!saveResponseJson?.data?.issue) {
-        updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.SAVED)
+        updateActiveSessionIssue(issue.id, ISSUE_STATE.SAVED)
         removeItemFromBeingScanned(issue.contentItemId)
         return
       }
@@ -769,7 +759,7 @@ export default function FixIssuesPage({
       if(saveResponseJson?.data?.issue) {
         // Update the report object by rescanning the content
         const newIssue = Object.assign({}, issue, saveResponseJson.data.issue)
-        updateActiveSessionIssue(newIssue.id, settings.ISSUE_STATE.SAVED)
+        updateActiveSessionIssue(newIssue.id, ISSUE_STATE.SAVED)
 
         const scanResponse = await api.scanContent(newIssue.contentItemId)
 
@@ -784,12 +774,12 @@ export default function FixIssuesPage({
         }
       }
 
-      updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.SAVED)
+      updateActiveSessionIssue(issue.id, ISSUE_STATE.SAVED)
       removeItemFromBeingScanned(issue.contentItemId)
 
     } catch (error) {
       console.warn(error)
-      updateActiveSessionIssue(issue.id, settings.ISSUE_STATE.ERROR)
+      updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
     }
   }
 
@@ -861,7 +851,7 @@ export default function FixIssuesPage({
 
   return (
     <>
-      { widgetState === settings.WIDGET_STATE.LOADING ? (
+      { widgetState === WIDGET_STATE.LOADING ? (
         <></>
       ) : (
         <div
@@ -873,8 +863,7 @@ export default function FixIssuesPage({
 
           <FixIssuesFilters
             t={t}
-            settings={settings}
-
+            preferences={preferences}
             activeFilters={activeFilters}
             handleSearchTerm={setSearchTerm}
             searchTerm={searchTerm}
@@ -884,8 +873,6 @@ export default function FixIssuesPage({
           <div className="mt-1 subtext align-self-end">{t('fix.label.barriers_shown_count', { shown: filteredIssues?.length || 0, total: unfilteredIssues?.length || 0 })}</div>
           <FixIssuesList
             t={t}
-            settings={settings}
-
             groupedList={groupedList}
             setActiveIssue={setActiveIssue}
           />
@@ -922,8 +909,6 @@ export default function FixIssuesPage({
                   <>
                     <LearnMore
                       t={t}
-                      settings={settings}
-
                       tempActiveIssue={tempActiveIssue}
                       showLearnMore={showLearnMore}
                       hideLearnMore={() => setShowLearnMore(false)}
@@ -931,8 +916,7 @@ export default function FixIssuesPage({
                     
                     <UfixitWidget
                       t={t}
-                      settings={settings}
-
+                      instanceInfo={instanceInfo}
                       activeContentItem={activeContentItem}
                       handleActiveContentItem={handleActiveContentItem}
                       addMessage={addMessage}
@@ -961,8 +945,6 @@ export default function FixIssuesPage({
                 {filteredIssues.length > 0 && (
                   <FixIssuesContentPreview
                     t={t}
-                    settings={settings}
-
                     activeContentItem={activeContentItem}
                     activeIssue={tempActiveIssue}
                     contentItemsBeingScanned={contentItemsBeingScanned}

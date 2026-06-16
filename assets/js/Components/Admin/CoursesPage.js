@@ -6,7 +6,7 @@ import ReportIcon from "../Icons/ReportIcon";
 
 export default function CoursePage({
   t,
-  settings,
+  instanceInfo,
   courses,
   searchTerm,
   handleCourseUpdate,
@@ -132,11 +132,10 @@ export default function CoursePage({
               <button
                 key={`reportButton${course.id}`}
                 onClick={() => {
-                    hasReport &&
-                    handleReportClick(course);
+                  hasReport && handleReportClick(course);
                 }}
                 textalign="center"
-                className={`btn btn-text btn-icon-only ${ !hasReport ? "btn-disabled" : ""}`}
+                className={`btn btn-text btn-icon-only ${!hasReport ? "btn-disabled" : ""}`}
                 disabled={!hasReport}
                 title={
                   hasReport
