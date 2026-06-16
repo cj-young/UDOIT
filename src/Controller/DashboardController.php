@@ -9,6 +9,7 @@ use App\Services\LmsApiService;
 use App\Services\LmsUserService;
 use App\Services\SessionService;
 use App\Services\UtilityService;
+use App\Services\InitialStateService;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
@@ -82,7 +83,8 @@ class DashboardController extends AbstractController
     public function settingsApi(
         UtilityService $util,
         SessionService $sessionService,
-        LmsApiService $lmsApi
+        LmsApiService $lmsApi,
+        InitialStateService $initialStateService
     ): JsonResponse {
         $this->util = $util;
         $this->session = $sessionService->getSession();
@@ -102,9 +104,13 @@ class DashboardController extends AbstractController
 
         $course = $this->createOrUpdateCourse($user->getInstitution(), $lmsCourseId, $courseTitle);
 
+        $preferences = $initialStateService->getPreferences($user);
+
         return new JsonResponse([
-            'settings' => $this->getSettings($course),
-            'messages' => $this->util->getUnreadMessages(true),
+            'messages'     => $this->util->getUnreadMessages(true),
+            'preferences'  => $preferences,
+            'labels'       => $initialStateService->getLabels($preferences),
+            'instanceInfo' => $initialStateService->getInstanceInfo($user, $course),
         ]);
     }
 
