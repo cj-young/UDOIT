@@ -11,13 +11,18 @@ export default class Api {
       reviewFile: "/api/files/{file}/review",
       postFile: "/api/files/{file}/post",
       deleteFile: "/api/files/{file}/delete",
+      batchDelete: "/api/{course}/files/delete",
       updateContent: "/api/{file}/content",
+      reportPdf: "/download/courses/{course}/reports/pdf",
       adminCourses: "/api/admin/courses/account/{account}/term/{term}",
       scanContent: "/api/sync/content/{contentItem}?report={getReport}",
       scanCourse: "/api/sync/{course}",
       scanLmsCourse: "/api/admin/sync/lms/{lmsCourseId}",
       fullRescan: "/api/sync/rescan/{course}",
       adminReport: "/api/admin/courses/{course}/reports/latest",
+      adminCourseReport: "/api/admin/courses/{course}/reports/full",
+      adminReportHistory: "/api/admin/reports/account/{account}/term/{term}",
+      adminUser: "/api/admin/users",
       updatePreferences: "/api/users/{user}/preferences",
     };
     this.instanceInfo = instanceInfo;
@@ -185,6 +190,19 @@ export default class Api {
     });
   }
 
+  batchDelete(urlList) {
+    let url = `${this.apiUrl}${this.endpoints.batchDelete}`;
+    url = url.replace("{course}", this.getCourseId());
+
+    return fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+      body: JSON.stringify({
+        paths: urlList,
+      }),
+    });
+  }
+
   updateContent(contentOptions, sectionOptions, fileId) {
     let url = `${this.apiUrl}${this.endpoints.updateContent}`;
     url = url.replace("{file}", fileId);
@@ -312,7 +330,7 @@ export default class Api {
 
   updatePreferences(newPreferences) {
     let url = `${this.apiUrl}${this.endpoints.updatePreferences}`;
-    url = url.replace("{user}", this.instanceInfo.user.id);
+    url = url.replace("{user}", this.getUserId());
 
     return this.fetchWithListeners(url, {
       method: "PATCH",
