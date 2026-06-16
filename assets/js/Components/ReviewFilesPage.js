@@ -506,7 +506,6 @@ export default function ReviewFilesPage({
     const url = `files/${fileId}`
 
     let tempQueue = JSON.parse(JSON.stringify(deleteFileQueue))
-    console.log(tempQueue)
     if(tempQueue.includes(url)){
       tempQueue = tempQueue.filter((q_url) => q_url != url)
     }
@@ -514,7 +513,6 @@ export default function ReviewFilesPage({
       tempQueue.push(url)
     }
 
-    console.log(tempQueue)
     setDeleteFileQueue(tempQueue)
   }
 
@@ -997,9 +995,8 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
     setIsDisabled(true)
     const reomovedFileId = []
     const tempQueue = JSON.parse(JSON.stringify(deleteFileQueue))
-    console.log(tempQueue)
     try{
-      const api = new Api(settings)
+      const api = new Api(instanceInfo)
       while(tempQueue.length > 0){
         let payloadTracker = 0
         let paths = []
@@ -1299,16 +1296,18 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
           </div>
           <div className="dialog-content">
             <div className="unused-files-list-container">
-              {isDisabled && (<div className="flex-column h-100 flex-grow-1 justify-content-center">
-                    <div className="flex-row justify-content-center mb-4">
-                      <div className="flex-column justify-content-center">
-                        <ProgressIcon className="icon-lg udoit-progress spinner" />
-                      </div>
-                      <div className="flex-column justify-content-center ms-3">
-                        <h2 className="mt-0 mb-0">{t('fix.label.deleting_files')}</h2>
-                      </div>
+              {isDisabled && (
+                <div className="flex-column h-100 flex-grow-1 justify-content-center align-items-center">
+                  <div className="flex-row justify-content-center mb-4">
+                    <div className="flex-column justify-content-center">
+                      <ProgressIcon className="icon-lg udoit-progress spinner" />
                     </div>
-                  </div> )}
+                    <div className="flex-column justify-content-center ms-3">
+                      <h2 className="mt-0 mb-0">{t('fix.label.deleting_files')}</h2>
+                    </div>
+                  </div>
+                </div>
+              )}
               {!isDisabled && unusedFiles.length > 0 && (
                 <div className="select-all-unused-toggle-row">
                   <ToggleSwitch
