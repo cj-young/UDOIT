@@ -35,20 +35,15 @@ class UserController extends AbstractController
         try {
             // Check if user is updating their own info
             $userIdFromSession = $sessionService->getSession()->get('userId');
-
-            $output->writeln(json_encode($userIdFromSession));
-            $output->writeln(json_encode($user->getId()));
             if ($user->getId() !== $userIdFromSession) {
                 throw new \Exception("msg.no_permissions");
             }
 
             $userVals = \json_decode($request->getContent(), true);
 
-            
             $oldPreferences = $user->getPreferences();
             $oldLang = $oldPreferences['lang'] ?? 'en';
             
-
             $allowedPreferences = [
                 'textSpacing',
                 'fontSize',
