@@ -53,12 +53,12 @@ export default function App(initialData) {
   const scanCourse = useCallback(() => {
     let api = new Api(instanceInfo);
     return api.scanCourse(instanceInfo.course.id);
-  }, []);
+  }, [instanceInfo]);
 
   const fullRescan = useCallback(() => {
     let api = new Api(instanceInfo);
     return api.fullRescan(instanceInfo.course.id);
-  }, []);
+  }, [instanceInfo]);
 
   // When user settings are updated and the language changes, we need to send alerts, but also wait a tick for the settings to update.
   // Using the setUntranslatedMessage function will wait for the next render cycle to update the message, with the new language settings.
@@ -80,7 +80,7 @@ export default function App(initialData) {
     }
   }, [untranslatedMessage]);
 
-  const updateUserPreferences = (newUserPreferences) => {
+  const updateUserPreferences = useCallback((newUserPreferences) => {
     const oldPreferences = structuredClone(preferences);
     setPreferences((old) => ({ ...old, ...newUserPreferences }));
 
@@ -104,7 +104,7 @@ export default function App(initialData) {
           });
         }
       });
-  };
+  }, [instanceInfo]);
 
   // Session Issues are used to track progress when multiple things are going on at once,
   // and can allow the activeIssue to change without losing information about the previous issue.
@@ -158,7 +158,7 @@ export default function App(initialData) {
     setSessionFiles(newSessionFiles);
   };
 
-  const processNewReport = (rawReport) => {
+  const processNewReport = useCallback((rawReport) => {
     const tempReport = analyzeReport(rawReport, ISSUE_STATE);
     setReport(tempReport);
 
@@ -206,7 +206,7 @@ export default function App(initialData) {
 
     setContentItemCache(tempContentItems);
     return tempReport;
-  };
+  }, [analyzeReport, instanceInfo]);
 
   const handleNewReport = (data) => {
     if (!data || !data.data) {
