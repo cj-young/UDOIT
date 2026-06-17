@@ -11,7 +11,6 @@ import './SelectValidIdForm.css'
 
 export default function SelectValidIdForm ({
   t,
-  settings,
   activeIssue,
   activeContentItem,
   isDisabled,

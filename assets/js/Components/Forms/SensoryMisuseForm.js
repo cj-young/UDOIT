@@ -5,9 +5,10 @@ import * as Html from '../../Services/Html'
 import './SensoryMisuseForm.css'
 
 export default function SensoryMisuseForm({
-  t,
-  settings,
-  activeIssue,
+  t, 
+  activeIssue, 
+  handleIssueSave, 
+  addMessage,
   isDisabled,
   handleActiveIssue,
   activeOption,

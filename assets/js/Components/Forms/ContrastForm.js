@@ -9,8 +9,8 @@ import * as Contrast from '../../Services/Contrast'
 import './ContrastForm.css'
 
 export default function ContrastForm({
-  t, 
-  settings,
+  t,
+  instanceInfo, 
   activeIssue,
   activeContentItem,
   isDisabled,
@@ -141,8 +141,8 @@ export default function ContrastForm({
     if (tempBackgroundColors.length === 0) {
       tempBackgroundColors.push({
         originalString: '',
-        originalColorString: settings.backgroundColor,
-        hsl: Contrast.toHSL(settings.backgroundColor)
+        originalColorString: instanceInfo.backgroundColor,
+        hsl: Contrast.toHSL(instanceInfo.backgroundColor)
       })
     }
     return tempBackgroundColors
@@ -160,7 +160,7 @@ export default function ContrastForm({
     else if (metadata?.messageArgs && metadata.messageArgs.length > 3) {
       return Contrast.toHSL(metadata.messageArgs[3])
     }
-    return Contrast.toHSL(settings.textColor);
+    return Contrast.toHSL(instanceInfo.textColor);
   }
 
   // Heading tags for contrast threshold

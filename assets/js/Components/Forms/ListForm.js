@@ -6,7 +6,7 @@ import { numberedPattern, letteredPattern, bulletPattern } from '../../Services/
 
 export default function ListForm({
   t,
-  settings,
+  instanceInfo,
   activeIssue,
   activeContentItem,
   isDisabled,

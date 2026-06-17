@@ -10,7 +10,6 @@ import SeverityIssueIconFilled from '../Icons/SeverityIssueIconFilled'
 
 export default function FileFixitWidget({
   t,
-  settings,
   sessionFiles,
   tempActiveIssue,
   uploadedFile,

@@ -5,7 +5,6 @@ import { getIssueHtml } from '../../Services/Html'
 
 export default function InlineCSSForm ({
   t,
-  settings,
   activeIssue,
   isDisabled,
   handleActiveIssue,

@@ -7,8 +7,6 @@ import './FixIssuesContentPreview.css'
 
 export default function FixIssuesContentPreview({
   t,
-  settings,
-
   activeContentItem,
   activeIssue,
   activeOption,

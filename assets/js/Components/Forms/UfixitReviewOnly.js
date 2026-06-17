@@ -4,7 +4,6 @@ import RadioSelector from '../Widgets/RadioSelector'
 
 export default function UfixitReviewOnly({
   t,
-  settings, 
   activeIssue,
   handleActiveIssue,
   isDisabled,

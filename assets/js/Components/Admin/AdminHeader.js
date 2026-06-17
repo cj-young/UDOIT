@@ -1,15 +1,14 @@
-import React from 'react'
-import UDOITLogo from '../../../mediaAssets/udoit-logo.svg'
-import HomeIcon from '../Icons/HomeIcon'
-import ContentAssignmentIcon from '../Icons/ContentAssignmentIcon'
-import UserIcon from '../Icons/UserIcon'
-import '../Header.css'
+import React from "react";
+import UDOITLogo from "../../../mediaAssets/udoit-logo.svg";
+import HomeIcon from "../Icons/HomeIcon";
+import ContentAssignmentIcon from "../Icons/ContentAssignmentIcon";
+import UserIcon from "../Icons/UserIcon";
+import "../Header.css";
 
 export default function AdminHeader({
   t,
-  settings,
   navigation,
-  handleNavigation
+  handleNavigation,
 }) {
   return (
     <header id="udoit-header" role="banner">
@@ -19,62 +18,48 @@ export default function AdminHeader({
             <img alt={t('alt.UDOIT')} src={UDOITLogo}></img>
           </div>
           <div className="flex-column justify-content-center">
-            <h1 className="mt-0 mb-0">{t('menu.admin')}</h1>
+            <h1 className="mt-0 mb-0">{t("menu.admin")}</h1>
           </div>
         </div>
         <div>
           <ul>
             <li
-              className={`flex-row ${navigation === 'dashboard' ? ' active-link' : ''}`}
-              onClick={() => handleNavigation('dashboard')}
+              className={`flex-row ${navigation === "dashboard" ? " active-link" : ""}`}
+              onClick={() => handleNavigation("dashboard")}
               onKeyDown={(e) => {
-                if(e.key === 'Enter' || e.key === ' ') {
-                  handleNavigation('dashboard')
+                if (e.key === "Enter" || e.key === " ") {
+                  handleNavigation("dashboard");
                 }
               }}
-              tabIndex="0">
-              <div className='flex-column justify-content-center'>
-                <HomeIcon className='icon-md pr-1'/>
+              tabIndex="0"
+            >
+              <div className="flex-column justify-content-center">
+                <HomeIcon className="icon-md pr-1" />
               </div>
-              <div className='flex-column justify-content-center'>
+              <div className="flex-column justify-content-center">
                 Dashboard
               </div>
             </li>
             <li
-              className={`flex-row ${navigation === 'courses' ? ' active-link' : ''}`}
-              onClick={() => handleNavigation('courses')}
+              className={`flex-row ${navigation === "courses" ? " active-link" : ""}`}
+              onClick={() => handleNavigation("courses")}
               onKeyDown={(e) => {
-                if(e.key === 'Enter' || e.key === ' ') {
-                  handleNavigation('courses')
+                if (e.key === "Enter" || e.key === " ") {
+                  handleNavigation("courses");
                 }
               }}
-              tabIndex="0">
-              <div className='flex-column justify-content-center'>
-                <ContentAssignmentIcon className='icon-md pr-1'/>
+              tabIndex="0"
+            >
+              <div className="flex-column justify-content-center">
+                <ContentAssignmentIcon className="icon-md pr-1" />
               </div>
-              <div className='flex-column justify-content-center'>
-                {t('menu.admin.courses')}
-              </div>
-            </li>
-            <li
-              className={`flex-row ${navigation === 'users' ? ' active-link' : ''}`}
-              onClick={() => handleNavigation('users')}
-              onKeyDown={(e) => {
-                if(e.key === 'Enter' || e.key === ' ') {
-                  handleNavigation('users')
-                }
-              }}
-              tabIndex="0">
-              <div className='flex-column justify-content-center'>
-                <UserIcon className='icon-md pr-1'/>
-              </div>
-              <div className='flex-column justify-content-center'>
-                {t('menu.admin.users')}
+              <div className="flex-column justify-content-center">
+                {t("menu.admin.courses")}
               </div>
             </li>
           </ul>
         </div>
       </nav>
     </header>
-  )
+  );
 }
