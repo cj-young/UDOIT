@@ -15,7 +15,8 @@ import './ReportsPage.css'
 import { ISSUE_FILTER } from '../Services/Constants'
 
 export default function ReportsPage({
-  t, 
+  t,
+  preferences,
   report, 
   instanceInfo, 
   quickSearchTerm
@@ -326,7 +327,7 @@ export default function ReportsPage({
           <div className="flex-column">
             <div className="callout-container p-4 flex-column w-100 flex-shrink-1 flex-grow-1">
               <div id="resolutionsReport" className="graph-container">
-                <ResolutionsReport t={t} settings={settings} reports={reports}/>
+                <ResolutionsReport t={t} preferences={preferences} reports={reports}/>
               </div>
               <div className="flex-row justify-content-end">
                 <button 

@@ -36,7 +36,6 @@ export default function FileFixitWidget({
 
       <BarrierInformation
         t={t}
-        settings={settings}
         tempActiveIssue={tempActiveIssue}
         handleLearnMoreClick={handleLearnMoreClick}
       />
@@ -46,14 +45,12 @@ export default function FileFixitWidget({
         <div className="align-self-start flex-shrink-0">
           <StatusPill
             t={t}
-            settings={settings}
             issue={tempActiveIssue} />
         </div>
       </div>
       <div className="flex-column gap-1 flex-grow-1">
         <FileForm
           t={t}
-          settings={settings}
           activeFile={tempActiveIssue.fileData}
           sessionFiles={sessionFiles}
           uploadedFile={uploadedFile}

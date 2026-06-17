@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { UFIXIT_OPTIONS } from '../../Services/Constants'
 import * as Html from '../../Services/Html'
 import RadioSelector from '../Widgets/RadioSelector'
 import OptionFeedback from '../Widgets/OptionFeedback'
@@ -26,8 +27,8 @@ export default function SelectValidIdForm ({
 }) {
 
   const FORM_OPTIONS = {
-    EDIT_ATTRIBUTE: settings.UFIXIT_OPTIONS.SELECT_ELEMENT,
-    MARK_AS_REVIEWED: settings.UFIXIT_OPTIONS.MARK_AS_REVIEWED
+    EDIT_ATTRIBUTE: UFIXIT_OPTIONS.SELECT_ELEMENT,
+    MARK_AS_REVIEWED: UFIXIT_OPTIONS.MARK_AS_REVIEWED
   }
 
   /* 

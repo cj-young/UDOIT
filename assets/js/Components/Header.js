@@ -93,7 +93,7 @@ export default function Header({
     setTimeout(() => {
       updateNavLayout()
     }, 1)
-  }, [settings])
+  }, [preferences])
 
   const handleClick = (destination) => {
     setMobileMenuVisible(false)

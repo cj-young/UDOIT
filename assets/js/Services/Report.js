@@ -1,6 +1,5 @@
 import * as Html from "./Html";
-import { ISSUE_STATE } from "./Constants";
-import { MEDIA_FILE_TYPES } from "./Settings";
+import { ISSUE_STATE, MEDIA_FILE_TYPES } from "./Constants";
 import { groupListIssues } from './Lists' 
 
 /** With all of the data inconsistency between the old and new issues, we need to double-check some things:
@@ -139,7 +138,7 @@ const checkTextContrastSufficient = (issue, element, parsedDocument) => {
       }
     }
     issue.metadata = issue.metadata || {};
-    issue.metadata.textColorXpath = textColorXpath; // getRelativeXpath(bgAncestor, textAncestor);
+    issue.metadata.textColorXpath = getRelativeXpath(bgAncestor, textAncestor);
     issue.metadata.focusXpath = Html.findXpathFromElement(element);
     issue.metadata = JSON.stringify(issue.metadata);
   }
@@ -516,7 +515,6 @@ export function analyzeReport(report) {
   tempReport.sessionIssues = sessionIssues;
   tempReport.sessionFiles = sessionFiles;
   tempReport.filesReviewed = tempFilesReviewed;
-  });
 
   return tempReport;
 }

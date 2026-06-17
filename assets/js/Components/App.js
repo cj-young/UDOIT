@@ -339,14 +339,14 @@ export default function App(initialData) {
     let body = document.getElementsByTagName('body')[0]
     if (body) {
       let classes = ''
-      classes += settings?.user?.roles?.font_size || settings.DEFAULT_USER_SETTINGS.FONT_SIZE
+      classes += preferences.fontSize || DEFAULT_USER_SETTINGS.FONT_SIZE
       classes += ' '
-      classes += settings?.user?.roles?.font_family || settings.DEFAULT_USER_SETTINGS.FONT_FAMILY
-      if (settings?.user?.roles?.dark_mode) {
+      classes += preferences.fontFamily || DEFAULT_USER_SETTINGS.FONT_FAMILY
+      if (preferences.darkMode) {
         classes += ' dark-mode'
       }
       body.className = classes
-      body.lang = settings?.user?.roles?.lang || settings.DEFAULT_USER_SETTINGS.LANGUAGE
+      body.lang = preferences.lang || DEFAULT_USER_SETTINGS.LANGUAGE
       body.style.setProperty('--text-spacing-percent', Number(textSpacing))
     }
   }
@@ -384,7 +384,7 @@ export default function App(initialData) {
 
   useEffect(() => {
     addSettingsClasses();
-  }, [settings, textSpacing]);
+  }, [preferences, textSpacing]);
 
   useEffect(() => {
     try {
@@ -414,14 +414,16 @@ export default function App(initialData) {
       { !welcomeClosed ?
         ( <WelcomePage
             t={t}
-            settings={settings}
+            instanceInfo={instanceInfo}
+            preferences={preferences}
             syncComplete={syncComplete}
-            setWelcomeClosed={setWelcomeClosed} /> ) :
-        (
+            setWelcomeClosed={setWelcomeClosed}
+          />
+        ) : (
           <>
             <Header
               t={t}
-              settings={settings}
+              preferences={preferences}
               modalActive={modalActive}
               navigation={navigation}
               handleNavigation={handleNavigation}
@@ -482,6 +484,7 @@ export default function App(initialData) {
             {"reports" === navigation && (
               <ReportsPage
                 t={t}
+                preferences={preferences}
                 instanceInfo={instanceInfo}
                 report={report}
                 quickSearchTerm={quickSearchTerm}
@@ -502,7 +505,7 @@ export default function App(initialData) {
             {"modal" === navigation && <div className="modal">{modal}</div>}
           </main>
         </>
-      }
+      )}
       <MessageTray t={t} preferences={preferences} nextMessage={nextMessage} />
     </div>
   );

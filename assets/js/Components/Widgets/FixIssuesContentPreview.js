@@ -120,7 +120,6 @@ export default function FixIssuesContentPreview({
                 <HtmlPreview
                   key={"html-preview"}
                   t={t}
-                  settings={settings}
 
                   activeContentItem={activeContentItem}
                   activeIssue={activeIssue}

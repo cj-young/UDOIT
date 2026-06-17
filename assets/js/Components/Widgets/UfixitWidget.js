@@ -127,7 +127,7 @@ export default function UfixitWidget({
                 handleActiveIssue={handleActiveIssue}
                 handleIssueSave={handleIssueSave}
                 isContentLoading={isContentLoading}
-                isDisabled={isContentLoading || (!isErrorFoundInContent && activeOption !== settings.UFIXIT_OPTIONS.DELETE_ELEMENT)}
+                isDisabled={isContentLoading || (!isErrorFoundInContent && activeOption !== UFIXIT_OPTIONS.DELETE_ELEMENT)}
                 doesIssueBelongToForm={doesIssueBelongToForm}
                 markAsReviewed={markAsReviewed}
                 setMarkAsReviewed={setMarkAsReviewed}

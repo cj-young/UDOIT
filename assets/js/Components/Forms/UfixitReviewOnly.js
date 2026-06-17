@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
+import { UFIXIT_OPTIONS } from '../../Services/Constants'
 import FormExternalLink from './FormExternalLink'
 import RadioSelector from '../Widgets/RadioSelector'
 
 export default function UfixitReviewOnly({
   t,
   activeIssue,
+  instanceInfo,
   handleActiveIssue,
   isDisabled,
   activeOption,
@@ -13,8 +15,8 @@ export default function UfixitReviewOnly({
 }) {
 
   const FORM_OPTIONS = {
-    FIX_IN_LMS: settings.UFIXIT_OPTIONS.FIX_IN_LMS,
-    MARK_AS_REVIEWED: settings.UFIXIT_OPTIONS.MARK_AS_REVIEWED
+    FIX_IN_LMS: UFIXIT_OPTIONS.FIX_IN_LMS,
+    MARK_AS_REVIEWED: UFIXIT_OPTIONS.MARK_AS_REVIEWED
   }
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function UfixitReviewOnly({
             </div>
             <FormExternalLink
               t={t}
-              settings={settings}
+              instanceInfo={instanceInfo}
               activeIssue={activeIssue}
             />
           </>

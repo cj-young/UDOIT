@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { UFIXIT_OPTIONS } from '../../Services/Constants'
 import CheckIcon from '../Icons/CheckIcon'
 import DarkIcon from '../Icons/DarkIcon'
 import ErrorIcon from '../Icons/ErrorIcon'
@@ -24,7 +25,7 @@ export default function ContrastForm({
 }) {
 
   const FORM_OPTIONS = {
-    SET_COLOR: settings.UFIXIT_OPTIONS.EDIT_ATTRIBUTE
+    SET_COLOR: UFIXIT_OPTIONS.EDIT_ATTRIBUTE
   }
 
   const GRADIENT_KEYWORDS = new Set([
