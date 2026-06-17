@@ -124,7 +124,7 @@ class AuthController extends AbstractController
         $instId = $request->query->get('id');
 
         $registration = $registrationRepository->getByInstitutionId($instId);
-        $registrationEncryptionService->encryptKey($registration);
+        $this->registrationEncryptionService->encryptKey($registration);
 
         $this->doctrine->getManager()->flush();
 
@@ -143,7 +143,7 @@ class AuthController extends AbstractController
         $userAgent = 'UDOIT/' . !empty($_ENV['VERSION_NUMBER']) ? $_ENV['VERSION_NUMBER'] : '4.0.0';
 
         if (empty($clientSecret)) {
-            $registrationEncryptionService->encryptKey($registration);
+            $this->registrationEncryptionService->encryptKey($registration);
             $this->doctrine->getManager()->flush();
             $clientSecret = $this->registrationEncryptionService->getClientSecret($registration);
         }
