@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem 1.5rem;
+  box-sizing: border-box;
+  height: 100%;
 
   .rounded-table-wrapper {
     max-height: 60vh;

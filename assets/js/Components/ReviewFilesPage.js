@@ -8,9 +8,10 @@ import LearnMore from './Widgets/LearnMore.js'
 import StatusPill from './Widgets/StatusPill'
 
 import CloseIcon from './Icons/CloseIcon.js'
-import FileTypeIcon from './Icons/FileTypeIcon'
 import DeleteIcon from './Icons/DeleteIcon'
+import FileTypeIcon from './Icons/FileTypeIcon'
 import LeftArrowIcon from './Icons/LeftArrowIcon'
+import ProgressIcon from './Icons/ProgressIcon.js'
 import RightArrowIcon from './Icons/RightArrowIcon'
 
 import Api from '../Services/Api'
@@ -261,6 +262,10 @@ export default function ReviewFilesPage({
             aria-label={t('files.button.delete_selected') + ': ' + fileName}
           />
         ),
+        onClick: () => {
+          toggleDeleteFileQueue(unusedFile.lmsFileId)
+        },
+        noTabFocus: true
       })
     })
 
@@ -1321,15 +1326,15 @@ const getSectionPostOptions = (newFile, sectionReferences) => {
           </div>
           <div className='dialog-footer'>
             <div className="subtext align-self-center">{t('files.label.selected_count', { count: deleteFileQueue.length })}</div>
-            <div className="flex-row gap-2">
-              <button className='btn btn-small btn-primary' onClick={() => closeDialog()}>{t(`fix.label.cancel`)}</button>
+            <div className="flex-row align-items-center gap-2">
+              <button className='btn btn-small btn-link' onClick={() => closeDialog()}>{t(`fix.label.cancel`)}</button>
               <button
-                className='btn btn-small btn-icon-left review-files-delete-button'
+                className='btn btn-small btn-icon-left btn-danger'
                 tabIndex='0'
                 disabled={deleteFileQueue.length === 0 || isDisabled}
                 onClick={deleteSelectedFilesWrapper}
                 >
-                <DeleteIcon className="icon-sm" />
+                <DeleteIcon className="icon-md" />
                 <div className="flex-column justify-content-center">{t('files.button.delete_selected')}</div>
               </button>
             </div>

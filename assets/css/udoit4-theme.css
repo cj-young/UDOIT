@@ -364,6 +364,18 @@
     }
   }
 
+  .btn-danger {
+    border-color: var(--error-color);
+    background-color: var(--error-color);
+    color: var(--primary-color-inverse);
+    fill: var(--primary-color-inverse);
+
+    &:hover,
+    &:focus {
+      filter: brightness(var(--hover-brightness));
+    }
+  }
+
   .btn-link {
     border-color: transparent;
     background-color: transparent;
