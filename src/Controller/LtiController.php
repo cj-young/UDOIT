@@ -97,11 +97,10 @@ class LtiController extends AbstractController
 
         $this->saveRequestToSession();
 
-        $postParams = $request->request->all();
-        $getParams = $request->query->all();
-        $allParams = array_merge($postParams, $getParams);
-        $iss = $allParams['iss'];
-        $clientId = $allParams['client_id'];
+        $params = $request->isMethod('POST') ? $request->request->all() : $request->query->all();
+
+        $iss = $params['iss'];
+        $clientId = $params['client_id'];
 
         return $this->redirect($this->getLtiAuthResponseUrl($iss, $clientId));
     }
