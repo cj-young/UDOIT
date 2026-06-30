@@ -121,10 +121,10 @@ export default function SettingsPage({
           </div>
 
           <div className='settings-row'>
-            <label id='slider-label-text_spacing'>{t('settings.label.text_spacing')}</label>
+            <label id='slider-label-textSpacing'>{t('settings.label.text_spacing')}</label>
             <input
-              id='text_spacing'
-              aria-labelledby='slider-label-text_spacing'
+              id='textSpacing'
+              aria-labelledby='slider-label-textSpacing'
               type='range'
               min='0'
               max='100'
