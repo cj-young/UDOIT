@@ -1050,7 +1050,7 @@ export default function FixIssuesPage({
                 {filteredIssues.length > 0 && (
                   <FixIssuesContentPreview
                     t={t}
-                    activeContentItem={activeContentItem}
+                    activeContentItem={tempActiveContentItem}
                     activeIssue={tempActiveIssue}
                     activeOption={activeOption}
                     contentItemsBeingScanned={contentItemsBeingScanned}
