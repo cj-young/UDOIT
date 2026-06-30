@@ -164,9 +164,6 @@ export default function AriaRoleForm({
     if (!currentRole) {
       currentRole = ''
     }    
-    
-    const deleted = (!element && activeIssue.status === 1)
-    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
 
     const tagName = Html.getTagName(html)
     const validRoles = ariaRoleMap[tagName] || []
@@ -181,21 +178,26 @@ export default function AriaRoleForm({
       setDetectedTag("")
       setValidRoles([])
     }
-
-    if (deleted) {
-      setActiveOption(FORM_OPTIONS.DELETE_ROLE)
-    }
-    else if (reviewed) {
-      setActiveOption(FORM_OPTIONS.MARK_AS_REVIEWED)
-    }
-    else if (hasValidRole) {
-      setActiveOption(FORM_OPTIONS.SELECT_ROLE)
-    }
-    else {
-      setActiveOption('')
-    }
-
     setSelectValue(currentRole)
+
+    const fixed = activeIssue.newHtml && (activeIssue.status === 1 || activeIssue.status === 3)
+    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
+    const deleted = !element
+    let startingOption = ''
+
+    if (reviewed) {
+      startingOption = FORM_OPTIONS.MARK_AS_REVIEWED
+    }
+    if (fixed) {
+      if (deleted) {
+        startingOption = FORM_OPTIONS.DELETE_ROLE
+      }
+      else if (hasValidRole) {
+        startingOption = FORM_OPTIONS.SELECT_ROLE
+      }
+    }
+    setActiveOption(startingOption)
+    
   }, [activeIssue])
 
   const computeSelectOptions = (tagName, currentSelection) => {
@@ -227,7 +229,6 @@ export default function AriaRoleForm({
 
   const updateHtmlContent = () => {
     let issue = activeIssue
-    issue.isModified = true
     
     if (activeOption === FORM_OPTIONS.MARK_AS_REVIEWED) {
       issue.newHtml = issue.initialHtml
@@ -307,7 +308,7 @@ export default function AriaRoleForm({
             option={FORM_OPTIONS.SELECT_ROLE}
             labelId = 'combo-label-role-select'
             labelText = {t('form.aria_role.label.select')}
-            />
+          />
           {activeOption === FORM_OPTIONS.SELECT_ROLE && (
             <>
               <Combobox
@@ -317,7 +318,10 @@ export default function AriaRoleForm({
                 label=''
                 options={selectOptions}
               />
-              <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.SELECT_ROLE]} />
+              <OptionFeedback
+                t={t}
+                feedbackArray={formErrors[FORM_OPTIONS.SELECT_ROLE]}
+              />
             </>
           )}
         </div>
@@ -331,9 +335,12 @@ export default function AriaRoleForm({
           setActiveOption={setActiveOption}
           option={FORM_OPTIONS.DELETE_ROLE}
           labelText = {t('form.aria_role.label.remove')}
-          />
+        />
         {activeOption === FORM_OPTIONS.DELETE_ROLE && (
-          <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.DELETE_ROLE]} />
+          <OptionFeedback
+            t={t}
+            feedbackArray={formErrors[FORM_OPTIONS.DELETE_ROLE]}
+          />
         )}
       </div>
       
@@ -345,7 +352,7 @@ export default function AriaRoleForm({
           setActiveOption={setActiveOption}
           option={FORM_OPTIONS.MARK_AS_REVIEWED}
           labelText = {t('fix.label.no_changes')}
-          />
+        />
       </div>
     </>
   )

@@ -5,7 +5,7 @@ import * as Html from '../../Services/Html'
 import * as Text from '../../Services/Text'
 import { UFIXIT_OPTIONS } from '../../Services/Constants'
 
-export default function AltText ({
+export default function AltTextForm ({
   t,
   activeIssue,
   isDisabled,
@@ -34,22 +34,27 @@ export default function AltText ({
     let altText = Html.getAttribute(html, 'alt')
     altText = (typeof altText === 'string') ? altText : ''
 
-    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
-
     setTextInputValue(altText)
     setCharacterCount(altText.length)
     setFormErrors([])
 
+    const fixed = activeIssue.newHtml && (activeIssue.status === 1 || activeIssue.status === 3)
+    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
+    let startingOption = ''
+
     if (reviewed){
-      setActiveOption(FORM_OPTIONS.MARK_AS_REVIEWED)
+      startingOption = FORM_OPTIONS.MARK_AS_REVIEWED
     }
-    else if (altText && altText.length > 0) {
-      setActiveOption(FORM_OPTIONS.ADD_TEXT)
-    } else if (elementIsDecorative(html)) {
-      setActiveOption(FORM_OPTIONS.MARK_DECORATIVE)
-    } else {
-      setActiveOption('')
+    if (fixed) {
+      if (altText && altText.length > 0) {
+        startingOption = FORM_OPTIONS.ADD_TEXT
+      }
+      else if (elementIsDecorative(html)) {
+        startingOption = FORM_OPTIONS.MARK_DECORATIVE
+      }
     }
+    setActiveOption(startingOption)
+
   }, [activeIssue])
 
   useEffect(() => {
@@ -59,7 +64,6 @@ export default function AltText ({
 
   const updateHtmlContent = () => {
     let issue = activeIssue
-    issue.isModified = true
 
     if (activeOption === FORM_OPTIONS.MARK_AS_REVIEWED) {
       issue.newHtml = issue.initialHtml
@@ -161,7 +165,7 @@ export default function AltText ({
           option={FORM_OPTIONS.ADD_TEXT}
           labelId = 'add-text-label'
           labelText = {t('form.alt_text.label.text')}
-          />
+        />
 
         {activeOption === FORM_OPTIONS.ADD_TEXT && (
           <>
@@ -174,9 +178,13 @@ export default function AltText ({
               className="w-100"
               value={textInputValue}
               disabled={isDisabled}
-              onChange={handleInput} />
+              onChange={handleInput}
+            />
             <div className="subtext">{t("form.alt_text.feedback.characters", { current: characterCount, total: maxLength })}</div>
-            <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.ADD_TEXT]} />
+            <OptionFeedback
+              t={t}
+              feedbackArray={formErrors[FORM_OPTIONS.ADD_TEXT]}
+            />
           </>
         )}
       </div>
@@ -189,7 +197,7 @@ export default function AltText ({
           setActiveOption={setActiveOption}
           option={FORM_OPTIONS.MARK_DECORATIVE}
           labelText = {t('form.alt_text.label.mark_decorative')}
-          />
+        />
       </div>
 
       {/* OPTION 3: Mark as Reviewed. ID: "MARK_AS_REVIEWED" */}
@@ -200,7 +208,7 @@ export default function AltText ({
           setActiveOption={setActiveOption}
           option={FORM_OPTIONS.MARK_AS_REVIEWED}
           labelText = {t('fix.label.no_changes')}
-          />
+        />
       </div>
     </>
   )

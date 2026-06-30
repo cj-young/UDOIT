@@ -93,7 +93,7 @@ export default function FixIssuesList({
               <div
                 id={`list-items-${i}`}
                 className={`ufixit-list-items-container ${openList[group.formLabel] ? 'open' : 'closed'}`}
-                aria-hidden={openList[group.formLabel] ? 'false' : 'true'}
+                inert={openList[group.formLabel] ? undefined : true}
                 tabIndex="-1">
                 { group.issues.map((issue, j) => {
                   return (
@@ -113,9 +113,7 @@ export default function FixIssuesList({
                       role="link"
                       tabIndex={openList[group.formLabel] ? '0' : '-1'}>
                         <div className="flex-row gap-2" aria-hidden="true">
-                          <div className="ufixit-list-content-type-icon-container">
-                            <ContentTypeIcon type={issue.contentType} className="gray icon-md"/>
-                          </div>
+                          <ContentTypeIcon type={issue.contentType} className="icon-block icon-md align-self-center"/>
                           <div className="flex-column justify-content-center">
                             <div className="list-item-title">
                               {issue.contentTitle}

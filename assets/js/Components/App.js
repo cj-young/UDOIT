@@ -335,6 +335,22 @@ export default function App(initialData) {
     }
   };
 
+  const addSettingsClasses = () => {
+    let body = document.getElementsByTagName('body')[0]
+    if (body) {
+      let classes = ''
+      classes += preferences.fontSize || DEFAULT_USER_SETTINGS.FONT_SIZE
+      classes += ' '
+      classes += preferences.fontFamily || DEFAULT_USER_SETTINGS.FONT_FAMILY
+      if (preferences.darkMode) {
+        classes += ' dark-mode'
+      }
+      body.className = classes
+      body.lang = preferences.lang || DEFAULT_USER_SETTINGS.LANGUAGE
+      body.style.setProperty('--text-spacing-percent', Number(textSpacing))
+    }
+  }
+
   // Every time the translation function changes, we need to recompute the page visibility listener.
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -359,11 +375,16 @@ export default function App(initialData) {
   }, [t]);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "../udoit3/build/static/tinymce/tinymce.min.js";
+    const script = document.createElement('script');
+    script.src = '../udoit3/build/static/tinymce/tinymce.min.js';
     script.async = true;
     document.body.appendChild(script);
+    addSettingsClasses();
   }, []);
+
+  useEffect(() => {
+    addSettingsClasses();
+  }, [preferences, textSpacing]);
 
   useEffect(() => {
     try {
@@ -388,34 +409,26 @@ export default function App(initialData) {
   }, [initialData.report, scanCourse]);
 
   return (
-    <div
-      id="app-container"
-      style={{ "--text-spacing-percent": Number(textSpacing) }}
-      className={
-        `flex-column flex-grow-1 ` +
-        `${preferences.fontSize} ` +
-        `${preferences.fontFamily} ` +
-        `${preferences.darkMode ? "dark-mode" : ""}`
-      }
-      lang={preferences.lang}
-    >
-      {!welcomeClosed ?
-        <WelcomePage
-          t={t}
-          instanceInfo={instanceInfo}
-          preferences={preferences}
-          syncComplete={syncComplete}
-          setWelcomeClosed={setWelcomeClosed}
-        />
-      : <>
-          <Header
+    <div id="app-container"
+      className="flex-column flex-grow-1">
+      { !welcomeClosed ?
+        ( <WelcomePage
             t={t}
+            instanceInfo={instanceInfo}
             preferences={preferences}
-            modalActive={modalActive}
-            navigation={navigation}
-            handleNavigation={handleNavigation}
             syncComplete={syncComplete}
+            setWelcomeClosed={setWelcomeClosed}
           />
+        ) : (
+          <>
+            <Header
+              t={t}
+              preferences={preferences}
+              modalActive={modalActive}
+              navigation={navigation}
+              handleNavigation={handleNavigation}
+              syncComplete={syncComplete}
+             />
 
           <main role="main" id="main-content">
             {"summary" === navigation && (
@@ -471,6 +484,7 @@ export default function App(initialData) {
             {"reports" === navigation && (
               <ReportsPage
                 t={t}
+                preferences={preferences}
                 instanceInfo={instanceInfo}
                 report={report}
                 quickSearchTerm={quickSearchTerm}
@@ -491,7 +505,7 @@ export default function App(initialData) {
             {"modal" === navigation && <div className="modal">{modal}</div>}
           </main>
         </>
-      }
+      )}
       <MessageTray t={t} preferences={preferences} nextMessage={nextMessage} />
     </div>
   );

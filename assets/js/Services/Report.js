@@ -1,6 +1,6 @@
 import * as Html from "./Html";
-import { ISSUE_STATE } from "./Constants";
-import { MEDIA_FILE_TYPES } from "./Settings";
+import { ISSUE_STATE, MEDIA_FILE_TYPES } from "./Constants";
+import { groupListIssues } from './Lists' 
 
 /** With all of the data inconsistency between the old and new issues, we need to double-check some things:
  *    1. If the issue is ACTIVE (found in the scan) but should be ignored, either because of the old
@@ -103,7 +103,7 @@ const checkTextContrastSufficient = (issue, element, parsedDocument) => {
 
   // Find ancestors
   const bgAncestor = findBgAncestor(element);
-  const textAncestor = findTextAncestor(element);
+  const textAncestor = element;
 
   // Set the issue's xpath and sourceHtml to the background color element
   if (bgAncestor) {
@@ -128,6 +128,7 @@ const checkTextContrastSufficient = (issue, element, parsedDocument) => {
       }
       return path.length ? path.join("/") : "";
     }
+
     // Parse metadata if it's a string
     if (typeof issue.metadata === "string") {
       try {
@@ -501,8 +502,10 @@ export function analyzeReport(report) {
           : ISSUE_STATE.RESOLVED;
       }
     }
-  });
-
+  })
+  
+  activeIssues = groupListIssues(activeIssues, parsedDocuments);
+  
   tempReport.issues = activeIssues;
   tempReport.ignoredIssues = ignoredIssues;
   tempReport.scanCounts = scanCounts;
