@@ -1,38 +1,44 @@
 export default class Api {
-  constructor(settings) {
+
+  constructor(instanceInfo) {
     this.apiUrl = `https://${window.location.hostname}`;
     this.endpoints = {
-      getReport: "/api/courses/{course}/reports/{report}",
-      getReportHistory: "/api/courses/{course}/reports",
-      setReportData: "/api/reports/{report}/setdata",
-      updateAndGetReport: "/api/courses/{course}/reports/update",
-      getIssueContent: "/api/issues/{issue}/content",
-      saveIssue: "/api/issues/{issue}/save",
-      reviewFile: "/api/files/{file}/review",
-      postFile: "/api/files/{file}/post",
-      deleteFile: "/api/files/{file}/delete",
-      updateContent: "/api/{file}/content",
-      adminCourses: "/api/admin/courses/account/{account}/term/{term}",
-      scanContent: "/api/sync/content/{contentItem}?report={getReport}",
-      scanCourse: "/api/sync/{course}",
-      scanLmsCourse: "/api/admin/sync/lms/{lmsCourseId}",
-      fullRescan: "/api/sync/rescan/{course}",
-      adminReport: "/api/admin/courses/{course}/reports/latest",
-      updateUser: "/api/users/{user}",
-    };
-    this.settings = settings;
+      getReport: '/api/courses/{course}/reports/{report}',
+      getReportHistory: '/api/courses/{course}/reports',
+      setReportData: '/api/reports/{report}/setdata',
+      updateAndGetReport: '/api/courses/{course}/reports/update',
+      getIssueContent: '/api/issues/{issue}/content',
+      saveIssue: '/api/issues/{issue}/save',
+      reviewFile: '/api/files/{file}/review',
+      postFile: '/api/files/{file}/post',
+      deleteFile: '/api/files/{file}/delete',
+      batchDelete: '/api/{course}/files/delete',
+      updateContent: '/api/{file}/content',
+      reportPdf: '/download/courses/{course}/reports/pdf',
+      adminCourses: '/api/admin/courses/account/{account}/term/{term}',
+      scanContent: '/api/sync/content/{contentItem}?report={getReport}',
+      scanCourse: '/api/sync/{course}',
+      scanLmsCourse: '/api/admin/sync/lms/{lmsCourseId}',
+      fullRescan: '/api/sync/rescan/{course}',
+      adminReport: '/api/admin/courses/{course}/reports/latest',
+      adminCourseReport: '/api/admin/courses/{course}/reports/full',
+      adminReportHistory: '/api/admin/reports/account/{account}/term/{term}',
+      adminUser: '/api/admin/users',
+      updatePreferences: '/api/users/{user}/preferences'
+    }
+    this.instanceInfo = instanceInfo;
 
-    if (settings && settings.apiUrl) {
-      this.apiUrl = settings.apiUrl;
+    if (instanceInfo && instanceInfo.apiUrl) {
+      this.apiUrl = instanceInfo.apiUrl;
     }
   }
 
   getCourseId() {
-    return this.settings.course.id;
+    return this.instanceInfo.course.id;
   }
 
   getUserId() {
-    return this.settings.user.id;
+    return this.instanceInfo.user.id;
   }
 
   getReport(reportId) {
@@ -156,6 +162,19 @@ export default class Api {
       method: "DELETE",
       credentials: "include",
     });
+  }
+
+  batchDelete(urlList) {
+    let url = `${this.apiUrl}${this.endpoints.batchDelete}`
+    url = url.replace('{course}', this.getCourseId())
+
+    return fetch(url, {
+      method: 'DELETE',
+      credentials: "include",
+      body: JSON.stringify({
+        paths: urlList
+      })
+    })
   }
 
   updateContent(contentOptions, sectionOptions, fileId) {
@@ -283,18 +302,18 @@ export default class Api {
     });
   }
 
-  updateUser(user) {
-    let url = `${this.apiUrl}${this.endpoints.updateUser}`;
-    url = url.replace("{user}", user.id);
+  updatePreferences(newPreferences) {
+    let url = `${this.apiUrl}${this.endpoints.updatePreferences}`;
+    url = url.replace("{user}", this.getUserId());
 
     return fetch(url, {
-      method: "PUT",
+      method: "PATCH",
       cache: "no-cache",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(user),
+      body: JSON.stringify(newPreferences),
     });
   }
 }

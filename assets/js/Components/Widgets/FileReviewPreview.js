@@ -9,7 +9,6 @@ import SeverityPotentialIcon from '../Icons/SeverityPotentialIcon'
 
 export default function FixIssuesContentPreview({
   t,
-  settings,
   activeIssue,
   getReadableFileType,
   isDisabled

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ProgressCircle from "../Widgets/ProgressCircle";
 import "../HomePage.css";
 
-export default function AdminDashboard({ t, settings, courses }) {
+export default function AdminDashboard({ t, preferences, courses }) {
   const [dashboardStats, setDashboardStats] = useState({
     loading: true,
     totalCourses: 0,
@@ -21,7 +21,7 @@ export default function AdminDashboard({ t, settings, courses }) {
   });
 
   const progressMeterRadius = () => {
-    switch (settings?.user?.roles?.font_size) {
+    switch (preferences.fontSize) {
       case "font-small":
         return 40;
       case "font-normal":

@@ -7,7 +7,6 @@ import CloseIcon from '../Icons/CloseIcon'
 
 export default function FileForm ({
   t, 
-  settings,
   activeFile,
   sessionFiles,
   uploadedFile,

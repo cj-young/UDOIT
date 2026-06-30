@@ -22,9 +22,9 @@ start:
 down:
 	$(COMPOSE) down
 
-# rebuild the containers from the ground up
+## Rebuild the containers from the ground up
 rebuild:
-	docker compose -f docker-compose.nginx.yml up --build
+	$(COMPOSE) up --build
 
 # ──────────────────────────────────────────────
 # Database / Migrations

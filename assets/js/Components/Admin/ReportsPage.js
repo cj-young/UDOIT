@@ -7,8 +7,14 @@ import { formNameFromRule } from "../../Services/Ufixit";
 import StatusPill from "../Widgets/StatusPill";
 import ProgressIcon from "../Icons/ProgressIcon";
 import "../ReportsPage.css";
+import { ISSUE_FILTER } from "../../Services/Constants";
 
-export default function ReportsPage({ t, settings, filters, selectedCourse }) {
+export default function ReportsPage({
+  t,
+  instanceInfo,
+  filters,
+  selectedCourse,
+}) {
   const [groupedReports, setGroupedReports] = useState(null);
   const [selectedCourseReports, setSelectedCourseReports] = useState(null);
   const [issues, setIssues] = useState(null);
@@ -90,10 +96,9 @@ export default function ReportsPage({ t, settings, filters, selectedCourse }) {
           issue.type = (
             <StatusPill
               t={t}
-              settings={settings}
               issue={{
-                status: settings.ISSUE_FILTER.ACTIVE,
-                severity: settings.ISSUE_FILTER.ISSUE,
+                status: ISSUE_FILTER.ACTIVE,
+                severity: ISSUE_FILTER.ISSUE,
               }}
             />
           );
@@ -102,10 +107,9 @@ export default function ReportsPage({ t, settings, filters, selectedCourse }) {
           issue.type = (
             <StatusPill
               t={t}
-              settings={settings}
               issue={{
-                status: settings.ISSUE_FILTER.ACTIVE,
-                severity: settings.ISSUE_FILTER.POTENTIAL,
+                status: ISSUE_FILTER.ACTIVE,
+                severity: ISSUE_FILTER.POTENTIAL,
               }}
             />
           );
@@ -114,7 +118,7 @@ export default function ReportsPage({ t, settings, filters, selectedCourse }) {
         mergedIssues.push(issue);
       } else {
         let index = mergedIssues.findIndex(
-          (i) => i.label_display === issue.label_display,
+          (i) => i.label_display === issue.label_display
         );
         mergedIssues[index].total += issue.total;
         mergedIssues[index].active += issue.active;
@@ -176,9 +180,8 @@ export default function ReportsPage({ t, settings, filters, selectedCourse }) {
             <div className="flex-column">
               <div className="mt-4">
                 <div id="resolutionsReport" className="graph-container">
-                  <ResolutionsReport 
-                    t={t} 
-                    settings={settings}
+                  <ResolutionsReport
+                    t={t}
                     reports={groupedReports}
                     selectedCourse={selectedCourse}
                   />

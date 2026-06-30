@@ -11,40 +11,16 @@ import SettingsPage from "./SettingsPage";
 import Api from "../Services/Api";
 import MessageTray from "./Widgets/MessageTray";
 import { analyzeReport } from "../Services/Report";
-import {
-  ISSUE_STATE,
-  WIDGET_STATE,
-  ISSUE_FILTER,
-  FILE_FILTER,
-  FILE_TYPES,
-  FILE_TYPE_MAP,
-  DEFAULT_USER_SETTINGS,
-  UFIXIT_OPTIONS,
-} from "../Services/Settings";
+import { ISSUE_STATE } from "../Services/Constants";
 
 export default function App(initialData) {
   const [nextMessage, setNextMessage] = useState("");
   const [untranslatedMessage, setUntranslatedMessage] = useState("");
   const [report, setReport] = useState(initialData.report || null);
-  const [settings, setSettings] = useState(
-    Object.assign(
-      {},
-      initialData?.settings || {},
-      { ISSUE_STATE },
-      { WIDGET_STATE },
-      { ISSUE_FILTER },
-      { FILE_FILTER },
-      { FILE_TYPES },
-      { FILE_TYPE_MAP },
-      { DEFAULT_USER_SETTINGS },
-      { UFIXIT_OPTIONS },
-    ),
-  );
-  const [textSpacing, setTextSpacing] = useState(
-    settings?.user?.roles && "text_spacing" in settings.user.roles
-      ? settings.user.roles.text_spacing
-      : settings.DEFAULT_USER_SETTINGS.TEXT_SPACING,
-  );
+  const [labels, setLabels] = useState(initialData.labels ?? []);
+  const [instanceInfo, setInstanceInfo] = useState(initialData.instanceInfo);
+  const [preferences, setPreferences] = useState(initialData.preferences);
+  const [textSpacing, setTextSpacing] = useState(preferences.textSpacing);
   const [sections, setSections] = useState([]);
 
   const [navigation, setNavigation] = useState("summary");
@@ -63,9 +39,7 @@ export default function App(initialData) {
   const t = useCallback(
     (key, values = {}) => {
       let translatedText =
-        settings.labels[key] && settings.labels[key] !== ""
-          ? settings.labels[key]
-          : key;
+        labels[key] && labels[key] !== "" ? labels[key] : key;
       if (values && Object.keys(values).length > 0) {
         Object.keys(values).forEach((key) => {
           translatedText = translatedText.replace(`{${key}}`, values[key]);
@@ -73,18 +47,18 @@ export default function App(initialData) {
       }
       return translatedText;
     },
-    [settings],
+    [labels],
   );
 
   const scanCourse = useCallback(() => {
-    let api = new Api(settings);
-    return api.scanCourse(settings.course.id);
-  }, []);
+    let api = new Api(instanceInfo);
+    return api.scanCourse(instanceInfo.course.id);
+  }, [instanceInfo]);
 
   const fullRescan = useCallback(() => {
-    let api = new Api(settings);
-    return api.fullRescan(settings.course.id);
-  }, []);
+    let api = new Api(instanceInfo);
+    return api.fullRescan(instanceInfo.course.id);
+  }, [instanceInfo]);
 
   // When user settings are updated and the language changes, we need to send alerts, but also wait a tick for the settings to update.
   // Using the setUntranslatedMessage function will wait for the next render cycle to update the message, with the new language settings.
@@ -106,29 +80,23 @@ export default function App(initialData) {
     }
   }, [untranslatedMessage]);
 
-  const updateUserSettings = (newUserSetting) => {
-    let oldSettings = JSON.parse(JSON.stringify(settings));
-    let newRoles = Object.assign({}, settings.user.roles, newUserSetting);
-    let newUser = Object.assign({}, settings.user, { roles: newRoles });
-    let newSettings = Object.assign({}, settings, { user: newUser });
-    setSettings(newSettings);
+  const updateUserPreferences = useCallback((newUserPreferences) => {
+    const oldPreferences = structuredClone(preferences);
+    setPreferences((old) => ({ ...old, ...newUserPreferences }));
 
-    let api = new Api(settings);
+    let api = new Api(instanceInfo);
     api
-      .updateUser(newUser)
+      .updatePreferences(newUserPreferences)
       .then((response) => response.json())
       .then((data) => {
         if (data.user) {
-          newSettings.user = data.user;
-          if (data?.labels?.lang) {
-            let newLanguageSettings = Object.assign({}, newSettings);
-            newLanguageSettings.lang = data?.language || newSettings.lang;
-            newLanguageSettings.labels = data.labels;
-            setSettings(newLanguageSettings);
+          instanceInfo.user = data.user;
+          if (data?.labels) {
+            setLabels(data.labels);
           }
           // setUntranslatedMessage({ message: 'msg.settings.updated', severity: 'success', visible: true })
         } else {
-          setSettings(oldSettings);
+          setPreferences(oldPreferences);
           setUntranslatedMessage({
             message: "msg.settings.update_failed",
             severity: "error",
@@ -136,7 +104,7 @@ export default function App(initialData) {
           });
         }
       });
-  };
+  }, [instanceInfo]);
 
   // Session Issues are used to track progress when multiple things are going on at once,
   // and can allow the activeIssue to change without losing information about the previous issue.
@@ -147,7 +115,7 @@ export default function App(initialData) {
     issueState = null,
     contentItemId = null,
   ) => {
-    if (issueState === null || issueState === settings.ISSUE_STATE.UNCHANGED) {
+    if (issueState === null || issueState === ISSUE_STATE.UNCHANGED) {
       let newSessionIssues = Object.assign({}, sessionIssues);
       if (newSessionIssues[issueId]) {
         delete newSessionIssues[issueId];
@@ -171,7 +139,7 @@ export default function App(initialData) {
     fileState = null,
     contentItemId = null,
   ) => {
-    if (fileState === null || fileState === settings.ISSUE_STATE.UNCHANGED) {
+    if (fileState === null || fileState === ISSUE_STATE.UNCHANGED) {
       let newSessionFiles = Object.assign({}, sessionFiles);
       if (newSessionFiles[fileId]) {
         delete newSessionFiles[fileId];
@@ -190,11 +158,11 @@ export default function App(initialData) {
     setSessionFiles(newSessionFiles);
   };
 
-  const processNewReport = (rawReport) => {
-    const tempReport = analyzeReport(rawReport, settings.ISSUE_STATE);
+  const processNewReport = useCallback((rawReport) => {
+    const tempReport = analyzeReport(rawReport, ISSUE_STATE);
     setReport(tempReport);
 
-    let api = new Api(settings);
+    let api = new Api(instanceInfo);
     api
       .setReportData(tempReport.id, {
         scanCounts: tempReport.scanCounts,
@@ -238,7 +206,7 @@ export default function App(initialData) {
 
     setContentItemCache(tempContentItems);
     return tempReport;
-  };
+  }, [analyzeReport, instanceInfo]);
 
   const handleNewReport = (data) => {
     if (!data || !data.data) {
@@ -371,14 +339,14 @@ export default function App(initialData) {
     let body = document.getElementsByTagName('body')[0]
     if (body) {
       let classes = ''
-      classes += settings?.user?.roles?.font_size || settings.DEFAULT_USER_SETTINGS.FONT_SIZE
+      classes += preferences.fontSize || DEFAULT_USER_SETTINGS.FONT_SIZE
       classes += ' '
-      classes += settings?.user?.roles?.font_family || settings.DEFAULT_USER_SETTINGS.FONT_FAMILY
-      if (settings?.user?.roles?.dark_mode) {
+      classes += preferences.fontFamily || DEFAULT_USER_SETTINGS.FONT_FAMILY
+      if (preferences.darkMode) {
         classes += ' dark-mode'
       }
       body.className = classes
-      body.lang = settings?.user?.roles?.lang || settings.DEFAULT_USER_SETTINGS.LANGUAGE
+      body.lang = preferences.lang || DEFAULT_USER_SETTINGS.LANGUAGE
       body.style.setProperty('--text-spacing-percent', Number(textSpacing))
     }
   }
@@ -407,19 +375,18 @@ export default function App(initialData) {
   }, [t]);
 
   useEffect(() => {
-    const script = document.createElement('script')
-    script.src = '../udoit3/build/static/tinymce/tinymce.min.js'
-    script.async = true
-    document.body.appendChild(script)
-    addSettingsClasses()
-  }, [])
+    const script = document.createElement('script');
+    script.src = '../udoit3/build/static/tinymce/tinymce.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+    addSettingsClasses();
+  }, []);
 
   useEffect(() => {
-    addSettingsClasses()
-  }, [settings, textSpacing])
+    addSettingsClasses();
+  }, [preferences, textSpacing]);
 
   useEffect(() => {
-    
     try {
       scanCourse()
         .then((responseStr) => {
@@ -458,7 +425,7 @@ export default function App(initialData) {
         <>
           <Header
             t={t}
-            settings={settings}
+            preferences={preferences}
             modalActive={modalActive}
             navigation={navigation}
             handleNavigation={handleNavigation}
@@ -469,7 +436,7 @@ export default function App(initialData) {
             {"summary" === navigation && (
               <HomePage
                 t={t}
-                settings={settings}
+                preferences={preferences}
                 report={report}
                 hasNewReport={hasNewReport}
                 quickIssues={quickIssues}
@@ -481,7 +448,8 @@ export default function App(initialData) {
             {"fixIssues" === navigation && (
               <FixIssuesPage
                 t={t}
-                settings={settings}
+                instanceInfo={instanceInfo}
+                preferences={preferences}
                 initialSeverity={initialSeverity}
                 initialSearchTerm={initialSearchTerm}
                 contentItemCache={contentItemCache}
@@ -500,7 +468,8 @@ export default function App(initialData) {
             {"reviewFiles" === navigation && (
               <ReviewFilesPage
                 t={t}
-                settings={settings}
+                instanceInfo={instanceInfo}
+                preferences={preferences}
                 contentItemCache={contentItemCache}
                 addContentItemToCache={addContentItemToCache}
                 report={report}
@@ -517,7 +486,8 @@ export default function App(initialData) {
             {"reports" === navigation && (
               <ReportsPage
                 t={t}
-                settings={settings}
+                preferences={preferences}
+                instanceInfo={instanceInfo}
                 report={report}
                 quickSearchTerm={quickSearchTerm}
               />
@@ -525,8 +495,9 @@ export default function App(initialData) {
             {"settings" === navigation && (
               <SettingsPage
                 t={t}
-                settings={settings}
-                updateUserSettings={updateUserSettings}
+                instanceInfo={instanceInfo}
+                preferences={preferences}
+                updateUserPreferences={updateUserPreferences}
                 syncComplete={syncComplete}
                 handleFullCourseRescan={handleFullCourseRescan}
                 textSpacing={textSpacing}
@@ -537,8 +508,7 @@ export default function App(initialData) {
           </main>
         </>
       )}
-      <MessageTray t={t} settings={settings} nextMessage={nextMessage} />
+      <MessageTray t={t} preferences={preferences} nextMessage={nextMessage} />
     </div>
   );
 }
-

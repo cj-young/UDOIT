@@ -6,7 +6,7 @@ import ReportIcon from "../Icons/ReportIcon";
 
 export default function CoursePage({
   t,
-  settings,
+  instanceInfo,
   courses,
   searchTerm,
   handleCourseUpdate,
@@ -132,11 +132,10 @@ export default function CoursePage({
               <button
                 key={`reportButton${course.id}`}
                 onClick={() => {
-                    hasReport &&
-                    handleReportClick(course);
+                  hasReport && handleReportClick(course);
                 }}
                 textalign="center"
-                className={`btn btn-text btn-icon-only ${ !hasReport ? "btn-disabled" : ""}`}
+                className={`btn btn-text btn-icon-only ${!hasReport ? "btn-disabled" : ""}`}
                 disabled={!hasReport}
                 title={
                   hasReport
@@ -229,7 +228,7 @@ export default function CoursePage({
   };
 
   const handleScanClick = (course) => {
-    let api = new Api(settings);
+    let api = new Api(instanceInfo);
 
     // For unscanned courses, course.id will be the LMS course ID (string/number)
     // and hasReport will be false. We need to create the course in UDOIT first.
@@ -343,7 +342,7 @@ export default function CoursePage({
 
   const checkForReport = (course) => {
     const newReportInterval = 5000;
-    let api = new Api(settings);
+    let api = new Api(instanceInfo);
     const courseId = course.udoitId || course.id;
     const originalId = course.originalId; // Save the original ID for removal
 

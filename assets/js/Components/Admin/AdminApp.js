@@ -14,23 +14,28 @@ import "../../../css/udoit4-theme.css";
 
 export default function AdminApp(initialData) {
   // If there are multiple accounts available, the first account is the selected accountId
-  let accountId = initialData.settings?.accountId;
-  if (initialData.settings?.accounts) {
-    const accountIds = Object.keys(initialData.settings.accounts);
+  let accountId = initialData.accountId;
+  if (initialData.accounts) {
+    const accountIds = Object.keys(initialData.accounts);
     accountId = accountIds.shift();
   }
 
   let initialFilters = {
     accountId: accountId,
-    termId: initialData.settings.defaultTerm,
+    termId: initialData.termInfo.defaultTerm,
     includeSubaccounts: true,
     courseId: null,
   };
 
   const [messages, setMessages] = useState(initialData.messages || []);
-  const [settings, setSettings] = useState(
-    Object.assign({}, initialData?.settings || {}, { ISSUE_FILTER }),
+  const [preferences, setPreferences] = useState(initialData.preferences ?? {});
+  const [instanceInfo, setInstanceInfo] = useState(
+    initialData.instanceInfo ?? {},
   );
+  const [termInfo, setTermInfo] = useState(initialData.termInfo || {});
+  const [labels, setLabels] = useState(initialData.labels ?? []);
+  const [accounts, setAccounts] = useState(initialData.accounts);
+
   const [courses, setCourses] = useState({});
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [filters, setFilters] = useState({ ...initialFilters });
@@ -43,7 +48,7 @@ export default function AdminApp(initialData) {
 
   const t = useCallback(
     (key, values = {}) => {
-      let translatedText = settings.labels[key] ? settings.labels[key] : key;
+      let translatedText = labels[key] ? labels[key] : key;
       if (values && Object.keys(values).length > 0) {
         Object.keys(values).forEach((valKey) => {
           translatedText = translatedText.replace(
@@ -54,13 +59,13 @@ export default function AdminApp(initialData) {
       }
       return translatedText;
     },
-    [settings.labels],
+    [labels],
   );
 
   const loadCourses = (filters) => {
     setLoadingCourses(true);
 
-    const api = new Api(settings);
+    const api = new Api(instanceInfo);
     api
       .getAdminCourses(filters)
       .then((response) => response.json())
@@ -140,18 +145,19 @@ export default function AdminApp(initialData) {
   return (
     <div
       id="app-container"
-      className={`flex-column flex-grow-1 ${settings?.user?.roles?.font_size || "font-medium"} ${settings?.user?.roles?.font_family || "sans-serif"} ${settings?.user?.roles?.dark_mode ? "dark-mode" : ""}`}
+      className={`flex-column flex-grow-1 ${preferences.fontSize || "font-medium"} ${preferences.fontFamily || "sans-serif"} ${preferences.darkMode ? "dark-mode" : ""}`}
     >
       <AdminHeader
         t={t}
-        settings={settings}
         navigation={navigation}
         handleNavigation={handleNavigation}
       />
 
       <AdminFilters
         t={t}
-        settings={settings}
+        preferences={preferences}
+        accounts={accounts}
+        termInfo={termInfo}
         filters={filters}
         handleFilter={handleFilter}
         loadingContent={loadingCourses}
@@ -177,7 +183,7 @@ export default function AdminApp(initialData) {
             {"dashboard" === navigation && (
               <AdminDashboard
                 t={t}
-                settings={settings}
+                preferences={preferences}
                 courses={courses}
                 handleNavigation={handleNavigation}
                 addMessage={addMessage}
@@ -186,8 +192,8 @@ export default function AdminApp(initialData) {
             {"courses" === navigation && (
               <CoursesPage
                 t={t}
-                settings={settings}
                 courses={courses}
+                instanceInfo={instanceInfo}
                 searchTerm={searchTerm}
                 addMessage={addMessage}
                 handleCourseUpdate={handleCourseUpdate}
@@ -198,7 +204,7 @@ export default function AdminApp(initialData) {
             {"reports" === navigation && (
               <ReportsPage
                 t={t}
-                settings={settings}
+                instanceInfo={instanceInfo}
                 filters={filters}
                 selectedCourse={selectedCourse}
               />
