@@ -217,6 +217,7 @@ class CanvasApi {
     public function apiPut($url, $options)
     {
         $lmsResponse = new LmsResponse();
+        $output = new ConsoleOutput();
         if(!isset($options['headers'])) {
             $options['headers'] = [];
         }
@@ -285,6 +286,10 @@ class CanvasApi {
             $type = "";
             $lmsId = "";
 
+            if (preg_match('#^courses/(\d+)\?include\[\]=syllabus_body$#', $paths[$i], $matches)) {
+                $type = "syllabus";
+            }
+
             if (preg_match('#/(\w+)/([^/]+)$#', $paths[$i], $matches)) {
                 $type = $matches[1]; 
                 $type = preg_replace('/s$/', '', $type);
@@ -300,6 +305,10 @@ class CanvasApi {
             $normalizedContent = json_decode($content);
             if ($type == 'discussion_topic' && isset($normalizedContent->is_announcement) && $normalizedContent->is_announcement) {
                 $type = 'announcement';
+            }
+
+            if ($type == 'syllabus'){
+                $lmsId = $normalizedContent->id;
             }
             $response = [
                 'content' => $normalizedContent,
