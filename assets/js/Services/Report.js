@@ -299,6 +299,7 @@ export function analyzeReport(report) {
   let sessionFiles = {};
   let currentTime = new Date();
   let millisecondsInADay = 86400000; // 1000 * 60 * 60 * 24
+  let tempContentResolved = 0;
 
   const parser = new DOMParser()
   const fileReferences = {}

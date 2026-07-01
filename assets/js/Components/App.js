@@ -412,12 +412,12 @@ export default function App(initialData) {
     <div
       id="app-container"
       style={{ "--text-spacing-percent": Number(textSpacing) }}
-      lang={settings?.user?.roles?.lang || settings.DEFAULT_USER_SETTINGS.LANGUAGE}
     >
       {!welcomeClosed ? (
         <WelcomePage
           t={t}
-          settings={settings}
+          instanceInfo={instanceInfo}
+          preferences={preferences}
           syncComplete={syncComplete}
           setWelcomeClosed={setWelcomeClosed}
         />
