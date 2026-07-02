@@ -45,17 +45,17 @@ export default class Api {
     const courseId = this.getCourseId();
 
     if (!reportId) {
-      reportId = 'latest';
+      reportId = "latest";
     }
 
     let url = `${this.apiUrl}${this.endpoints.getReport}`;
-    url = url.replace('{course}', courseId).replace('{report}', reportId);
+    url = url.replace("{course}", courseId).replace("{report}", reportId);
 
     return fetch(url, {
-      method: 'GET',
-      credentials: 'include',
+      method: "GET",
+      credentials: "include",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   }
@@ -64,13 +64,13 @@ export default class Api {
     const courseId = this.getCourseId();
 
     let url = `${this.apiUrl}${this.endpoints.getReportHistory}`;
-    url = url.replace('{course}', courseId);
+    url = url.replace("{course}", courseId);
 
     return fetch(url, {
-      method: 'GET',
-      credentials: 'include',
+      method: "GET",
+      credentials: "include",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   }

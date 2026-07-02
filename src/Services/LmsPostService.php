@@ -108,7 +108,7 @@ class LmsPostService {
             return $lms->batchDeleteContent($paths);
         }
         catch(\Exception){
-            $this->util->createMessage('Failed to download unused files.', 'error');
+            $this->util->createMessage('Failed to delete unused files.', 'error');
             return;
         }
 

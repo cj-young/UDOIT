@@ -12,10 +12,16 @@ export default function AdminHeader({
 }) {
   return (
     <header id="udoit-header" role="banner">
-      <nav aria-label={t('menu.nav.label')}>
-        <div className="flex-row justify-content-start gap-2" onClick={() => handleNavigation('dashboard')}>
-          <div className="flex-column justify-content-center" style={{ width: 'min-content' }}>
-            <img alt={t('alt.UDOIT')} src={UDOITLogo}></img>
+      <nav aria-label={t("menu.nav.label")}>
+        <div
+          className="flex-row justify-content-start gap-2"
+          onClick={() => handleNavigation("dashboard")}
+        >
+          <div
+            className="flex-column justify-content-center"
+            style={{ width: "min-content" }}
+          >
+            <img alt={t("alt.UDOIT")} src={UDOITLogo}></img>
           </div>
           <div className="flex-column justify-content-center">
             <h1 className="mt-0 mb-0">{t("menu.admin")}</h1>

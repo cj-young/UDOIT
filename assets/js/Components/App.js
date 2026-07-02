@@ -409,26 +409,28 @@ export default function App(initialData) {
   }, [initialData.report, scanCourse]);
 
   return (
-    <div id="app-container"
-      className="flex-column flex-grow-1">
-      { !welcomeClosed ?
-        ( <WelcomePage
+    <div
+      id="app-container"
+      style={{ "--text-spacing-percent": Number(textSpacing) }}
+    >
+      {!welcomeClosed ? (
+        <WelcomePage
+          t={t}
+          instanceInfo={instanceInfo}
+          preferences={preferences}
+          syncComplete={syncComplete}
+          setWelcomeClosed={setWelcomeClosed}
+        />
+      ) : (
+        <>
+          <Header
             t={t}
-            instanceInfo={instanceInfo}
             preferences={preferences}
+            modalActive={modalActive}
+            navigation={navigation}
+            handleNavigation={handleNavigation}
             syncComplete={syncComplete}
-            setWelcomeClosed={setWelcomeClosed}
           />
-        ) : (
-          <>
-            <Header
-              t={t}
-              preferences={preferences}
-              modalActive={modalActive}
-              navigation={navigation}
-              handleNavigation={handleNavigation}
-              syncComplete={syncComplete}
-             />
 
           <main role="main" id="main-content">
             {"summary" === navigation && (
