@@ -1,14 +1,16 @@
 import React, {useState, useEffect, act} from 'react'
 import RadioSelector from '../Widgets/RadioSelector'
 import OptionFeedback from '../Widgets/OptionFeedback'
+import { formNames } from '../../Services/Ufixit'
 import * as Text from '../../Services/Text'
 import * as Html from '../../Services/Html'
+import { UFIXIT_OPTIONS } from '../../Services/Constants'
 
-export default function AnchorText({
+export default function AnchorTextForm ({
   t,
-  settings,
   activeIssue,
   isDisabled,
+  doesIssueBelongToForm,
   handleActiveIssue,
   activeOption,
   setActiveOption,
@@ -17,9 +19,9 @@ export default function AnchorText({
 }) {
 
   const FORM_OPTIONS = {
-    ADD_TEXT: settings.UFIXIT_OPTIONS.ADD_TEXT,
-    DELETE_ELEMENT: settings.UFIXIT_OPTIONS.DELETE_ELEMENT,
-    MARK_AS_REVIEWED: settings.UFIXIT_OPTIONS.MARK_AS_REVIEWED
+    ADD_TEXT: UFIXIT_OPTIONS.ADD_TEXT,
+    DELETE_ELEMENT: UFIXIT_OPTIONS.DELETE_ELEMENT,
+    MARK_AS_REVIEWED: UFIXIT_OPTIONS.MARK_AS_REVIEWED
   }
 
   const [textInputValue, setTextInputValue] = useState("")
@@ -31,49 +33,62 @@ export default function AnchorText({
     }
     const html = Html.getIssueHtml(activeIssue)
     let initialText = ''
-    if(Html.getTagName(html).toLowerCase() === 'a') {
+    if(Html.getTagName(html)?.toLowerCase() === 'a') {
       initialText = Html.getInnerText(html)
-    } else if(Html.getTagName(html).toLowerCase() === 'area') {
+    } else if(Html.getTagName(html)?.toLowerCase() === 'area') {
       initialText = Html.getAttribute(html, 'alt') || ''
     }
-
-    const deleted = (!activeIssue.newHtml && (activeIssue.status === 1))
-    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
-
-    if (deleted) {
-      setActiveOption(FORM_OPTIONS.DELETE_ELEMENT)
-    }
-    else if (reviewed) {
-      setActiveOption(FORM_OPTIONS.MARK_AS_REVIEWED)
-    }
-    else if (initialText !== '') {
-      setActiveOption(FORM_OPTIONS.ADD_TEXT)
-    }
-    else {
-      setActiveOption('')
-    }
-    
     setLinkUrl(Html.getAttribute(html, 'href') || '')
     setTextInputValue(initialText)
+
+    const fixed = activeIssue.newHtml && (activeIssue.status === 1 || activeIssue.status === 3)
+    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
+    const deleted = !activeIssue.newHtml
+    let startingOption = ''
+
+    if (reviewed) {
+      startingOption = FORM_OPTIONS.MARK_AS_REVIEWED
+    }
+    if (fixed) {
+      if (deleted) {
+        startingOption = FORM_OPTIONS.DELETE_ELEMENT
+      }
+      else if (initialText !== '') {
+        startingOption = FORM_OPTIONS.ADD_TEXT
+      }
+    }
+    handleOptionChange(startingOption)
+
   }, [activeIssue])
 
   useEffect(() => {
+    if(!doesIssueBelongToForm(formNames.ANCHOR_TEXT, activeIssue?.issueData)) {
+      return
+    }
     updateHtmlContent()
     checkFormErrors()
-  }, [activeOption, textInputValue])
+  }, [textInputValue])
 
-  const updateHtmlContent = () => {
+  const handleOptionChange = (option) => {
+    if(!doesIssueBelongToForm(formNames.ANCHOR_TEXT, activeIssue?.issueData)) {
+      return
+    }
+    updateHtmlContent(option)
+    checkFormErrors(option)
+    setActiveOption(option)
+  }
+
+  const updateHtmlContent = (optionOverride = activeOption) => {
     let issue = activeIssue
-    issue.isModified = true
     
-    if (activeOption === FORM_OPTIONS.MARK_AS_REVIEWED) {
+    if (optionOverride === FORM_OPTIONS.MARK_AS_REVIEWED) {
       issue.newHtml = issue.initialHtml
-      handleActiveIssue(issue)
+      handleActiveIssue(issue, optionOverride)
       return
     }
 
     const html = Html.getIssueHtml(activeIssue)
-    const deleteLink = (activeOption === FORM_OPTIONS.DELETE_ELEMENT)
+    const deleteLink = (optionOverride === FORM_OPTIONS.DELETE_ELEMENT)
     let element = Html.toElement(html)
     let elementTag = Html.getTagName(element)?.toLowerCase() || ''
     
@@ -97,16 +112,16 @@ export default function AnchorText({
     }
     
     issue.newHtml = Html.toString(element)
-    handleActiveIssue(issue)
+    handleActiveIssue(issue, optionOverride)
   }
 
-  const checkFormErrors = () => {
+  const checkFormErrors = (optionOverride = activeOption) => {
     let tempErrors = {
       [FORM_OPTIONS.ADD_TEXT]: [],
       [FORM_OPTIONS.DELETE_ELEMENT]: [],
     }
     
-    if(activeOption === FORM_OPTIONS.ADD_TEXT) {
+    if(optionOverride === FORM_OPTIONS.ADD_TEXT) {
       if(!Text.isTextDescriptive(textInputValue)) {
         tempErrors[FORM_OPTIONS.ADD_TEXT].push({ text: t('form.anchor.msg.text_descriptive'), type: 'error' })
       }
@@ -132,11 +147,11 @@ export default function AnchorText({
           <RadioSelector
             activeOption={activeOption}
             isDisabled={isDisabled}
-            setActiveOption={setActiveOption}
+            setActiveOption={handleOptionChange}
             option={FORM_OPTIONS.ADD_TEXT}
             labelId = 'add-text-label'
             labelText = {t('form.anchor.link_text')}
-            />
+          />
 
           {activeOption === FORM_OPTIONS.ADD_TEXT && (
             <>
@@ -149,8 +164,12 @@ export default function AnchorText({
                 value={textInputValue}
                 onChange={handleInput}
                 tabIndex="0"
-                disabled={isDisabled} />
-              <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.ADD_TEXT]} />
+                disabled={isDisabled}
+              />
+              <OptionFeedback
+                t={t}
+                feedbackArray={formErrors[FORM_OPTIONS.ADD_TEXT]}
+              />
             </>
           )}
         </div>
@@ -160,12 +179,15 @@ export default function AnchorText({
           <RadioSelector
             activeOption={activeOption}
             isDisabled={isDisabled}
-            setActiveOption={setActiveOption}
+            setActiveOption={handleOptionChange}
             option={FORM_OPTIONS.DELETE_ELEMENT}
             labelText = {t('form.anchor.delete_link')}
-            />
+          />
           {activeOption === FORM_OPTIONS.DELETE_ELEMENT && (
-            <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.DELETE_ELEMENT]} />
+            <OptionFeedback
+              t={t}
+              feedbackArray={formErrors[FORM_OPTIONS.DELETE_ELEMENT]}
+            />
           )}
         </div>
         
@@ -174,10 +196,10 @@ export default function AnchorText({
           <RadioSelector
             activeOption={activeOption}
             isDisabled={isDisabled}
-            setActiveOption={setActiveOption}
+            setActiveOption={handleOptionChange}
             option={FORM_OPTIONS.MARK_AS_REVIEWED}
             labelText = {t('fix.label.no_changes')}
-            />
+          />
         </div>
       </div>
 

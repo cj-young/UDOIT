@@ -5,6 +5,7 @@ import Combobox from '../Widgets/Combobox'
 import ToggleSwitch from '../Widgets/ToggleSwitch'
 import * as Html from '../../Services/Html'
 import * as Text from '../../Services/Text'
+import { UFIXIT_OPTIONS } from '../../Services/Constants'
 
 // This template is built with the same structure as the LanguageForm if you want to see it in action.
 // It allows three major types of fixes: selecting an option from a list, adding text, or using a checkbox.
@@ -15,9 +16,8 @@ import * as Text from '../../Services/Text'
 // You can remove any parts that you don't need for your specific form. For a simplified example, see the
 // HeadingEmptyForm.js component.
 
-export default function TemplateSaveOrReviewForm ({
+export default function TemplateForm ({
   t,
-  settings,
   activeIssue,
   isDisabled,
   handleActiveIssue,
@@ -29,10 +29,10 @@ export default function TemplateSaveOrReviewForm ({
   
   // Define the major radio button level options for the form using settings constants. 
   const FORM_OPTIONS = {
-    ADD_TEXT: settings.UFIXIT_OPTIONS.ADD_TEXT,
-    SELECT_LANGUAGE: settings.UFIXIT_OPTIONS.SELECT_ATTRIBUTE_VALUE,
-    DELETE_ATTRIBUTE: settings.UFIXIT_OPTIONS.DELETE_ATTRIBUTE,
-    MARK_AS_REVIEWED: settings.UFIXIT_OPTIONS.MARK_AS_REVIEWED
+    ADD_TEXT: UFIXIT_OPTIONS.ADD_TEXT,
+    SELECT_LANGUAGE: UFIXIT_OPTIONS.SELECT_ATTRIBUTE_VALUE,
+    DELETE_ATTRIBUTE: UFIXIT_OPTIONS.DELETE_ATTRIBUTE,
+    MARK_AS_REVIEWED: UFIXIT_OPTIONS.MARK_AS_REVIEWED
   }
 
   // If you have any arbitrary limits or rules for tests, put them here at the top.
@@ -73,29 +73,30 @@ export default function TemplateSaveOrReviewForm ({
     const hasAttribute = Html.hasAttribute(element, attributeName)
     const attributeValue = Html.getAttribute(element, attributeName) || ''
     const selectOptions = computeSelectOptions(attributeValue)
-    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
-    
-    // Determine which option should be selected based on the issue's current state.
-    if (!hasAttribute) {
-      setActiveOption(FORM_OPTIONS.DELETE_ATTRIBUTE)
-    }
-    else if (reviewed) {
-      setActiveOption(FORM_OPTIONS.MARK_AS_REVIEWED)
-    }
-    else if (attributeValue in primaryLanguages) {
-      setActiveOption(FORM_OPTIONS.SELECT_LANGUAGE)
-    }
-    else if (attributeValue !== '') {
-      setActiveOption(FORM_OPTIONS.ADD_TEXT)
-    }
-    else {
-      setActiveOption('')
-    }
-
     setSelectedValue(attributeValue)
     setSelectOptions(selectOptions)
     setTextInputValue(attributeValue)
     setIsToggleChecked(attributeValue === 'en-US') // Example logic for the toggle
+    
+    // Determine which option should be selected based on the issue's current state.
+    const fixed = activeIssue.newHtml && (activeIssue.status === 1 || activeIssue.status === 3)
+    const reviewed = activeIssue.newHtml && (activeIssue.status === 2 || activeIssue.status === 3)
+    let startingOption = ''
+
+    if (reviewed) {
+      startingOption = FORM_OPTIONS.MARK_AS_REVIEWED
+    }
+    if (fixed) {
+      if (!hasAttribute) {
+        setActiveOption(FORM_OPTIONS.DELETE_ATTRIBUTE)
+      }
+      else if (attributeValue in primaryLanguages) {
+        setActiveOption(FORM_OPTIONS.SELECT_LANGUAGE)
+      }
+      else if (attributeValue !== '') {
+        setActiveOption(FORM_OPTIONS.ADD_TEXT)
+      }
+    }
   }, [activeIssue])
 
 
@@ -112,7 +113,6 @@ export default function TemplateSaveOrReviewForm ({
   // We also must set a flag (isModified) so we know the issue has been changed.
   const updateHtmlContent = () => {
     let issue = activeIssue
-    issue.isModified = true
 
     // The easiest way to manipulate the HTML is to convert it to an element.
     // Always start with the initialHtml to avoid compounding changes on top of each other.
@@ -145,7 +145,8 @@ export default function TemplateSaveOrReviewForm ({
 
 
   // Whenever the input changes, and on initial load, we need to check for errors.
-  // These errors are sent to the FormSaveOrReview component to be displayed to the user.
+  // When an error of a specific type is present, it gets shown in the OptionFeedback component.
+  // FormErrors of type: "error" also prevent saving. To not prevent saving, use type: "warning".
   const checkFormErrors = () => {
     let tempErrors = {
       [FORM_OPTIONS.SELECT_LANGUAGE]: [],
@@ -235,7 +236,8 @@ export default function TemplateSaveOrReviewForm ({
               className="w-100"
               value={textInputValue}
               disabled={isDisabled}
-              onChange={handleTextInput} />
+              onChange={handleTextInput}
+            />
             
             {/* Example checkbox using the custom Toggle switch component */}
             <div className="flex-row justify-content-start gap-1">
@@ -244,10 +246,14 @@ export default function TemplateSaveOrReviewForm ({
                 initialValue={isToggleChecked}
                 updateToggle={setIsToggleChecked}
                 disabled={isDisabled}
-                small={true} />
+                small={true}
+              />
               <label htmlFor="exampleCheckbox" className="ufixit-instructions">Ignore what I wrote and mark the language as English</label>
             </div>
-            <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.ADD_TEXT]} />
+            <OptionFeedback
+              t={t}
+              feedbackArray={formErrors[FORM_OPTIONS.ADD_TEXT]}
+            />
           </>
         )}
       </div>
@@ -261,7 +267,7 @@ export default function TemplateSaveOrReviewForm ({
           option={FORM_OPTIONS.SELECT_LANGUAGE}
           labelId = 'combo-label-language-select'
           labelText = {t(`form.language.label.select_language`)} 
-          />
+        />
         {activeOption === FORM_OPTIONS.SELECT_LANGUAGE && (
           <>
             <Combobox 
@@ -270,9 +276,11 @@ export default function TemplateSaveOrReviewForm ({
               id='language-select'
               label=''
               options={selectOptions} 
-              settings={settings}
             />
-            <OptionFeedback feedbackArray={formErrors[FORM_OPTIONS.SELECT_LANGUAGE]} />
+            <OptionFeedback
+              t={t}
+              feedbackArray={formErrors[FORM_OPTIONS.SELECT_LANGUAGE]}
+            />
           </>
         )}
       </div>
@@ -285,7 +293,7 @@ export default function TemplateSaveOrReviewForm ({
           setActiveOption={setActiveOption}
           option={FORM_OPTIONS.DELETE_ATTRIBUTE}
           labelText = 'Remove the lang attribute'
-          />
+        />
       </div>
 
       {/* OPTION 4: Mark as Reviewed. ID: "mark-as-reviewed" */}
@@ -296,7 +304,7 @@ export default function TemplateSaveOrReviewForm ({
           setActiveOption={setActiveOption}
           option={FORM_OPTIONS.MARK_AS_REVIEWED}
           labelText = {t('fix.label.no_changes')}
-          />
+        />
       </div>
     </>
   )
