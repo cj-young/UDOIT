@@ -109,13 +109,23 @@
 
     &:not(.emphasis) .summary-icon-container {
       background-color: var(--pill-error-background);
+      &.completed {
+        background-color: var(--pill-success-background);
+        border-color: var(--pill-success-border);
+      }
     }
 
     .progress-bar-container {
       background-color: var(--progress-bar-background-color);
 
+
       .progress-bar-fill {
+        &.completed {
+          background-color: var(--success-color);
+        }
+        &:not(.completed) {
         background-color: var(--error-color);
+        }
       }
     }
   }
@@ -132,13 +142,22 @@
 
     &:not(.emphasis) .summary-icon-container {
       background-color: var(--pill-warning-background);
+      &.completed {
+        background-color: var(--pill-success-background);
+        border-color: var(--pill-success-border);
+      }
     }
 
     .progress-bar-container {
       background-color: var(--progress-bar-background-color);
 
       .progress-bar-fill {
+        &.completed {
+          background-color: var(--success-color);
+        }
+        &:not(.completed) {
         background-color: var(--potential-color);
+        }
       }
     }
   }
@@ -155,13 +174,23 @@
 
     &:not(.emphasis) .summary-icon-container {
       background-color: var(--pill-file-background);
+      &.completed {
+        background-color: var(--pill-success-background);
+        border-color: var(--pill-success-border);
+      }
+      
     }
 
     .progress-bar-container {
       background-color: var(--progress-bar-background-color);
 
       .progress-bar-fill {
-        background-color: var(--file-color);
+        &.completed {
+          background-color: var(--success-color);
+        }
+        &:not(.completed) {
+          background-color: var(--file-color);
+        }
       }
     }
   }

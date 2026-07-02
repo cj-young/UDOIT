@@ -962,7 +962,6 @@ export default function FixIssuesPage({
         <div inert={widgetState === WIDGET_STATE.FIXIT ? "inert" : undefined}>
           <h1 className="pageTitle">{t('barriers.title')}</h1>
           <p className="pageSubtitle">{t('barriers.subtitle')}</p>
-
           <FixIssuesFilters
             t={t}
             preferences={preferences}
@@ -975,6 +974,8 @@ export default function FixIssuesPage({
           <div className="mt-1 subtext align-self-end">{t('fix.label.barriers_shown_count', { shown: filteredIssues?.length || 0, total: unfilteredIssues?.length || 0 })}</div>
           <FixIssuesList
             t={t}
+            unfilteredIssues={unfilteredIssues}
+            initialSeverity={initialSeverity}
             groupedList={groupedList}
             setActiveIssue={handleActiveIssue}
           />
