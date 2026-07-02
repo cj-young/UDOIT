@@ -10,7 +10,7 @@ import { ISSUE_FILTER } from '../../Services/Constants'
 export default function FixIssuesList({
   t,
   unfilteredIssues,
-  initialSeverity,
+  selectedSeverity,
   groupedList,
   setActiveIssue
 }) {
@@ -64,7 +64,7 @@ export default function FixIssuesList({
     setOpenList(updatedList)
   }
 
-  const checkBarriersResolved = (initialSeverity, unfilteredIssues) => {
+  const checkBarriersResolved = (selectedSeverity, unfilteredIssues) => {
 
     const solvedStatus = [
       ISSUE_FILTER.FIXED,
@@ -73,9 +73,9 @@ export default function FixIssuesList({
     ]
 
     // Get specified section (Known, Potential) if it exists
-    if (initialSeverity) {
+    if (selectedSeverity !== ISSUE_FILTER.ALL) {
       const severityIssues = unfilteredIssues.filter(issue => 
-        issue.severity === initialSeverity
+        issue.severity === selectedSeverity
       );
 
       return severityIssues.every(issue => solvedStatus.includes(issue.status));
@@ -85,7 +85,7 @@ export default function FixIssuesList({
     };
   }
 
-  const barriersResolved = checkBarriersResolved(initialSeverity, unfilteredIssues);
+  const barriersResolved = checkBarriersResolved(selectedSeverity, unfilteredIssues);
 
   return (
     <div className="ufixit-list-container flex-column">
@@ -96,7 +96,7 @@ export default function FixIssuesList({
               <h2 className="mt-0 mb-0 primary-dark">{t('report.label.barriers_resolved')}</h2>
             </div>
             <div className="flex-row align-self-center ms-3 me-3">
-              {t('report.msg.barriers_resolved', {initialSeverity : initialSeverity === "ISSUE" ? t('filter.label.severity.issue').toLowerCase() : initialSeverity === "POTENTIAL" ? t('filter.label.severity.potential').toLowerCase() : t('report.label.issue').toLowerCase()})}
+              {t('report.msg.barriers_resolved', {selectedSeverity : selectedSeverity === ISSUE_FILTER.ISSUE ? t('filter.label.severity.issue').toLowerCase() : selectedSeverity === ISSUE_FILTER.POTENTIAL ? t('filter.label.severity.potential').toLowerCase() : t('report.label.issue').toLowerCase()})}
             </div>
           </div>
           ) : groupedList.length > 0 ? groupedList.map((group, i) => {
