@@ -15,6 +15,7 @@ export default function FixIssuesContentPreview({
 }) {
 
   const [fileReferenceHolder, setFileReferenceHolder] = useState({})
+  const [singleReferencesOnly, setSingleReferencesOnly] = useState(true)
   const [currentFile, setCurrentFile] = useState(null)
   const [oldFile, setOldFile] = useState(null)
 
@@ -93,12 +94,18 @@ export default function FixIssuesContentPreview({
       }
       tempReferences[refKey].push(tempRef)
     })
+
+    // If there are only single references (majority of use cases), don't bother showing the "Instances" column.
+    let tempSingleReferencesOnly = true
+    Object.keys(tempReferences)?.forEach((key) => {
+      if(tempReferences[key].length > 1) {
+        tempSingleReferencesOnly = false
+      }
+    })
     
+    setSingleReferencesOnly(tempSingleReferencesOnly)
     setFileReferenceHolder(tempReferences)
   }
-    
-
-
 
   return (
     <>
@@ -145,11 +152,11 @@ export default function FixIssuesContentPreview({
             <>
               <div className="strong-caps mt-3">{t('form.file.instances.label')}</div>
               <div className="mt-2 rounded-table-wrapper">
-                <table className="udoit-sortable-table">
+                <table className="udoit-sortable-table first-column-wide">
                   <thead>
                     <tr>
                       <th>{t('form.file.location.label')}</th>
-                      <th>{t('fix.label.references')}</th>
+                      { !singleReferencesOnly && (<th>{t('fix.label.references')}</th>)}
                       <th>{t('form.file.status.label')}</th>
                     </tr>
                   </thead>
@@ -162,9 +169,7 @@ export default function FixIssuesContentPreview({
                             <ExternalLinkIcon className="link-color align-self-center ms-2 icon-sm"/>
                           </a>
                         </td>
-                        <td>
-                          <p>{fileReferenceHolder[key]?.length}</p>
-                        </td>
+                        { !singleReferencesOnly && (<td>{fileReferenceHolder[key]?.length}</td>)}
                         <td>
                           {key.includes(REPLACED_LABEL)  ? (
                             <div className='file-label-pill file-new'>{t('form.file.new.label')}</div>
