@@ -24,12 +24,13 @@ export default class Api {
       adminCourseReport: '/api/admin/courses/{course}/reports/full',
       adminReportHistory: '/api/admin/reports/account/{account}/term/{term}',
       adminUser: '/api/admin/users',
-      updatePreferences: '/api/users/{user}/preferences'
+      updatePreferences: '/users/{user}/preferences'
     }
     this.instanceInfo = instanceInfo;
 
     if (instanceInfo && instanceInfo.apiUrl) {
       this.apiUrl = instanceInfo.apiUrl;
+      this.goApiUrl = instanceInfo.goApiUrl ?? this.apiUrl;
     }
   }
 
@@ -303,7 +304,7 @@ export default class Api {
   }
 
   updatePreferences(newPreferences) {
-    let url = `${this.apiUrl}${this.endpoints.updatePreferences}`;
+    let url = `${this.goApiUrl}${this.endpoints.updatePreferences}`;
     url = url.replace("{user}", this.getUserId());
 
     return fetch(url, {

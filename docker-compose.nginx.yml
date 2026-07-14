@@ -66,6 +66,26 @@ services:
         - ./:/app
       env_file:
         - .env
+  go-app:
+    container_name: udoit3-go
+    image: golang:1.26-alpine
+    working_dir: /app
+    volumes:
+      - ./go-rewrite:/app
+      - ./translations:/app/translations
+    ports:
+      - "8080:8080"
+    environment:
+      - CGO_ENABLED=0
+    command: sh -c "go mod download && go run ./cmd/api"
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+  redis:
+    container_name: udoit3-redis
+    image: "redis:7-alpine"
   yarn:
       container_name: udoit3-yarn
       build:

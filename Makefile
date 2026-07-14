@@ -108,3 +108,8 @@ ins-psql:
 			(title, lms_domain, lms_id, lms_account_id, created, status, vanity_url, metadata, api_client_id, api_client_secret) \
 			VALUES \
 			('$(TITLE)', '$(LMS_DOMAIN)', '$(LMS_ID)', '$(LMS_ACCOUNT_ID)', '$(CREATED)', '$(STATUS)', '$(VANITY_URL)', '$(API_CLIENT_ID)', '$(API_CLIENT_SECRET)');"
+
+
+go-fmt:
+	cd ./go-rewrite && \
+	go tool gofumpt -w $$(find . -name '*.go')
