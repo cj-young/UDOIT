@@ -9,23 +9,25 @@ type LTISession struct {
 	issuer        string
 	clientID      string
 	targetLinkURI string
+	tenantID			int64
 	createdAt     time.Time
 	expiresAt     time.Time
 }
 
-func NewLTISession(state, nonce, issuer, clientID, targetLinkURI string, createdAt, expiresAt time.Time) *LTISession {
+func NewLTISession(state, nonce, issuer, clientID, targetLinkURI string, tenantID int64, createdAt, expiresAt time.Time) *LTISession {
 	return &LTISession{
 		state:         state,
 		nonce:         nonce,
 		issuer:        issuer,
 		clientID:      clientID,
 		targetLinkURI: targetLinkURI,
+		tenantID:      tenantID,
 		createdAt:     createdAt,
 		expiresAt:     expiresAt,
 	}
 }
 
-func RehydrateLTISession(id int, state, nonce, issuer, clientID, targetLinkURI string, createdAt, expiresAt time.Time) *LTISession {
+func RehydrateLTISession(id int, state, nonce, issuer, clientID, targetLinkURI string, tenantID int64, createdAt, expiresAt time.Time) *LTISession {
 	return &LTISession{
 		id:            id,
 		state:         state,
@@ -33,6 +35,7 @@ func RehydrateLTISession(id int, state, nonce, issuer, clientID, targetLinkURI s
 		issuer:        issuer,
 		clientID:      clientID,
 		targetLinkURI: targetLinkURI,
+		tenantID:      tenantID,
 		createdAt:     createdAt,
 		expiresAt:     expiresAt,
 	}
@@ -68,4 +71,8 @@ func (l *LTISession) TargetLinkURI() string {
 
 func (l *LTISession) IsExpired() bool {
 	return time.Now().After(l.expiresAt)
+}
+
+func (l *LTISession) TenantID() int64 {
+	return l.tenantID
 }

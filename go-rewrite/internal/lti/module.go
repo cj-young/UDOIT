@@ -20,14 +20,17 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	m.handler.RegisterRoutes(rg)
 }
 
-func New(client *redis.Client, db *sql.DB, userCreator application.UserCreator, sessionCreator internal.SessionCreator) *Module {
+func New(client *redis.Client, db *sql.DB, userCreator application.UserCreator, sessionCreator internal.SessionCreator, courseCreator application.CourseCreator) *Module {
 	ltiSessionTTL := 10 * time.Minute
 
 	ltiSessionRepository := infrastructure.NewRedisLTISessionRepository(client, ltiSessionTTL, "lti_session:")
 	registrationRepository := infrastructure.NewMySQLRegistrationRepository(db)
+	ltiUserLinkRepository := infrastructure.NewMySQLLTIUserLinkRepository(db)
+	ltiCourseLinkRepository := infrastructure.NewMySQLLTICourseLinkRepository(db)
+	idTokenVerifier := infrastructure.NewJWKSIDTokenVerifier()
 
 	getLaunchRedirectUseCase := application.NewGetLaunchRedirectUseCase(registrationRepository, ltiSessionRepository)
-	processLaunchUseCase := application.NewProcessLaunchUseCase(ltiSessionRepository, registrationRepository, infrastructure.NewMySQLLTIUserLinkRepository(db), userCreator)
+	processLaunchUseCase := application.NewProcessLaunchUseCase(ltiSessionRepository, registrationRepository, ltiUserLinkRepository, ltiCourseLinkRepository, idTokenVerifier, userCreator, courseCreator)
 
 	handler := internal.NewHandler(sessionCreator, getLaunchRedirectUseCase, processLaunchUseCase)
 

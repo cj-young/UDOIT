@@ -19,10 +19,10 @@ func NewMySQLRegistrationRepository(db *sql.DB) *MySQLRegistrationRepository {
 
 func (r *MySQLRegistrationRepository) Create(ctx context.Context, registration domain.Registration) error {
 	query := `
-		INSERT INTO registrations (issuer, client_id, login_auth_endpoint, jwk_endpoint,service_auth_endpoint, service_logout_endpoint)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO registration (issuer, client_id, tenant_id, login_auth_endpoint, jwk_endpoint, service_auth_endpoint, service_logout_endpoint)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
-	_, err := r.db.ExecContext(ctx, query, registration.Issuer, registration.ClientID, registration.LoginAuthEndpoint, registration.JWKEndpoint, registration.ServiceAuthEndpoint, registration.ServiceLogoutEndpoint)
+	_, err := r.db.ExecContext(ctx, query, registration.Issuer, registration.ClientID, registration.TenantID, registration.LoginAuthEndpoint, registration.JWKEndpoint, registration.ServiceAuthEndpoint, registration.ServiceLogoutEndpoint)
 	if err != nil {
 		return err
 	}
@@ -31,11 +31,11 @@ func (r *MySQLRegistrationRepository) Create(ctx context.Context, registration d
 
 func (r *MySQLRegistrationRepository) Save(ctx context.Context, registration domain.Registration) error {
 	query := `
-		UPDATE registrations
-		SET login_auth_endpoint = ?, jwk_endpoint = ?, service_auth_endpoint = ?, service_logout_endpoint = ?
+		UPDATE registration
+		SET tenant_id = ?, login_auth_endpoint = ?, jwk_endpoint = ?, service_auth_endpoint = ?, service_logout_endpoint = ?
 		WHERE issuer = ? AND client_id = ?
 	`
-	_, err := r.db.ExecContext(ctx, query, registration.LoginAuthEndpoint, registration.JWKEndpoint, registration.ServiceAuthEndpoint, registration.ServiceLogoutEndpoint, registration.Issuer, registration.ClientID)
+	_, err := r.db.ExecContext(ctx, query, registration.TenantID, registration.LoginAuthEndpoint, registration.JWKEndpoint, registration.ServiceAuthEndpoint, registration.ServiceLogoutEndpoint, registration.Issuer, registration.ClientID)
 	if err != nil {
 		return err
 	}
@@ -44,14 +44,14 @@ func (r *MySQLRegistrationRepository) Save(ctx context.Context, registration dom
 
 func (r *MySQLRegistrationRepository) GetByIssuerAndClientID(ctx context.Context, issuer string, clientID string) (*domain.Registration, error) {
 	query := `
-		SELECT issuer, client_id, login_auth_endpoint, jwk_endpoint, service_auth_endpoint, service_logout_endpoint
-		FROM registrations
+		SELECT issuer, client_id, tenant_id, login_auth_endpoint, jwk_endpoint, service_auth_endpoint, service_logout_endpoint
+		FROM registration
 		WHERE issuer = ? AND client_id = ?
 	`
 	row := r.db.QueryRowContext(ctx, query, issuer, clientID)
 
 	var registration domain.Registration
-	err := row.Scan(&registration.Issuer, &registration.ClientID, &registration.LoginAuthEndpoint, &registration.JWKEndpoint, &registration.ServiceAuthEndpoint, &registration.ServiceLogoutEndpoint)
+	err := row.Scan(&registration.Issuer, &registration.ClientID, &registration.TenantID, &registration.LoginAuthEndpoint, &registration.JWKEndpoint, &registration.ServiceAuthEndpoint, &registration.ServiceLogoutEndpoint)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

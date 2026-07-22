@@ -3,24 +3,28 @@ package internal
 import (
 	"rewritetest/internal/files/internal/application"
 	"rewritetest/internal/shared/apperr"
+	"rewritetest/internal/shared/auth"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	getFileUseCase *application.GetFileUseCase
+	getFileUseCase    *application.GetFileUseCase
+	deleteFileUseCase *application.DeleteFileUseCase
 }
 
-func NewHandler(getFileUseCase *application.GetFileUseCase) *Handler {
+func NewHandler(getFileUseCase *application.GetFileUseCase, deleteFileUseCase *application.DeleteFileUseCase) *Handler {
 	return &Handler{
-		getFileUseCase: getFileUseCase,
+		getFileUseCase:    getFileUseCase,
+		deleteFileUseCase: deleteFileUseCase,
 	}
 }
 
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/:file/review", h.HandleReviewFile)
 	rg.GET("/hello", h.HandleHelloFiles)
+	rg.DELETE("/:file", h.HandleDeleteFile)
 }
 
 func (h *Handler) HandleHelloFiles(c *gin.Context) {
@@ -30,6 +34,7 @@ func (h *Handler) HandleHelloFiles(c *gin.Context) {
 }
 
 func (h *Handler) HandleReviewFile(c *gin.Context) {
+
 	fileID, err := strconv.ParseInt(c.Param("file"), 10, 64)
 	if err != nil {
 		c.Error(apperr.New(
@@ -37,6 +42,7 @@ func (h *Handler) HandleReviewFile(c *gin.Context) {
 			apperr.WithCause(err),
 			apperr.WithOp("files.handler.HandleReviewFile"),
 		))
+		return
 	}
 
 	_, err = h.getFileUseCase.Execute(c.Request.Context(), fileID)
@@ -49,4 +55,35 @@ func (h *Handler) HandleReviewFile(c *gin.Context) {
 		return
 	}
 
+}
+
+func (h *Handler) HandleDeleteFile(c *gin.Context) {
+	principal, ok := auth.GetPrincipal(c)
+	if !ok {
+		c.Error(apperr.New(
+			apperr.CodeUnauthorized, "unauthorized", "Unauthorized",
+			apperr.WithOp("files.handler.HandleDeleteFile"),
+		))
+		return
+	}
+
+	fileID, err := strconv.ParseInt(c.Param("file"), 10, 64)
+	if err != nil {
+		c.Error(apperr.New(
+			apperr.CodeValidation, "invalid_file_id", "File ID must be a valid integer",
+			apperr.WithCause(err),
+			apperr.WithOp("files.handler.HandleDeleteFile"),
+		))
+		return
+	}
+
+	err = h.deleteFileUseCase.Execute(c.Request.Context(), principal, fileID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "File deleted successfully",
+	})
 }

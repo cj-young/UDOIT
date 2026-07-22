@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"rewritetest/internal/auth"
@@ -12,7 +13,7 @@ import (
 )
 
 type SessionCreator interface {
-	CreateSession(ctx context.Context, userID int64) (auth.Session, error)
+	CreateSession(ctx context.Context, userID int64, tenantID int64) (auth.Session, error)
 }
 
 type Handler struct {
@@ -56,13 +57,20 @@ func (h *Handler) handleLoginInitiation(c *gin.Context) {
 		LoginHint:     req.LoginHint,
 		TargetLinkURI: req.TargetLinkURI,
 		ClientID:      req.ClientID,
+		RedirectURI:   launchCallbackURL(c),
 	}
 
 	redirectURL, err := h.getLaunchRedirectUseCase.Execute(c.Request.Context(), getLaunchRedirectQuery)
 	if err != nil {
+		if apperr.IsAppError(err) {
+			c.Error(err)
+			return
+		}
+
 		c.Error(apperr.New(
 			apperr.CodeInternal, "launch_redirect_error", "Failed to get launch redirect URL",
 			apperr.WithOp("lti.handler.handleLoginInitiation"),
+			apperr.WithCause(err),
 		))
 		return
 	}
@@ -92,6 +100,11 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 
 	result, err := h.processLaunchUseCase.Execute(c.Request.Context(), processLaunchCommand)
 	if err != nil {
+		if apperr.IsAppError(err) {
+			c.Error(err)
+			return
+		}
+
 		c.Error(apperr.New(
 			apperr.CodeInternal, "launch_processing_error", "Failed to process launch",
 			apperr.WithOp("lti.handler.handleLaunch"),
@@ -100,8 +113,13 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 		return
 	}
 
-	session, err := h.sessionCreator.CreateSession(c.Request.Context(), result.UserID)
+	session, err := h.sessionCreator.CreateSession(c.Request.Context(), result.UserID, result.TenantID)
 	if err != nil {
+		if apperr.IsAppError(err) {
+			c.Error(err)
+			return
+		}
+
 		c.Error(apperr.New(
 			apperr.CodeInternal, "session_creation_error", "Failed to create user session",
 			apperr.WithOp("lti.handler.handleLaunch"),
@@ -123,4 +141,16 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 	http.SetCookie(c.Writer, cookie)
 
 	c.Redirect(302, result.RedirectURL)
+}
+
+func launchCallbackURL(c *gin.Context) string {
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	if forwarded := c.GetHeader("X-Forwarded-Proto"); forwarded != "" {
+		scheme = forwarded
+	}
+
+	return fmt.Sprintf("%s://%s%s/check", scheme, c.Request.Host, c.FullPath())
 }

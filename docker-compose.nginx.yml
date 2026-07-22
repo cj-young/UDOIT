@@ -11,6 +11,18 @@ services:
       MYSQL_PASSWORD: udoit
     ports:
       - "3306:3306"
+  db-new:
+    container_name: udoit3-db-new
+    image: mysql:latest
+    volumes:
+      - dbdatanew:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: udoit3
+      MYSQL_USER: udoit
+      MYSQL_PASSWORD: udoit
+    ports:
+      - "3307:3306"
   # Uncomment this block and comment the next db block
   # to use Postgres instead of MySQL
   # db:
@@ -79,7 +91,7 @@ services:
       - CGO_ENABLED=0
     command: sh -c "go mod download && go run ./cmd/api"
     depends_on:
-      - db
+      - db-new
       - redis
     env_file:
       - .env
@@ -107,7 +119,24 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
+  migrate:
+    image: migrate/migrate:v4.17.1
+    container_name: udoit3-migrate
+    volumes:
+      - ./go-rewrite/db/migrations:/migrations
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "mysql://root:root@tcp(db-new:3306)/udoit3",
+        "up"
+      ]
+    depends_on:
+      - db-new
+    networks:
+      - default
+  
 
 volumes:
   web:
   dbdata:
+  dbdatanew:

@@ -7,47 +7,33 @@ import (
 
 	"rewritetest/internal/shared/apperr"
 	"rewritetest/internal/users/internal/domain"
+	userssqlc "rewritetest/internal/users/internal/infrastructure/sqlc"
 )
 
 type MySQLUserRepository struct {
-	db *sql.DB
+	queries *userssqlc.Queries
 }
 
 func NewMySQLUserRepository(db *sql.DB) *MySQLUserRepository {
 	return &MySQLUserRepository{
-		db: db,
+		queries: userssqlc.New(db),
 	}
 }
 
 func (r *MySQLUserRepository) GetByID(ctx context.Context, id int64) (*domain.User, error) {
-	query := `
-		SELECT id, username, name, preferences
-		FROM users
-		WHERE id = ?
-	`
-
-	row := r.db.QueryRowContext(ctx, query, id)
-
-	var (
-		userID    int64
-		username  string
-		name      string
-		prefsJSON []byte
-	)
-
-	err := row.Scan(&userID, &username, &name, &prefsJSON)
+	row, err := r.queries.GetUserByID(ctx, uint64(id))
 	if err != nil {
 		return nil, err
 	}
 
 	prefs := domain.Preferences{}
-	if len(prefsJSON) > 0 {
-		if err := json.Unmarshal(prefsJSON, &prefs); err != nil {
+	if len(row.Preferences) > 0 {
+		if err := json.Unmarshal(row.Preferences, &prefs); err != nil {
 			return nil, err
 		}
 	}
 
-	user := domain.RehydrateUser(userID, username, name, prefs)
+	user := domain.RehydrateUser(int64(row.ID), row.Username, row.Name, prefs)
 
 	return &user, nil
 }
@@ -58,19 +44,15 @@ func (r *MySQLUserRepository) Create(ctx context.Context, user *domain.User) err
 		return err
 	}
 
-	query := `
-		INSERT INTO users (username, name, preferences)
-		VALUES (?, ?, ?)
-	`
-
 	var id int64
 
-	result, err := r.db.ExecContext(
+	result, err := r.queries.CreateUser(
 		ctx,
-		query,
-		user.Username(),
-		user.Name(),
-		prefsJSON,
+		userssqlc.CreateUserParams{
+			Username:    user.Username(),
+			Name:        user.Name(),
+			Preferences: prefsJSON,
+		},
 	)
 	if err != nil {
 		return err
@@ -92,28 +74,15 @@ func (r *MySQLUserRepository) Update(ctx context.Context, user *domain.User) err
 		return err
 	}
 
-	query := `
-		UPDATE users
-		SET
-			username = ?,
-			name = ?,
-			preferences = ?
-		WHERE id = ?
-	`
-
-	result, err := r.db.ExecContext(
+	rowsAffected, err := r.queries.UpdateUser(
 		ctx,
-		query,
-		user.Username(),
-		user.Name(),
-		prefsJSON,
-		user.ID(),
+		userssqlc.UpdateUserParams{
+			Username:    user.Username(),
+			Name:        user.Name(),
+			Preferences: prefsJSON,
+			ID:          uint64(user.ID()),
+		},
 	)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}

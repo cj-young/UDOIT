@@ -31,7 +31,7 @@ func (r *MySQLSessionRepository) Create(ctx context.Context, session domain.Sess
 
 func (r *MySQLSessionRepository) GetByID(ctx context.Context, id string) (*domain.Session, error) {
 	query := `
-		SELECT uuid, data
+		SELECT uuid, data, 
 		FROM user_session
 		WHERE uuid = ?
 	`
@@ -52,18 +52,20 @@ func (r *MySQLSessionRepository) GetByID(ctx context.Context, id string) (*domai
 	}
 
 	var payload struct {
-		UserId *int `json:"userId"`
+		UserID *int64 `json:"userId"`
+		// TenantID *int64 `json:"tenantId"`
 	}
 
 	if err := json.Unmarshal([]byte(rawData.String), &payload); err != nil {
 		return nil, err
 	}
 
-	if payload.UserId == nil {
+	if payload.UserID == nil {
 		return nil, nil
 	}
 
-	session := domain.NewSession(sessionID, int64(*payload.UserId), time.Now(), time.Now().Add(1000*time.Hour*24))
+	// TODO: 1234567890 is a placeholder for the tenant ID. Once launches are handled in the rewrite, this should be replaced.
+	session := domain.NewSession(sessionID, *payload.UserID, 1234567890, time.Now(), time.Now().Add(1000*time.Hour*24))
 	return &session, nil
 }
 

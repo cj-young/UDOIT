@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"net/url"
 	"time"
 
@@ -43,6 +44,11 @@ func NewGetLaunchRedirectUseCase(registrationRepository domain.RegistrationRepos
 }
 
 func (u *GetLaunchRedirectUseCase) Execute(ctx context.Context, query GetLaunchRedirectQuery) (string, error) {
+	ttl := query.LTISessionTTL
+	if ttl <= 0 {
+		ttl = 10 * time.Minute
+	}
+
 	registration, err := u.registrationRepository.GetByIssuerAndClientID(ctx, query.Issuer, query.ClientID)
 	if err != nil {
 		return "", err
@@ -87,17 +93,17 @@ func (u *GetLaunchRedirectUseCase) Execute(ctx context.Context, query GetLaunchR
 	}
 
 	params := baseURL.Query()
-	params.Set("client_id", url.QueryEscape(registration.ClientID))
-	params.Set("state", url.QueryEscape(state))
-	params.Set("nonce", url.QueryEscape(nonce))
-	params.Set("redirect_uri", url.QueryEscape(query.RedirectURI))
+	params.Set("client_id", registration.ClientID)
+	params.Set("state", state)
+	params.Set("nonce", nonce)
+	params.Set("redirect_uri", query.RedirectURI)
 	params.Set("scope", "openid")
 	params.Set("response_type", "id_token")
 	params.Set("response_mode", "form_post")
 	params.Set("prompt", "none")
 	baseURL.RawQuery = params.Encode()
 
-	ltiSession := domain.NewLTISession(state, nonce, query.Issuer, query.ClientID, query.TargetLinkURI, time.Now(), time.Now().Add(query.LTISessionTTL))
+	ltiSession := domain.NewLTISession(state, nonce, query.Issuer, query.ClientID, query.TargetLinkURI, registration.TenantID, time.Now(), time.Now().Add(ttl))
 	if err := u.ltiSessionRepository.Create(ctx, ltiSession); err != nil {
 		return "", apperr.New(
 			apperr.CodeInternal,
@@ -117,7 +123,7 @@ func generateState() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(token), nil
+	return base64.RawURLEncoding.EncodeToString(token), nil
 }
 
 func generateNonce() (string, error) {
@@ -126,5 +132,5 @@ func generateNonce() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(token), nil
+	return base64.RawURLEncoding.EncodeToString(token), nil
 }

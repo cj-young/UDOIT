@@ -15,6 +15,7 @@ type CreateSessionUseCase struct {
 
 type CreateSessionCommand struct {
 	UserID int64
+	TenantID int64
 	TTL    time.Duration
 }
 
@@ -31,7 +32,7 @@ func NewCreateSessionUseCase(sessionRepository domain.SessionRepository) *Create
 
 func (u *CreateSessionUseCase) Execute(ctx context.Context, cmd CreateSessionCommand) (CreateSessionResponse, error) {
 	sessionID := uuid.NewString()
-	session := domain.NewSession(sessionID, cmd.UserID, time.Now(), time.Now().Add(cmd.TTL))
+	session := domain.NewSession(sessionID, cmd.UserID, cmd.TenantID, time.Now(), time.Now().Add(cmd.TTL))
 	if err := u.sessionRepository.Create(ctx, session); err != nil {
 		return CreateSessionResponse{}, err
 	}

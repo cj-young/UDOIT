@@ -13,11 +13,12 @@ type Module struct {
 	handler *internal.Handler
 }
 
-func New(db *sql.DB) *Module {
+func New(db *sql.DB, fileDeleter application.FileDeleter) *Module {
 
 	fileRepository := infrastructure.NewMySQLFileRepository(db)
 	getFileUseCase := application.NewGetFileUseCase(fileRepository)
-	handler := internal.NewHandler(getFileUseCase)
+	deleteFileUseCase := application.NewDeleteFileUseCase(fileRepository, fileDeleter)
+	handler := internal.NewHandler(getFileUseCase, deleteFileUseCase)
 
 	return &Module{
 		handler: handler,

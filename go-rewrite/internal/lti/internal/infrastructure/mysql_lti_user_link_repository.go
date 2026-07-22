@@ -21,7 +21,7 @@ func NewMySQLLTIUserLinkRepository(db *sql.DB) *MySQLLTIUserLinkRepository {
 func (r *MySQLLTIUserLinkRepository) GetBySubAndIssuer(ctx context.Context, sub, issuer string) (*domain.LTIUserLink, error) {
 	query := `
 		SELECT sub, issuer, user_id
-		FROM lti_user_links
+		FROM lti_user_link
 		WHERE sub = ? AND issuer = ?
 	`
 
@@ -48,7 +48,7 @@ func (r *MySQLLTIUserLinkRepository) GetBySubAndIssuer(ctx context.Context, sub,
 
 func (r *MySQLLTIUserLinkRepository) Create(ctx context.Context, link *domain.LTIUserLink) error {
 	query := `
-		INSERT INTO lti_user_links (sub, issuer, user_id)
+		INSERT INTO lti_user_link (sub, issuer, user_id)
 		VALUES (?, ?, ?)
 	`
 

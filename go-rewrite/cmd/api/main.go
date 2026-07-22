@@ -9,8 +9,10 @@ import (
 	"os"
 
 	"rewritetest/internal/auth"
+	"rewritetest/internal/courses"
 	"rewritetest/internal/files"
 	"rewritetest/internal/i18n"
+	"rewritetest/internal/lms"
 	"rewritetest/internal/lti"
 	"rewritetest/internal/shared/http/middleware"
 	"rewritetest/internal/users"
@@ -50,16 +52,19 @@ func main() {
 	fmt.Println("Redis client successfully connected")
 
 	// Initialize modules
+	lmsModule := lms.New(db, os.Getenv("GO_INTERNAL_SYNC_SECRET"))
 	authModule := auth.New(client, db)
-	filesModule := files.New(db)
+	coursesModule := courses.New(db)
+	filesModule := files.New(db, lmsModule)
 	i18nModule := i18n.New()
 	usersModule := users.New(db, i18nModule, authModule)
-	ltiModule := lti.New(client, db, usersModule, authModule)
+	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule)
 
 	// Register routes
 	usersModule.RegisterRoutes(router.Group("/users"))
 	ltiModule.RegisterRoutes(router.Group("/lti"))
 	filesModule.RegisterRoutes(router.Group("/files"))
+	lmsModule.RegisterRoutes(router.Group("/internal/lms"))
 
 	port := ":8080"
 	fmt.Println("Server running on http://localhost" + port)

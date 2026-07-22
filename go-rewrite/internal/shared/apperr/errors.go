@@ -98,3 +98,8 @@ func IsCode(err error, code Code) bool {
 	e, ok := errors.AsType[*AppError](err)
 	return ok && e.Code == code
 }
+
+func IsAppError(err error) bool {
+	_, ok := errors.AsType[*AppError](err)
+	return ok
+}
