@@ -7,7 +7,7 @@ type Registration struct {
 	LoginAuthEndpoint     string
 	JWKEndpoint           string
 	ServiceAuthEndpoint   string
-	ServiceLogoutEndpoint string
+	ServiceLoginEndpoint string
 	TenantID int64
 }
 
@@ -15,19 +15,19 @@ func (r *Registration) ID() int64 {
 	return r.id
 }
 
-func NewRegistration(issuer, clientID, loginAuthEndpoint, jwkEndpoint, serviceAuthEndpoint, serviceLogoutEndpoint string, tenantID int64) *Registration {
+func NewRegistration(issuer, clientID, loginAuthEndpoint, jwkEndpoint, serviceAuthEndpoint, serviceLoginEndpoint string, tenantID int64) *Registration {
 	return &Registration{
 		Issuer:                issuer,
 		ClientID:              clientID,
 		LoginAuthEndpoint:     loginAuthEndpoint,
 		JWKEndpoint:           jwkEndpoint,
 		ServiceAuthEndpoint:   serviceAuthEndpoint,
-		ServiceLogoutEndpoint: serviceLogoutEndpoint,
+		ServiceLoginEndpoint: serviceLoginEndpoint,
 		TenantID:              tenantID,
 	}
 }
 
-func RehydrateRegistration(id int64, issuer, clientID, loginAuthEndpoint, jwkEndpoint, serviceAuthEndpoint, serviceLogoutEndpoint string, tenantID int64) *Registration {
+func RehydrateRegistration(id int64, issuer, clientID, loginAuthEndpoint, jwkEndpoint, serviceAuthEndpoint, serviceLoginEndpoint string, tenantID int64) *Registration {
 	return &Registration{
 		id:                    id,
 		Issuer:                issuer,
@@ -35,7 +35,7 @@ func RehydrateRegistration(id int64, issuer, clientID, loginAuthEndpoint, jwkEnd
 		LoginAuthEndpoint:     loginAuthEndpoint,
 		JWKEndpoint:           jwkEndpoint,
 		ServiceAuthEndpoint:   serviceAuthEndpoint,
-		ServiceLogoutEndpoint: serviceLogoutEndpoint,
+		ServiceLoginEndpoint: serviceLoginEndpoint,
 		TenantID:              tenantID,
 	}
 }

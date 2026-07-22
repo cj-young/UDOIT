@@ -15,7 +15,7 @@ type Module struct {
 	deleteFileUseCase *application.DeleteFileUseCase
 }
 
-func New(db *sql.DB, internalSyncSecret string) *Module {
+func New(db *sql.DB) *Module {
 	credentialRepository := infrastructure.NewMySQLLMSCredentialRepository(db)
 	providerConfigRepository := infrastructure.NewMySQLLMSProviderConfigRepository(db)
 	lmsObjectMappingRepository := infrastructure.NewMySQLLMSObjectMappingRepository(db)
@@ -32,4 +32,9 @@ func New(db *sql.DB, internalSyncSecret string) *Module {
 
 func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, fileID int64) error {
 	return m.deleteFileUseCase.Execute(ctx, principal, fileID)
+}
+
+func (m *Module) IsValidLMSType(lmsKey string) bool {
+	lmsType := domain.LMSType(lmsKey)
+	return lmsType.IsValid()
 }

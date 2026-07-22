@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS lms_object_mapping;
+DROP TABLE IF EXISTS lms_user_credential;
+DROP TABLE IF EXISTS lms_user_mapping;
+DROP TABLE IF EXISTS lti_course_link;
+DROP TABLE IF EXISTS lti_user_link;
+DROP TABLE IF EXISTS registration;
+DROP TABLE IF EXISTS user_session;
+DROP TABLE IF EXISTS file_item;
+DROP TABLE IF EXISTS course;
+DROP TABLE IF EXISTS tenant;
+DROP TABLE IF EXISTS user;

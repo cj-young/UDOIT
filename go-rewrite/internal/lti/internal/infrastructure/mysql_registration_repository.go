@@ -3,39 +3,44 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"rewritetest/internal/lti/internal/domain"
+	ltisqlc "rewritetest/internal/lti/internal/infrastructure/sqlc"
 )
 
 type MySQLRegistrationRepository struct {
-	db *sql.DB
+	queries *ltisqlc.Queries
 }
 
 func NewMySQLRegistrationRepository(db *sql.DB) *MySQLRegistrationRepository {
 	return &MySQLRegistrationRepository{
-		db: db,
+		queries: ltisqlc.New(db),
 	}
 }
 
 func (r *MySQLRegistrationRepository) Create(ctx context.Context, registration domain.Registration) error {
-	query := `
-		INSERT INTO registration (issuer, client_id, tenant_id, login_auth_endpoint, jwk_endpoint, service_auth_endpoint, service_logout_endpoint)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`
-	_, err := r.db.ExecContext(ctx, query, registration.Issuer, registration.ClientID, registration.TenantID, registration.LoginAuthEndpoint, registration.JWKEndpoint, registration.ServiceAuthEndpoint, registration.ServiceLogoutEndpoint)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r.queries.CreateRegistration(ctx, ltisqlc.CreateRegistrationParams{
+		Issuer:                registration.Issuer,
+		ClientID:              registration.ClientID,
+		TenantID:              uint64(registration.TenantID),
+		LoginAuthEndpoint:     registration.LoginAuthEndpoint,
+		JwkEndpoint:           registration.JWKEndpoint,
+		ServiceAuthEndpoint:   registration.ServiceAuthEndpoint,
+		ServiceLoginEndpoint: registration.ServiceLoginEndpoint,
+	})
 }
 
 func (r *MySQLRegistrationRepository) Save(ctx context.Context, registration domain.Registration) error {
-	query := `
-		UPDATE registration
-		SET tenant_id = ?, login_auth_endpoint = ?, jwk_endpoint = ?, service_auth_endpoint = ?, service_logout_endpoint = ?
-		WHERE issuer = ? AND client_id = ?
-	`
-	_, err := r.db.ExecContext(ctx, query, registration.TenantID, registration.LoginAuthEndpoint, registration.JWKEndpoint, registration.ServiceAuthEndpoint, registration.ServiceLogoutEndpoint, registration.Issuer, registration.ClientID)
+	_, err := r.queries.UpdateRegistration(ctx, ltisqlc.UpdateRegistrationParams{
+		TenantID:              uint64(registration.TenantID),
+		LoginAuthEndpoint:     registration.LoginAuthEndpoint,
+		JwkEndpoint:           registration.JWKEndpoint,
+		ServiceAuthEndpoint:   registration.ServiceAuthEndpoint,
+		ServiceLoginEndpoint: registration.ServiceLoginEndpoint,
+		Issuer:                registration.Issuer,
+		ClientID:              registration.ClientID,
+	})
 	if err != nil {
 		return err
 	}
@@ -43,20 +48,24 @@ func (r *MySQLRegistrationRepository) Save(ctx context.Context, registration dom
 }
 
 func (r *MySQLRegistrationRepository) GetByIssuerAndClientID(ctx context.Context, issuer string, clientID string) (*domain.Registration, error) {
-	query := `
-		SELECT issuer, client_id, tenant_id, login_auth_endpoint, jwk_endpoint, service_auth_endpoint, service_logout_endpoint
-		FROM registration
-		WHERE issuer = ? AND client_id = ?
-	`
-	row := r.db.QueryRowContext(ctx, query, issuer, clientID)
-
-	var registration domain.Registration
-	err := row.Scan(&registration.Issuer, &registration.ClientID, &registration.TenantID, &registration.LoginAuthEndpoint, &registration.JWKEndpoint, &registration.ServiceAuthEndpoint, &registration.ServiceLogoutEndpoint)
+	row, err := r.queries.GetRegistrationByIssuerAndClientID(ctx, ltisqlc.GetRegistrationByIssuerAndClientIDParams{
+		Issuer:   issuer,
+		ClientID: clientID,
+	})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &registration, nil
+
+	return domain.NewRegistration(
+		row.Issuer,
+		row.ClientID,
+		row.LoginAuthEndpoint,
+		row.JwkEndpoint,
+		row.ServiceAuthEndpoint,
+		row.ServiceLoginEndpoint,
+		int64(row.TenantID),
+	), nil
 }

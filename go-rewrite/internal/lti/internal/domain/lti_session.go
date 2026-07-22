@@ -3,7 +3,6 @@ package domain
 import "time"
 
 type LTISession struct {
-	id            int
 	state         string
 	nonce         string
 	issuer        string
@@ -16,20 +15,6 @@ type LTISession struct {
 
 func NewLTISession(state, nonce, issuer, clientID, targetLinkURI string, tenantID int64, createdAt, expiresAt time.Time) *LTISession {
 	return &LTISession{
-		state:         state,
-		nonce:         nonce,
-		issuer:        issuer,
-		clientID:      clientID,
-		targetLinkURI: targetLinkURI,
-		tenantID:      tenantID,
-		createdAt:     createdAt,
-		expiresAt:     expiresAt,
-	}
-}
-
-func RehydrateLTISession(id int, state, nonce, issuer, clientID, targetLinkURI string, tenantID int64, createdAt, expiresAt time.Time) *LTISession {
-	return &LTISession{
-		id:            id,
 		state:         state,
 		nonce:         nonce,
 		issuer:        issuer,
@@ -75,4 +60,12 @@ func (l *LTISession) IsExpired() bool {
 
 func (l *LTISession) TenantID() int64 {
 	return l.tenantID
+}
+
+func (l *LTISession) CreatedAt() time.Time {
+	return l.createdAt
+}
+
+func (l *LTISession) ExpiresAt() time.Time {
+	return l.expiresAt
 }

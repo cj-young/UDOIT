@@ -1,13 +1,13 @@
 package domain
 
 type Tenant struct {
-	id int64
+	id     int64
 	lmsKey string
 }
 
 func NewTenant(id int64, lmsKey string) *Tenant {
 	return &Tenant{
-		id: id,
+		id:     id,
 		lmsKey: lmsKey,
 	}
 }

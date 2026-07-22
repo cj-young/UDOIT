@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"log/slog"
 
 	"rewritetest/internal/shared/apperr"
 	sharedAuth "rewritetest/internal/shared/auth"
@@ -55,8 +54,6 @@ func (u *UpdatePreferencesUseCase) Execute(ctx context.Context, principal shared
 		)
 	}
 
-	slog.Info("Updating preferences for user", "user", user)
-
 	preferences := user.Preferences()
 	update, err := toPreferencesUpdate(cmd)
 	if err != nil {
@@ -86,7 +83,6 @@ func (u *UpdatePreferencesUseCase) Execute(ctx context.Context, principal shared
 
 	err = u.userRepository.Update(ctx, user)
 	if err != nil {
-		slog.Error("Failed to update user preferences", "error", err)
 		return nil, apperr.New(
 			apperr.CodeInternal, "failed_to_save_user", "An error occurred while saving the user",
 			apperr.WithOp("users.application.update_preferences.Execute"),

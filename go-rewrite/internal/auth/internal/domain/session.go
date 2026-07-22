@@ -32,6 +32,10 @@ func (s Session) IsExpired() bool {
 	return time.Now().After(s.expiresAt)
 }
 
+func (s Session) CreatedAt() time.Time {
+	return s.createdAt
+}
+
 func (s Session) ExpiresAt() time.Time {
 	return s.expiresAt
 }

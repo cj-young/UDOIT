@@ -116,13 +116,13 @@ func (fakeHandlerCourseCreator) CreateCourse(context.Context, string, int64) (in
 
 func TestHandleLoginInitiation_InvalidPayload(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCase())
+	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCase(), "http://tool.example/lti/auth/check")
 	r := gin.New()
 	r.Use(sharedmiddleware.ErrorHandler())
 	r.POST("/lti/authorize", h.handleLoginInitiation)
 
 	req := httptest.NewRequest(http.MethodPost, "/lti/authorize", strings.NewReader("{bad"))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
 	r.ServeHTTP(rec, req)
@@ -133,7 +133,7 @@ func TestHandleLoginInitiation_InvalidPayload(t *testing.T) {
 
 func TestHandleLaunch_PassesThroughAppError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCaseMissingSession())
+	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCaseMissingSession(), "http://tool.example/lti/auth/check")
 	r := gin.New()
 	r.Use(sharedmiddleware.ErrorHandler())
 	r.POST("/lti/authorize/check", h.handleLaunch)
@@ -154,6 +154,7 @@ func TestHandleLaunch_SuccessSetsCookieAndRedirects(t *testing.T) {
 		&fakeHandlerSessionCreator{session: auth.Session{ID: "sess-1", ExpiresAt: time.Now().Add(time.Hour)}},
 		buildGetLaunchRedirectUseCase(),
 		buildProcessLaunchUseCase(),
+		"http://tool.example/lti/auth/check",
 	)
 	r := gin.New()
 	r.Use(sharedmiddleware.ErrorHandler())

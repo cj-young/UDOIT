@@ -22,6 +22,7 @@ type GetLaunchRedirectQuery struct {
 	LoginHint     string
 	TargetLinkURI string
 	RedirectURI   string
+	LTIMessageHint string
 	LTISessionTTL time.Duration
 }
 
@@ -34,6 +35,7 @@ type LaunchRedirectParams struct {
 	ResponseType string `json:"response_type"`
 	ResponseMode string `json:"response_mode"`
 	Prompt       string `json:"prompt"`
+	LTIMessageHint string `json:"lti_message_hint"`
 }
 
 func NewGetLaunchRedirectUseCase(registrationRepository domain.RegistrationRepository, ltiSessionRepository domain.LTISessionRepository) *GetLaunchRedirectUseCase {
@@ -101,6 +103,10 @@ func (u *GetLaunchRedirectUseCase) Execute(ctx context.Context, query GetLaunchR
 	params.Set("response_type", "id_token")
 	params.Set("response_mode", "form_post")
 	params.Set("prompt", "none")
+	params.Set("login_hint", query.LoginHint)
+	if query.LTIMessageHint != "" {
+		params.Set("lti_message_hint", query.LTIMessageHint)
+	}
 	baseURL.RawQuery = params.Encode()
 
 	ltiSession := domain.NewLTISession(state, nonce, query.Issuer, query.ClientID, query.TargetLinkURI, registration.TenantID, time.Now(), time.Now().Add(ttl))

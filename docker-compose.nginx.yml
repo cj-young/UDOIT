@@ -95,6 +95,19 @@ services:
       - redis
     env_file:
       - .env
+  register-tenant:
+    container_name: udoit3-register-tenant
+    image: golang:1.26-alpine
+    working_dir: /app
+    volumes:
+      - ./go-rewrite:/app
+    command: sh -c "go mod download && go run ./cmd/register-tenant -config ./config/register-tenant.yaml"
+    depends_on:
+      - db-new
+    env_file:
+      - .env
+    profiles:
+      - manual
   redis:
     container_name: udoit3-redis
     image: "redis:7-alpine"

@@ -28,11 +28,11 @@ type Session struct {
 func New(client *redis.Client, db *sql.DB) *Module {
 	sessionTTL := 24 * time.Hour
 
-	// redisSessionRepository := infrastructure.NewRedisSessionRepository(client, sessionTTL, "session:")
-	mysqlSessionRepository := infrastructure.NewMySQLSessionRepository(db)
+	redisSessionRepository := infrastructure.NewRedisSessionRepository(client, sessionTTL, "session:")
+	// mysqlSessionRepository := infrastructure.NewMySQLSessionRepository(db)
 
-	createSessionUseCase := application.NewCreateSessionUseCase(mysqlSessionRepository)
-	getPrincipalFromSessionUseCase := application.NewGetPrincipalFromSessionUseCase(mysqlSessionRepository)
+	createSessionUseCase := application.NewCreateSessionUseCase(redisSessionRepository)
+	getPrincipalFromSessionUseCase := application.NewGetPrincipalFromSessionUseCase(redisSessionRepository)
 
 	return &Module{
 		createSessionUseCase:           createSessionUseCase,

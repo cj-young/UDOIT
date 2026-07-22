@@ -148,3 +148,6 @@ sqlc-verify:
 	else \
 		docker run --rm -v "$(PWD)/go-rewrite:/src" -w /src $(SQLC_IMAGE) verify --project "$(SQLC_PROJECT_ID)" -f sqlc.yaml; \
 	fi
+
+register-tenant:
+	$(COMPOSE) run --rm register-tenant

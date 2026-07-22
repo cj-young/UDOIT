@@ -20,13 +20,15 @@ type Handler struct {
 	sessionCreator           SessionCreator
 	getLaunchRedirectUseCase *application.GetLaunchRedirectUseCase
 	processLaunchUseCase     *application.ProcessLaunchUseCase
+	baseURL string
 }
 
-func NewHandler(sessionCreator SessionCreator, getLaunchRedirectUseCase *application.GetLaunchRedirectUseCase, processLaunchUseCase *application.ProcessLaunchUseCase) *Handler {
+func NewHandler(sessionCreator SessionCreator, getLaunchRedirectUseCase *application.GetLaunchRedirectUseCase, processLaunchUseCase *application.ProcessLaunchUseCase, baseURL string) *Handler {
 	return &Handler{
 		sessionCreator:           sessionCreator,
 		getLaunchRedirectUseCase: getLaunchRedirectUseCase,
 		processLaunchUseCase:     processLaunchUseCase,
+		baseURL: baseURL,
 	}
 }
 
@@ -36,15 +38,16 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 type LoginInitiationRequest struct {
-	ISS           string `json:"iss" binding:"required"`
-	LoginHint     string `json:"login_hint" binding:"required"`
-	TargetLinkURI string `json:"target_link_uri" binding:"required"`
-	ClientID      string `json:"client_id" binding:"required"`
+	ISS           string `form:"iss" binding:"required"`
+	LoginHint     string `form:"login_hint" binding:"required"`
+	TargetLinkURI string `form:"target_link_uri" binding:"required"`
+	ClientID      string `form:"client_id" binding:"required"`
+	LTIMessageHint string `form:"lti_message_hint"`
 }
 
 func (h *Handler) handleLoginInitiation(c *gin.Context) {
 	var req LoginInitiationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.Error(apperr.New(
 			apperr.CodeValidation, "invalid_request_payload", "Invalid request payload",
 			apperr.WithOp("lti.handler.handleLoginInitiation"),
@@ -52,12 +55,15 @@ func (h *Handler) handleLoginInitiation(c *gin.Context) {
 		return
 	}
 
+	launchCallbackURL := fmt.Sprintf("%s/lti/authorize/check", h.baseURL)
+
 	getLaunchRedirectQuery := application.GetLaunchRedirectQuery{
 		Issuer:        req.ISS,
 		LoginHint:     req.LoginHint,
 		TargetLinkURI: req.TargetLinkURI,
 		ClientID:      req.ClientID,
-		RedirectURI:   launchCallbackURL(c),
+		RedirectURI:   launchCallbackURL,
+		LTIMessageHint: req.LTIMessageHint,
 	}
 
 	redirectURL, err := h.getLaunchRedirectUseCase.Execute(c.Request.Context(), getLaunchRedirectQuery)
@@ -141,16 +147,4 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 	http.SetCookie(c.Writer, cookie)
 
 	c.Redirect(302, result.RedirectURL)
-}
-
-func launchCallbackURL(c *gin.Context) string {
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	if forwarded := c.GetHeader("X-Forwarded-Proto"); forwarded != "" {
-		scheme = forwarded
-	}
-
-	return fmt.Sprintf("%s://%s%s/check", scheme, c.Request.Host, c.FullPath())
 }
