@@ -64,7 +64,6 @@ func main() {
 	usersModule.RegisterRoutes(router.Group("/users"))
 	ltiModule.RegisterRoutes(router.Group("/lti"))
 	filesModule.RegisterRoutes(router.Group("/files"))
-	lmsModule.RegisterRoutes(router.Group("/internal/lms"))
 
 	port := ":8080"
 	fmt.Println("Server running on http://localhost" + port)
