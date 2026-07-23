@@ -323,6 +323,15 @@ func validateLaunchClaims(claims jwt.MapClaims, session *domain.LTISession) erro
 		)
 	}
 
+	if targetLinkURI, _ := claims["https://purl.imsglobal.org/spec/lti/claim/target_link_uri"].(string); targetLinkURI != session.TargetLinkURI() {
+		return apperr.New(
+			apperr.CodeValidation,
+			"invalid_id_token",
+			"ID token 'target_link_uri' claim does not match session target link URI",
+			apperr.WithOp("lti.application.ProcessLaunchUseCase.validateLaunchClaims"),
+		)
+	}
+
 	if !audienceContains(claims["aud"], session.ClientID()) {
 		return apperr.New(
 			apperr.CodeValidation,
