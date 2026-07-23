@@ -41,6 +41,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authenticator Authenticato
 	rg.Use(authenticator.WithAuth())
 	rg.GET("/hello", h.handleHello)
 	rg.PATCH("/:userId/preferences", h.handleUpdatePreferences)
+	rg.PATCH("/me/preferences", h.handleUpdatePreferencesInferred)
 }
 
 func (h *Handler) handleHello(c *gin.Context) {
@@ -116,6 +117,59 @@ func (h *Handler) handleUpdatePreferences(c *gin.Context) {
 			"username": "doesn't matter I don't care",
 			"name": "idgaf this shouldn't be returned anyway",
 		},
+		"labels": labels,
+	})
+}
+
+func (h *Handler) handleUpdatePreferencesInferred(c *gin.Context) {
+	var updateReq UpdatePreferencesRequest
+
+	if err := c.ShouldBindJSON(&updateReq); err != nil {
+		c.Error(apperr.New(
+			apperr.CodeValidation, "invalid_request_body", fmt.Sprintf("Failed to parse request body: %v", err),
+			apperr.WithOp("users.handler.handleUpdatePreferences"),
+		))
+		return
+	}
+
+	principal, ok := sharedAuth.GetPrincipal(c)
+	if !ok {
+		c.Error(apperr.New(
+			apperr.CodeInternal, "missing_principal", "Failed to retrieve user information from context",
+			apperr.WithOp("users.handler.handleUpdatePreferencesInferred"),
+		))
+		return
+	}
+	userID := principal.AgentID
+
+	theme := updateReq.Theme
+	if theme == nil && updateReq.DarkMode != nil {
+		if *updateReq.DarkMode {
+			t := "dark"
+			theme = &t
+		} else {
+			t := "light"
+			theme = &t
+		}
+	}
+
+	updatePreferencesCmd := application.UpdatePreferencesCommand{
+		UserID:       userID,
+		Theme:        theme,
+		TextSpacing:  updateReq.TextSpacing,
+		FontSize:     updateReq.FontSize,
+		FontFamily:   updateReq.FontFamily,
+		AlertTimeout: updateReq.AlertTimeout,
+		Language:     updateReq.Language,
+	}
+
+	labels, err := h.updatePreferencesUseCase.Execute(c.Request.Context(), principal, updatePreferencesCmd)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]any{
 		"labels": labels,
 	})
 }

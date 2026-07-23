@@ -30,7 +30,7 @@ checkAuthBtn.addEventListener("click", async () => {
   await runRequest({
     label: "Auth/session probe",
     method: "PATCH",
-    path: `/users/${userID}/preferences`,
+    path: `/go/users/me/preferences`,
     body: {
       theme: prefsForm.elements.theme.value,
       textSpacing: Number(prefsForm.elements.textSpacing.value || 100),
@@ -60,7 +60,7 @@ prefsForm.addEventListener("submit", async (event) => {
   await runRequest({
     label: "Update preferences",
     method: "PATCH",
-    path: `/users/${userID}/preferences`,
+    path: `/go/users/${userID}/preferences`,
     body: {
       theme: prefsForm.elements.theme.value,
       textSpacing: Number(prefsForm.elements.textSpacing.value || 100),
@@ -73,7 +73,7 @@ helloFilesBtn.addEventListener("click", async () => {
   await runRequest({
     label: "Files hello",
     method: "GET",
-    path: "/files/hello",
+    path: "/go/files/hello",
   });
 });
 
@@ -87,7 +87,7 @@ deleteFileBtn.addEventListener("click", async () => {
   await runRequest({
     label: "Delete file",
     method: "DELETE",
-    path: `/files/${fileID}`,
+    path: `/go/files/${fileID}`,
   });
 });
 
