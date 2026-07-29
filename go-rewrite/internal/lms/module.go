@@ -11,8 +11,6 @@ import (
 	"rewritetest/internal/lms/internal/infrastructure"
 	"rewritetest/internal/lms/internal/infrastructure/providers/canvas"
 
-	"rewritetest/internal/shared/auth"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,10 +18,9 @@ import (
 )
 
 type Module struct {
-	deleteFileUseCase          *application.DeleteFileUseCase
-	beginAuthenticationUseCase *application.BeginAuthenticationUseCase
 	providerRegistry           domain.LMSProviderRegistry
 	providerConfigRepository   domain.LMSProviderConfigRepository
+	objectMappingRepository domain.LMSObjectMappingRepository
 	handler                    *internal.Handler
 }
 
@@ -44,44 +41,20 @@ func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
 	providerRegistry := infrastructure.NewMapLMSProviderRegistry()
 	providerRegistry.RegisterProvider(domain.LMSTypeCanvas, canvasProvider)
 
-	deleteFileUseCase := application.NewDeleteFileUseCase(providerRegistry, providerConfigRepository, lmsObjectMappingRepository)
-	beginAuthenticationUseCase := application.NewBeginAuthenticationUseCase(providerRegistry, providerConfigRepository)
 	processOAuthRedirectUseCase := application.NewProcessOAuthRedirectUseCase(providerRegistry, providerConfigRepository, authAttemptRepository)
 
 	handler := internal.NewHandler(processOAuthRedirectUseCase)
 
 	return &Module{
-		deleteFileUseCase:          deleteFileUseCase,
-		beginAuthenticationUseCase: beginAuthenticationUseCase,
 		providerRegistry:           providerRegistry,
 		providerConfigRepository:   providerConfigRepository,
+		objectMappingRepository:    lmsObjectMappingRepository,
 		handler:                    handler,
 	}
 }
 
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	m.handler.RegisterRoutes(rg)
-}
-
-// Redirect URL probably shouldn't be an explicit field because different kinds
-// might not have redirect URLs
-//
-// This struct acts as a DTO for auth challenges and is functionally separate from
-// the auth challenge defined in the domain
-type AuthChallenge struct {
-	Kind        AuthChallengeKind
-	RedirectURL string
-}
-
-type AuthChallengeKind string
-
-const (
-	AuthChallengeKindRedirect AuthChallengeKind = "redirect"
-	AuthChallengeKindNone     AuthChallengeKind = "none"
-)
-
-func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, fileID int64) error {
-	return m.deleteFileUseCase.Execute(ctx, principal, fileID)
 }
 
 func (m *Module) IsValidLMSType(lmsKey string) bool {
@@ -99,20 +72,4 @@ func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, conf
 		return err
 	}
 	return provider.ValidateConfig(configData)
-}
-
-func (m *Module) BeginAuthentication(ctx context.Context, userID int64, tenantID int64, targetLinkURI string) (AuthChallenge, error) {
-	authChallenge, err := m.beginAuthenticationUseCase.Execute(ctx, userID, tenantID, targetLinkURI)
-	if err != nil {
-		return AuthChallenge{}, err
-	}
-
-	return AuthChallenge{
-		Kind:        AuthChallengeKind(authChallenge.Kind),
-		RedirectURL: authChallenge.RedirectURL,
-	}, nil
-}
-
-func (m *Module) GetCourseContent(ctx context.Context, principal auth.Principal, courseID int64) error {
-	return nil
 }
