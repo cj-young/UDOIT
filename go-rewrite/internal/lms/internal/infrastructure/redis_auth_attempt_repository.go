@@ -3,7 +3,6 @@ package infrastructure
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"time"
 
 	"rewritetest/internal/lms/internal/domain"
@@ -28,7 +27,7 @@ func (r *RedisAuthAttemptRepository) Create(ctx context.Context, authAttempt dom
 	if err != nil {
 		return err
 	}
-	slog.Info("Creating auth attempt in Redis", "key", key, "data", string(data))
+	
 	err = r.client.Set(ctx, key, data, r.ttl).Err()
 	if err != nil {
 		return err
@@ -39,7 +38,6 @@ func (r *RedisAuthAttemptRepository) Create(ctx context.Context, authAttempt dom
 
 func (r *RedisAuthAttemptRepository) GetByState(ctx context.Context, state string) (domain.AuthAttempt, error) {
 	key := r.key(state)
-	slog.Info("This is exhausting the key is this", "key", key)
 	data, err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
