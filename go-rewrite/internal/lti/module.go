@@ -39,7 +39,15 @@ func NewRegistrationModule(db *sql.DB) *Module {
 	return &Module{registerRegistrationUseCase: registerRegistrationUseCase}
 }
 
-func New(client *redis.Client, db *sql.DB, userCreator application.UserCreator, sessionCreator internal.SessionCreator, courseCreator application.CourseCreator, baseURL string) *Module {
+func New(
+	client *redis.Client,
+	db *sql.DB,
+	userCreator application.UserCreator,
+	sessionCreator internal.SessionCreator,
+	courseCreator application.CourseCreator,
+	authenticationInitializer application.AuthenticationInitializer,
+	baseURL string,
+) *Module {
 	ltiSessionTTL := 10 * time.Minute
 
 	ltiSessionRepository := infrastructure.NewRedisLTISessionRepository(client, ltiSessionTTL, "lti_session:")
@@ -51,23 +59,30 @@ func New(client *redis.Client, db *sql.DB, userCreator application.UserCreator, 
 	getLaunchRedirectUseCase := application.NewGetLaunchRedirectUseCase(registrationRepository, ltiSessionRepository)
 	processLaunchUseCase := application.NewProcessLaunchUseCase(ltiSessionRepository, registrationRepository, ltiUserLinkRepository, ltiCourseLinkRepository, idTokenVerifier, userCreator, courseCreator)
 	registerRegistrationUseCase := application.NewRegisterRegistrationUseCase(registrationRepository)
+	beginAuthenticationUseCase := application.NewBeginAuthenticationUseCase(authenticationInitializer)
 
-	handler := internal.NewHandler(sessionCreator, getLaunchRedirectUseCase, processLaunchUseCase, baseURL)
+	handler := internal.NewHandler(
+		sessionCreator,
+		getLaunchRedirectUseCase,
+		processLaunchUseCase,
+		beginAuthenticationUseCase,
+		baseURL,
+	)
 
 	return &Module{
-		handler:                     handler,
+		handler: handler,
 		registerRegistrationUseCase: registerRegistrationUseCase,
 	}
 }
 
 func (m *Module) RegisterRegistration(ctx context.Context, input RegisterRegistrationInput) error {
 	return m.registerRegistrationUseCase.Execute(ctx, application.RegisterRegistrationCommand{
-		Issuer:                input.Issuer,
-		ClientID:              input.ClientID,
-		TenantID:              input.TenantID,
-		LoginAuthEndpoint:     input.LoginAuthEndpoint,
-		JWKEndpoint:           input.JWKEndpoint,
-		ServiceAuthEndpoint:   input.ServiceAuthEndpoint,
+		Issuer: input.Issuer,
+		ClientID: input.ClientID,
+		TenantID: input.TenantID,
+		LoginAuthEndpoint: input.LoginAuthEndpoint,
+		JWKEndpoint: input.JWKEndpoint,
+		ServiceAuthEndpoint: input.ServiceAuthEndpoint,
 		ServiceLoginEndpoint: input.ServiceLoginEndpoint,
 	})
 }

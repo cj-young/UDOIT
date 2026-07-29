@@ -6,26 +6,25 @@ import (
 	"encoding/json"
 
 	"rewritetest/internal/lms/internal/domain"
+	lmssqlc "rewritetest/internal/lms/internal/infrastructure/sqlc"
+	"rewritetest/internal/shared/apperr"
 )
 
 type MySQLLMSObjectMappingRepository struct {
-	db *sql.DB
+	queries *lmssqlc.Queries
 }
 
 func NewMySQLLMSObjectMappingRepository(db *sql.DB) *MySQLLMSObjectMappingRepository {
-	return &MySQLLMSObjectMappingRepository{db: db}
+	return &MySQLLMSObjectMappingRepository{
+		queries: lmssqlc.New(db),
+	}
 }
 
 func (r *MySQLLMSObjectMappingRepository) GetByTypeAndInternalID(ctx context.Context, objectType domain.LMSObjectType, internalID int64) (*domain.LMSObjectMapping, error) {
-	query := `
-		SELECT lms_key, mapping_json
-		FROM lms_object_mapping
-		WHERE object_type = ? AND internal_id = ?
-	`
-
-	var lmsKey string
-	var mappingRaw []byte
-	err := r.db.QueryRowContext(ctx, query, string(objectType), internalID).Scan(&lmsKey, &mappingRaw)
+	row, err := r.queries.GetLMSObjectMappingByTypeAndInternalID(ctx, lmssqlc.GetLMSObjectMappingByTypeAndInternalIDParams{
+		ObjectType: string(objectType),
+		InternalID: uint64(internalID),
+	})
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -34,13 +33,20 @@ func (r *MySQLLMSObjectMappingRepository) GetByTypeAndInternalID(ctx context.Con
 	}
 
 	mappingData := map[string]any{}
-	if len(mappingRaw) > 0 {
-		if err := json.Unmarshal(mappingRaw, &mappingData); err != nil {
+	if len(row.MappingJson) > 0 {
+		if err := json.Unmarshal(row.MappingJson, &mappingData); err != nil {
 			return nil, err
 		}
 	}
 
-	mapping := domain.NewLMSObjectMapping(internalID, objectType, lmsKey, mappingData)
+	var externalID string
+	if row.ExternalID.Valid {
+		externalID = row.ExternalID.String
+	} else {
+		return nil, apperr.New(apperr.CodeInternal, "external_id_not_valid", "External ID is not valid")
+	}
+
+	mapping := domain.NewLMSObjectMapping(internalID, objectType, externalID, row.LmsKey, mappingData)
 	return &mapping, nil
 }
 

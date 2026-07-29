@@ -66,8 +66,22 @@ WHERE user_id = sqlc.arg(user_id)
 LIMIT 1;
 
 -- name: GetLMSObjectMappingByTypeAndInternalID :one
-SELECT lms_key, mapping_json
+SELECT lms_key, mapping_json, external_id
 FROM lms_object_mapping
 WHERE object_type = sqlc.arg(object_type)
   AND internal_id = sqlc.arg(internal_id)
 LIMIT 1;
+
+-- name: GetLMSProviderConfigByTenant :one
+SELECT tenant_id, lms_type, config_json, created_at, updated_at
+FROM lms_provider_config
+WHERE tenant_id = sqlc.arg(tenant_id)
+LIMIT 1;
+
+-- name: UpsertLMSProviderConfigByTenant :exec
+INSERT INTO lms_provider_config (tenant_id, lms_type, config_json)
+VALUES (sqlc.arg(tenant_id), sqlc.arg(lms_type), sqlc.arg(config_json))
+ON DUPLICATE KEY UPDATE
+  lms_type = VALUES(lms_type),
+  config_json = VALUES(config_json),
+  updated_at = NOW();

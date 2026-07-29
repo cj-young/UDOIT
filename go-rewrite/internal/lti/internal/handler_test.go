@@ -116,7 +116,7 @@ func (fakeHandlerCourseCreator) CreateCourse(context.Context, string, int64) (in
 
 func TestHandleLoginInitiation_InvalidPayload(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCase(), "http://tool.example/lti/auth/check")
+	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCase(), buildBeginAuthenticationUseCase(), "http://tool.example/lti/auth/check")
 	r := gin.New()
 	r.Use(sharedmiddleware.ErrorHandler())
 	r.POST("/lti/authorize", h.handleLoginInitiation)
@@ -133,7 +133,7 @@ func TestHandleLoginInitiation_InvalidPayload(t *testing.T) {
 
 func TestHandleLaunch_PassesThroughAppError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCaseMissingSession(), "http://tool.example/lti/auth/check")
+	h := NewHandler(&fakeHandlerSessionCreator{}, buildGetLaunchRedirectUseCase(), buildProcessLaunchUseCaseMissingSession(), buildBeginAuthenticationUseCase(), "http://tool.example/lti/auth/check")
 	r := gin.New()
 	r.Use(sharedmiddleware.ErrorHandler())
 	r.POST("/lti/authorize/check", h.handleLaunch)
@@ -154,6 +154,7 @@ func TestHandleLaunch_SuccessSetsCookieAndRedirects(t *testing.T) {
 		&fakeHandlerSessionCreator{session: auth.Session{ID: "sess-1", ExpiresAt: time.Now().Add(time.Hour)}},
 		buildGetLaunchRedirectUseCase(),
 		buildProcessLaunchUseCase(),
+		buildBeginAuthenticationUseCase(),
 		"http://tool.example/lti/auth/check",
 	)
 	r := gin.New()
@@ -243,5 +244,11 @@ func buildProcessLaunchUseCaseMissingSession() *application.ProcessLaunchUseCase
 		&fakeHandlerVerifier{},
 		fakeHandlerUserCreator{},
 		fakeHandlerCourseCreator{},
+	)
+}
+
+func buildBeginAuthenticationUseCase() *application.BeginAuthenticationUseCase {
+	return application.NewBeginAuthenticationUseCase(
+		nil,
 	)
 }

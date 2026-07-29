@@ -2,11 +2,11 @@ package domain
 
 type Preferences struct {
 	Theme        *Theme  `json:"theme,omitempty"`
-	TextSpacing  *int    `json:"textSpacing,omitempty"`
-	FontSize     *string `json:"fontSize,omitempty"`
-	FontFamily   *string `json:"fontFamily,omitempty"`
-	AlertTimeout *int    `json:"alertTimeout,omitempty"`
-	Language     *string `json:"lang,omitempty"`
+	TextSpacing  *int    `json:"text_spacing,omitempty"`
+	FontSize     *string `json:"font_size,omitempty"`
+	FontFamily   *string `json:"font_family,omitempty"`
+	AlertTimeout *int    `json:"alert_timeout,omitempty"`
+	Language     *string `json:"language,omitempty"`
 }
 
 type PreferencesUpdate struct {

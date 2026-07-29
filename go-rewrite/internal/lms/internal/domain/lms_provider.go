@@ -5,6 +5,21 @@ import (
 	"rewritetest/internal/shared/auth"
 )
 
-type LMSProvider interface {
+type FullLMSProvider interface {
+	FileProvider
+	AuthenticationProvider
+	ConfigValidator
+}
+
+type FileProvider interface {
 	DeleteFile(ctx context.Context, principal auth.Principal, config LMSProviderConfig, fileMapping LMSObjectMapping) error
 }
+
+type AuthenticationProvider interface {
+	BeginAuthentication(ctx context.Context, config LMSProviderConfig, userID int64, targetLinkURI string) (AuthChallenge, error)
+}
+
+type ConfigValidator interface {
+	ValidateConfig(configData map[string]any) error
+}
+

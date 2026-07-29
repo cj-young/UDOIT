@@ -140,9 +140,22 @@ CREATE TABLE lms_object_mapping (
     object_type VARCHAR(64) NOT NULL,
     lms_key VARCHAR(64) NOT NULL,
     mapping_json JSON DEFAULT NULL,
+    external_id VARCHAR(64) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (internal_id, object_type),
     KEY idx_lms_object_mapping_object_type (object_type),
     KEY idx_lms_object_mapping_lms_key (lms_key)
+);
+
+CREATE TABLE lms_provider_config (
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    lms_type VARCHAR(64) NOT NULL,
+    config_json JSON NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (tenant_id),
+    CONSTRAINT fk_lms_provider_config_tenant_id
+        FOREIGN KEY (tenant_id) REFERENCES tenant (id)
+        ON DELETE CASCADE
 );

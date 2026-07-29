@@ -26,26 +26,14 @@ func NewDeleteFileUseCase(
 }
 
 func (uc *DeleteFileUseCase) Execute(ctx context.Context, principal auth.Principal, fileID int64) error {
-	tenantConfig, err := uc.lmsProviderConfigRepository.GetByTenant(ctx, principal.TenantID)
+	lmsProvider, tenantConfig, err := GetLMSProviderAndConfig(
+		ctx,
+		uc.lmsProviderRegistry,
+		uc.lmsProviderConfigRepository,
+		principal.TenantID,
+	)
 	if err != nil {
 		return err
-	}
-	if tenantConfig == nil {
-		return apperr.New(
-			apperr.CodeInternal, "missing_lms_provider_config", "LMS provider config not found for tenant",
-			apperr.WithOp("lms.application.delete_file.Execute"),
-		)
-	}
-
-	lmsProvider, err := uc.lmsProviderRegistry.Get(ctx, tenantConfig.LMSKey())
-	if err != nil {
-		return err
-	}
-	if lmsProvider == nil {
-		return apperr.New(
-			apperr.CodeInternal, "missing_lms_provider", "LMS provider not found for tenant",
-			apperr.WithOp("lms.application.delete_file.Execute"),
-		)
 	}
 
 	fileMapping, err := uc.lmsObjectMappingRepository.GetByTypeAndInternalID(ctx, domain.LMSObjectTypeFile, fileID)
@@ -59,5 +47,9 @@ func (uc *DeleteFileUseCase) Execute(ctx context.Context, principal auth.Princip
 		)
 	}
 
-	return lmsProvider.DeleteFile(ctx, principal, *tenantConfig, *fileMapping)
+	err = lmsProvider.DeleteFile(ctx, principal, tenantConfig, *fileMapping)
+	if err != nil {
+		return err
+	}
+	return nil
 }

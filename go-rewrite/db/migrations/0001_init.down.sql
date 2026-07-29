@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS lms_object_mapping;
+DROP TABLE IF EXISTS lms_provider_config;
 DROP TABLE IF EXISTS lms_user_credential;
 DROP TABLE IF EXISTS lms_user_mapping;
 DROP TABLE IF EXISTS lti_course_link;

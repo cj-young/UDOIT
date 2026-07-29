@@ -112,6 +112,8 @@ services:
   redis:
     container_name: udoit3-redis
     image: "redis:7-alpine"
+    ports:
+      - "6379:6379"
   yarn:
       container_name: udoit3-yarn
       build:

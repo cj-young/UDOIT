@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"rewritetest/internal/auth"
+	"rewritetest/internal/lms"
 	"rewritetest/internal/lti/internal/application"
 	"rewritetest/internal/shared/apperr"
 
@@ -20,14 +21,16 @@ type Handler struct {
 	sessionCreator           SessionCreator
 	getLaunchRedirectUseCase *application.GetLaunchRedirectUseCase
 	processLaunchUseCase     *application.ProcessLaunchUseCase
+	beginAuthenticationUseCase *application.BeginAuthenticationUseCase
 	baseURL string
 }
 
-func NewHandler(sessionCreator SessionCreator, getLaunchRedirectUseCase *application.GetLaunchRedirectUseCase, processLaunchUseCase *application.ProcessLaunchUseCase, baseURL string) *Handler {
+func NewHandler(sessionCreator SessionCreator, getLaunchRedirectUseCase *application.GetLaunchRedirectUseCase, processLaunchUseCase *application.ProcessLaunchUseCase, beginAuthenticationUseCase *application.BeginAuthenticationUseCase, baseURL string) *Handler {
 	return &Handler{
 		sessionCreator:           sessionCreator,
 		getLaunchRedirectUseCase: getLaunchRedirectUseCase,
 		processLaunchUseCase:     processLaunchUseCase,
+		beginAuthenticationUseCase: beginAuthenticationUseCase,
 		baseURL: baseURL,
 	}
 }
@@ -134,6 +137,25 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 		return
 	}
 
+	authChallenge, err := h.beginAuthenticationUseCase.Execute(c.Request.Context(), application.BeginAuthenticationRequest{
+		UserID:  result.UserID,
+		TenantID: result.TenantID,
+		TargetLinkURI: result.TargetLinkURI, 
+	})
+	if err != nil {
+		if apperr.IsAppError(err) {
+			c.Error(err)
+			return
+		}
+
+		c.Error(apperr.New(
+			apperr.CodeInternal, "authentication_error", "Failed to begin authentication",
+			apperr.WithOp("lti.handler.handleLaunch"),
+			apperr.WithCause(err),
+		))
+		return
+	}
+
 	cookie := &http.Cookie{
 		Name:     "AUTH_TOKEN",
 		Value:    session.ID,
@@ -146,5 +168,18 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 
 	http.SetCookie(c.Writer, cookie)
 
-	c.Redirect(302, result.RedirectURL)
+	switch authChallenge.Kind {
+		case lms.AuthChallengeKindRedirect:
+			c.Redirect(302, authChallenge.RedirectURL)
+			return
+		case lms.AuthChallengeKindNone:
+			c.Redirect(302, result.TargetLinkURI)
+			return
+		default:
+			c.Error(apperr.New(
+				apperr.CodeInternal, "unknown_auth_challenge_kind", "Unknown authentication challenge kind",
+				apperr.WithOp("lti.handler.handleLaunch"),
+			))
+			return
+	}
 }

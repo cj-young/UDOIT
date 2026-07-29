@@ -1,0 +1,347 @@
+package canvas
+
+import (
+	"bytes"
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"rewritetest/internal/lms/internal/domain"
+	"rewritetest/internal/shared/apperr"
+	"strings"
+	"time"
+)
+
+func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, config domain.LMSProviderConfig, userID int64, targetLinkURI string) (domain.AuthChallenge, error) {
+	
+	canvasConfig, err := p.asCanvasConfig(config)
+	if err != nil {
+		return domain.AuthChallenge{}, err
+	}
+
+	baseURL, err := url.Parse(canvasConfig.baseURL)
+	if err != nil {
+		return domain.AuthChallenge{}, apperr.New(
+			apperr.CodeInternal, "Invalid Canvas base URL", err.Error(),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.BeginAuthentication"),
+			apperr.WithCause(err),
+		)
+	}
+
+	isAuthenticated, err := p.checkIsAuthenticated(ctx, canvasConfig, userID)
+	if err != nil {
+		return domain.AuthChallenge{}, err
+	}
+	if isAuthenticated {
+		return domain.AuthChallenge{
+			Kind: domain.AuthChallengeKindNone,
+		}, nil
+	}
+
+	state, err := generateState()
+	if err != nil {
+		return domain.AuthChallenge{}, apperr.New(
+			apperr.CodeInternal, "state_generation_failed", "Failed to generate state",
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.BeginAuthentication"),
+			apperr.WithCause(err),
+		)
+	}
+
+	params := baseURL.Query()
+	params.Set("client_id", canvasConfig.clientID)
+	params.Set("response_type", "code")
+	params.Set("redirect_uri", p.oauthRedirectURI)
+	params.Set("state", state)
+	baseURL.Path = "/login/oauth2/auth"
+	baseURL.RawQuery = params.Encode()
+
+	authAttempt := domain.AuthAttempt{
+		UserID:  userID,
+		TenantID: config.TenantID(),
+		State: state,
+		TargetLinkURI: targetLinkURI,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(time.Hour), //TODO: Make expiration time configurable
+	}
+	err = p.authAttemptRepository.Create(ctx, authAttempt)
+	if err != nil {
+		return domain.AuthChallenge{}, err
+	}
+
+	return domain.AuthChallenge{
+		Kind: domain.AuthChallengeKindRedirect,
+		RedirectURL: baseURL.String(),
+	}, nil
+}
+
+
+type TokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	TokenType    string `json:"token_type"`
+}
+
+func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, config domain.LMSProviderConfig, authAttempt domain.AuthAttempt, code string) (string, error) {
+	
+	canvasConfig, err := p.asCanvasConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	baseURL, err := url.Parse(canvasConfig.baseURL)
+	if err != nil {
+		return "", apperr.New(
+			apperr.CodeInternal, "invalid_canvas_base_url", err.Error(),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
+			apperr.WithCause(err),
+		)
+	}
+
+	baseURL.Path = "/login/oauth2/token"
+
+	formData := url.Values{}
+	formData.Set("grant_type", "authorization_code")
+	formData.Set("client_id", canvasConfig.clientID)
+	formData.Set("client_secret", canvasConfig.clientSecret)
+	formData.Set("redirect_uri", p.oauthRedirectURI)
+	formData.Set("code", code)
+
+	payload := strings.NewReader(formData.Encode())
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL.String(), payload)
+	if err != nil {
+		return "", apperr.New(
+			apperr.CodeInternal, "failed_to_create_http_request", err.Error(),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
+			apperr.WithCause(err),
+		)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return "", apperr.New(
+			apperr.CodeInternal, "failed_to_send_http_request", err.Error(),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
+			apperr.WithCause(err),
+		)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", apperr.New(
+			apperr.CodeInternal, "failed_to_process_oauth_redirect", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
+		)
+	}
+
+	var oauthResponse TokenResponse
+	err = json.NewDecoder(resp.Body).Decode(&oauthResponse)
+	if err != nil {
+		return "", apperr.New(
+			apperr.CodeInternal, "failed_to_decode_oauth_response", err.Error(),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
+			apperr.WithCause(err),
+		)
+	}
+
+	expiresAt := time.Now().Add(time.Duration(oauthResponse.ExpiresIn) * time.Second)
+
+
+	// TODO: move map creation somewhere that gives type safety when Canvas credential schema changes
+	lmsCredential := domain.NewLMSCredential(
+		authAttempt.UserID,
+		domain.LMSTypeCanvas,
+		map[string]any{
+			"api_token":     oauthResponse.AccessToken,
+			"refresh_token": oauthResponse.RefreshToken,
+		},
+		&expiresAt,
+		time.Now(),
+	)
+
+
+	err = p.lmsCredentialRepository.UpsertActive(ctx, lmsCredential)
+	if err != nil {
+		return "", err
+	}
+
+	return authAttempt.TargetLinkURI, nil
+}
+
+func generateState() (string, error) {
+	token := make([]byte, 16)
+	_, err := rand.Read(token)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(token), nil
+}
+
+type RefreshTokenRequest struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RefreshToken string `json:"refresh_token"`
+	GrantType    string `json:"grant_type"`
+}
+
+// Obtains a refreshed access token from Canvas.
+// Does not persist the credential
+// https://developerdocs.instructure.com/services/canvas/oauth2/file.oauth_endpoints#post-login-oauth2-token
+func (p *CanvasLMSProvider) refreshAccessToken(ctx context.Context, cred CanvasCredential, config CanvasConfig) (CanvasCredential, error) {
+	refreshURL := fmt.Sprintf("%s/login/oauth2/token", config.baseURL)
+
+	requestBody := RefreshTokenRequest{
+		ClientID:     config.clientID,
+		ClientSecret: config.clientSecret,
+		RefreshToken: cred.refreshToken,
+		GrantType:    "refresh_token",
+	}
+
+	requestBodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return CanvasCredential{}, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, refreshURL, bytes.NewReader(requestBodyBytes))
+	if err != nil {
+		return CanvasCredential{}, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return CanvasCredential{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return CanvasCredential{}, apperr.New(
+			apperr.CodeInternal, "failed_to_refresh_access_token", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode),
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.refreshAccessToken"),
+		)
+	}
+
+	var tokenResponse TokenResponse
+	err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
+	if err != nil {
+		return CanvasCredential{}, err
+	}
+
+	cred.apiToken = tokenResponse.AccessToken
+	if tokenResponse.RefreshToken != "" {
+		cred.refreshToken = tokenResponse.RefreshToken
+	}
+	expiresAt := time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second)
+	cred.expiresAt = &expiresAt
+
+	return cred, nil
+
+}
+
+// Performs an authenticated HTTP request to the Canvas API, automatically
+// handling token refresh if the access token has expired.
+func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req *http.Request, config CanvasConfig, userID int64) (*http.Response, error) {
+	cred, err := p.lmsCredentialRepository.GetActiveByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if cred == nil {
+		return nil, apperr.New(
+			apperr.CodeNotFound, "Canvas LMS Credential not found", "",
+			apperr.WithOp("lms.infrastructure.canvas_lms_provider.doAuthenticatedRequest"),
+		)
+	}
+
+	credential, err := p.asCanvasCredential(*cred)
+	if err != nil {
+		return nil, err
+	}
+	
+	maxAttempts := 2
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		resp, err := p.executeRequest(ctx, req, credential.apiToken)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != http.StatusUnauthorized {
+			return resp, nil
+		}
+
+		resp.Body.Close()
+
+		if attempt == maxAttempts {
+			return resp, nil
+		}
+
+		// Attempt to refresh the access token since the previous request was unauthorized
+
+		credential, err := p.refreshAccessToken(ctx, credential, config)
+		if err != nil {
+			return nil, err
+		}
+
+		lmsCredential := domain.NewLMSCredential(
+			userID,
+			domain.LMSTypeCanvas,
+			map[string]any{
+				"api_token": credential.apiToken,
+				"refresh_token": credential.refreshToken,
+			},
+			credential.expiresAt,
+			time.Now(),
+		)
+
+		if err := p.lmsCredentialRepository.UpsertActive(ctx, lmsCredential); err != nil {
+			return nil, err
+		}
+
+	}
+  
+	panic("unreachable")
+}
+
+func (p *CanvasLMSProvider) executeRequest(ctx context.Context, req *http.Request, token string) (*http.Response, error) {
+	r := req.Clone(ctx)
+
+	if req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return nil, err
+		}
+		r.Body = body
+	}
+
+	r.Header.Set("Authorization", "Bearer "+token)
+
+	return p.httpClient.Do(r)
+}
+
+// Should return false if the user is not authenticated.
+// Should only error if there is an unexpected issue, not simply because the user is not authenticated.
+func (p *CanvasLMSProvider) checkIsAuthenticated(ctx context.Context, config CanvasConfig, userID int64) (bool, error) {
+
+	url := fmt.Sprintf("%s/api/v1/users/self", config.baseURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return false, nil
+	}
+
+	res, err := p.doAuthenticatedRequest(ctx, req, config, userID)
+	if err != nil {
+		return false, nil
+	}
+
+	if res.StatusCode == http.StatusOK {
+		return true, nil
+	}
+
+	return false, nil
+
+}

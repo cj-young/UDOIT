@@ -33,7 +33,7 @@ type ProcessLaunchCommand struct {
 }
 
 type ProcessLaunchResult struct {
-	RedirectURL string
+	TargetLinkURI string
 	UserID      int64
 	CourseID    int64
 	TenantID    int64
@@ -86,7 +86,7 @@ func (u *ProcessLaunchUseCase) Execute(ctx context.Context, cmd ProcessLaunchCom
 	}
 
 	return ProcessLaunchResult{
-		RedirectURL: session.TargetLinkURI(),
+		TargetLinkURI: session.TargetLinkURI(),
 		UserID:      userID,
 		CourseID:    courseID,
 		TenantID:    session.TenantID(),

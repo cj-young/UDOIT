@@ -7,14 +7,19 @@ import (
 	"time"
 
 	"rewritetest/internal/lms/internal/domain"
+	lmssqlc "rewritetest/internal/lms/internal/infrastructure/sqlc"
 )
 
 type MySQLLMSCredentialRepository struct {
 	db *sql.DB
+	queries *lmssqlc.Queries
 }
 
 func NewMySQLLMSCredentialRepository(db *sql.DB) *MySQLLMSCredentialRepository {
-	return &MySQLLMSCredentialRepository{db: db}
+	return &MySQLLMSCredentialRepository{
+		db: db,
+		queries: lmssqlc.New(db),
+	}
 }
 
 func (r *MySQLLMSCredentialRepository) UpsertActive(ctx context.Context, credential domain.LMSCredential) error {
@@ -23,25 +28,13 @@ func (r *MySQLLMSCredentialRepository) UpsertActive(ctx context.Context, credent
 		return err
 	}
 
-	query := `
-		INSERT INTO lms_user_credential (user_id, lms_key, schema_name, credential_json, expires_at, is_active, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, 1, NOW(), NOW())
-		ON DUPLICATE KEY UPDATE
-			schema_name = VALUES(schema_name),
-			credential_json = VALUES(credential_json),
-			expires_at = VALUES(expires_at),
-			is_active = 1,
-			updated_at = NOW()
-	`
-
-	_, err = r.db.ExecContext(
-		ctx,
-		query,
-		credential.UserID(),
-		credential.LMSKey(),
-		payloadJSON,
-		nullableTime(credential.ExpiresAt()),
-	)
+	err = r.queries.UpsertLMSUserCredential(ctx, lmssqlc.UpsertLMSUserCredentialParams{
+		UserID:        uint64(credential.UserID()),
+		LmsKey:        string(credential.LMSKey()),
+		SchemaName:   "",
+		CredentialJson: payloadJSON,
+		ExpiresAt:     nullableTime(credential.ExpiresAt()),
+	})
 
 	return err
 }
@@ -87,7 +80,7 @@ func (r *MySQLLMSCredentialRepository) GetActiveByUser(ctx context.Context, user
 		}
 	}
 
-	credential := domain.RehydrateLMSCredential(
+	credential, err := domain.RehydrateLMSCredential(
 		resultUserID,
 		resultLMSKey,
 		payload,
@@ -96,15 +89,21 @@ func (r *MySQLLMSCredentialRepository) GetActiveByUser(ctx context.Context, user
 		createdAt,
 		updatedAt,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &credential, nil
 }
 
-func nullableTime(value *time.Time) any {
+func nullableTime(value *time.Time) sql.NullTime {
 	if value == nil {
-		return nil
+		return sql.NullTime{Valid: false}
 	}
-	return *value
+	return sql.NullTime{
+		Time:  *value,
+		Valid: true,
+	}
 }
 
 func nullTimePtr(value sql.NullTime) *time.Time {

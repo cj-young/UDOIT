@@ -55,18 +55,19 @@ func main() {
 	fmt.Println("Redis client successfully connected")
 
 	// Initialize modules
-	lmsModule := lms.New(db)
+	lmsModule := lms.New(db, client, fmt.Sprintf("%s/lms", os.Getenv("GO_BASE_URL")))
 	authModule := auth.New(client, db)
 	coursesModule := courses.New(db)
 	filesModule := files.New(db, lmsModule)
 	i18nModule := i18n.New()
 	usersModule := users.New(db, i18nModule, authModule)
-	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule, os.Getenv("GO_BASE_URL"))
+	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule, lmsModule, os.Getenv("GO_BASE_URL"))
 
 	// Register routes
 	usersModule.RegisterRoutes(router.Group("/users"))
 	ltiModule.RegisterRoutes(router.Group("/lti"))
 	filesModule.RegisterRoutes(router.Group("/files"))
+	lmsModule.RegisterRoutes(router.Group("/lms"))
 
 	mockToolDir := filepath.Clean("./mock-lti-tool")
 	serveMockTool := func(c *gin.Context) {

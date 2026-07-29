@@ -167,7 +167,7 @@ func TestProcessLaunchExecute_ExistingLinksPath(t *testing.T) {
 	require.Equal(t, int64(77), result.UserID)
 	require.Equal(t, int64(88), result.CourseID)
 	require.Equal(t, int64(7), result.TenantID)
-	require.Equal(t, "https://tool.example/app", result.RedirectURL)
+	require.Equal(t, "https://tool.example/app", result.TargetLinkURI)
 	require.Equal(t, "state-1", sessionRepo.deletedState)
 	require.False(t, userCreator.called)
 	require.False(t, courseCreator.called)

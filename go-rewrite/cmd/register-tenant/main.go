@@ -15,12 +15,14 @@ import (
 	"rewritetest/internal/tenants"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/redis/go-redis/v9"
 	"gopkg.in/yaml.v3"
 )
 
 type config struct {
-	Tenant tenantConfig `yaml:"tenant"`
-	LTI    ltiConfig    `yaml:"lti"`
+	Tenant tenantConfig   `yaml:"tenant"`
+	LTI    ltiConfig      `yaml:"lti"`
+	LMS    map[string]any `yaml:"lms"`
 }
 
 type tenantConfig struct {
@@ -28,11 +30,11 @@ type tenantConfig struct {
 }
 
 type ltiConfig struct {
-	Issuer                string `yaml:"issuer"`
-	ClientID              string `yaml:"client_id"`
-	LoginAuthEndpoint     string `yaml:"login_auth_endpoint"`
-	JWKEndpoint           string `yaml:"jwk_endpoint"`
-	ServiceAuthEndpoint   string `yaml:"service_auth_endpoint"`
+	Issuer               string `yaml:"issuer"`
+	ClientID             string `yaml:"client_id"`
+	LoginAuthEndpoint    string `yaml:"login_auth_endpoint"`
+	JWKEndpoint          string `yaml:"jwk_endpoint"`
+	ServiceAuthEndpoint  string `yaml:"service_auth_endpoint"`
 	ServiceLoginEndpoint string `yaml:"service_login_endpoint"`
 }
 
@@ -56,6 +58,13 @@ func main() {
 	}
 	defer db.Close()
 
+	client := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("GO_REDIS_ADDR"),
+		Password: "",
+		DB:       0,
+	})
+	defer client.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
@@ -63,7 +72,14 @@ func main() {
 		fatalf("failed to connect to database: %v", err)
 	}
 
-	lmsModule := lms.New(db)
+	lmsModule := lms.New(db, client, os.Getenv("GO_BASE_URL"))
+
+	lmsKey, _ := cfg.LMS["lms_key"].(string)
+
+	err = lmsModule.ValidateProviderConfig(ctx, lmsKey, cfg.LMS)
+	if err != nil {
+		fatalf("invalid LMS provider config: %v", err)
+	}
 
 	tenantsModule := tenants.New(db, lmsModule)
 	tenantID, err := tenantsModule.RegisterTenant(ctx, cfg.Tenant.LMSKey)
@@ -71,14 +87,19 @@ func main() {
 		fatalf("failed to register tenant: %v", err)
 	}
 
+	err = lmsModule.SaveProviderConfig(ctx, tenantID, lmsKey, cfg.LMS)
+	if err != nil {
+		fatalf("failed to save LMS provider config: %v", err)
+	}
+
 	ltiModule := lti.NewRegistrationModule(db)
 	err = ltiModule.RegisterRegistration(ctx, lti.RegisterRegistrationInput{
-		Issuer:                cfg.LTI.Issuer,
-		ClientID:              cfg.LTI.ClientID,
-		TenantID:              tenantID,
-		LoginAuthEndpoint:     cfg.LTI.LoginAuthEndpoint,
-		JWKEndpoint:           cfg.LTI.JWKEndpoint,
-		ServiceAuthEndpoint:   cfg.LTI.ServiceAuthEndpoint,
+		Issuer:               cfg.LTI.Issuer,
+		ClientID:             cfg.LTI.ClientID,
+		TenantID:             tenantID,
+		LoginAuthEndpoint:    cfg.LTI.LoginAuthEndpoint,
+		JWKEndpoint:          cfg.LTI.JWKEndpoint,
+		ServiceAuthEndpoint:  cfg.LTI.ServiceAuthEndpoint,
 		ServiceLoginEndpoint: cfg.LTI.ServiceLoginEndpoint,
 	})
 	if err != nil {
@@ -88,7 +109,7 @@ func main() {
 	fmt.Printf(
 		"registered tenant+lti successfully\n  tenant_id=%d\n  lms_key=%s\n  issuer=%s\n  client_id=%s\n",
 		tenantID,
-		cfg.Tenant.LMSKey,
+		lmsKey,
 		cfg.LTI.Issuer,
 		cfg.LTI.ClientID,
 	)
@@ -140,6 +161,14 @@ func validateConfig(cfg config) error {
 
 	if strings.TrimSpace(cfg.LTI.ServiceLoginEndpoint) == "" {
 		return errors.New("lti.service_login_endpoint is required")
+	}
+
+	if len(cfg.LMS) == 0 {
+		return errors.New("lms section is required")
+	}
+
+	if lmsKey, _ := cfg.LMS["lms_key"].(string); strings.TrimSpace(lmsKey) == "" {
+		return errors.New("lms.lms_key is required")
 	}
 
 	return nil

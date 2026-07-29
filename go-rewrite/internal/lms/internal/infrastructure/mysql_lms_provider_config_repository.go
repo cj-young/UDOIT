@@ -3,22 +3,59 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"rewritetest/internal/lms/internal/domain"
+	lmssqlc "rewritetest/internal/lms/internal/infrastructure/sqlc"
+	"rewritetest/internal/shared/apperr"
 )
 
 type MySQLLMSProviderConfigRepository struct {
-	db *sql.DB
+	queries *lmssqlc.Queries
 }
 
 func NewMySQLLMSProviderConfigRepository(db *sql.DB) *MySQLLMSProviderConfigRepository {
 	return &MySQLLMSProviderConfigRepository{
-		db: db,
+		queries: lmssqlc.New(db),
 	}
 }
 
 func (r *MySQLLMSProviderConfigRepository) GetByTenant(ctx context.Context, tenantID int64) (*domain.LMSProviderConfig, error) {
-	
-	return domain.NewLMSProviderConfig(tenantID, domain.LMSTypeCanvas, map[string]any{
-		"baseUrl": "https://devhub.cdl.ucf.edu",
-	}), nil
+	result, err := r.queries.GetLMSProviderConfigByTenant(ctx, uint64(tenantID))
+	if err != nil {
+		return nil, err
+	}
+
+	var config map[string]any
+	if err := json.Unmarshal(result.ConfigJson, &config); err != nil {
+		return nil, err
+	}
+
+	lmsType := domain.LMSType(result.LmsType)
+	if !lmsType.IsValid() {
+		return nil, apperr.New(
+			apperr.CodeInternal, "invalid_lms_type", "An invalid LMS type was found in the requested LMS config.",
+		)
+	}
+
+	return domain.NewLMSProviderConfig(
+		int64(result.TenantID),
+		lmsType,
+		config,
+	), nil
+}
+
+func (r *MySQLLMSProviderConfigRepository) UpsertByTenant(ctx context.Context, tenantID int64, lmsKey domain.LMSType, data map[string]any) error {
+	configJSON, err := json.Marshal(data)
+	if err != nil {
+		return apperr.New(
+			apperr.CodeInternal, "config_marshal_failed", "Failed to marshal LMS provider config",
+			apperr.WithOp("lms.internal.infrastructure.UpsertByTenant"),
+		)
+	}
+
+	return r.queries.UpsertLMSProviderConfigByTenant(ctx, lmssqlc.UpsertLMSProviderConfigByTenantParams{
+		TenantID:   uint64(tenantID),
+		LmsType:    string(lmsKey),
+		ConfigJson: configJSON,
+	})
 }
