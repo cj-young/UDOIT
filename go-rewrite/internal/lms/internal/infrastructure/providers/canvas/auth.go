@@ -251,7 +251,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req *htt
 	}
 	if cred == nil {
 		return nil, apperr.New(
-			apperr.CodeNotFound, "Canvas LMS Credential not found", "",
+			apperr.CodeUnauthorized, "Canvas LMS Credential not found", "",
 			apperr.WithOp("lms.infrastructure.canvas_lms_provider.doAuthenticatedRequest"),
 		)
 	}
