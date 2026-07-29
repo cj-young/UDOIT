@@ -1,9 +1,8 @@
 package infrastructure
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"time"
 
 	"rewritetest/internal/auth/internal/domain"
@@ -30,10 +29,10 @@ func (r *RedisSessionRepository) key(id string) string {
 }
 
 type SessionStorageDTO struct {
-	UserID int64
-	TenantID int64
-	CreatedAt time.Time
-	ExpiresAt time.Time
+	UserID 			int64				`json:"user_id"`
+	TenantID 		int64				`json:"tenant_id"`
+	CreatedAt 	time.Time		`json:"created_at"`
+	ExpiresAt 	time.Time		`json:"expires_at"`
 }
 
 func (r *RedisSessionRepository) Create(ctx context.Context, session domain.Session) error {
@@ -42,14 +41,12 @@ func (r *RedisSessionRepository) Create(ctx context.Context, session domain.Sess
 		expiration = time.Until(session.ExpiresAt())
 	}
 
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(ToSessionStorageDTO(session))
+	data, err := json.Marshal(ToSessionStorageDTO(session))
 	if err != nil {
 		return err
 	}
 
-	return r.client.Set(ctx, r.key(session.ID()), buf.Bytes(), expiration).Err()
+	return r.client.Set(ctx, r.key(session.ID()), data, expiration).Err()
 }
 
 func (r *RedisSessionRepository) GetByID(ctx context.Context, id string) (*domain.Session, error) {
@@ -62,10 +59,8 @@ func (r *RedisSessionRepository) GetByID(ctx context.Context, id string) (*domai
 		return nil, err
 	}
 
-	dec := gob.NewDecoder(bytes.NewReader(data))
-	
 	var dto SessionStorageDTO
-	err = dec.Decode(&dto)
+	err = json.Unmarshal(data, &dto)
 	if err != nil {
 		return nil, err
 	}

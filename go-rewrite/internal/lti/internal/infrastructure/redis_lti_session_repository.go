@@ -1,9 +1,8 @@
 package infrastructure
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"time"
 
 	"rewritetest/internal/lti/internal/domain"
@@ -30,26 +29,29 @@ func (r *RedisLTISessionRepository) key(state string) string {
 }
 
 type LTISessionStorageDTO struct {
-	State string
-	Nonce string
-	Issuer string
-	ClientID string
-	TargetLinkURI string
-	TenantID int64
-	CreatedAt time.Time
-	ExpiresAt time.Time
+	State 					string		`json:"state"`
+	Nonce 					string		`json:"nonce"`
+	Issuer 					string		`json:"issuer"`
+	ClientID 				string		`json:"client_id"`
+	TargetLinkURI 	string		`json:"target_link_uri"`
+	TenantID 				int64			`json:"tenant_id"`
+	CreatedAt 			time.Time	`json:"created_at"`
+	ExpiresAt 			time.Time	`json:"expires_at"`
 }
 
 
 func (r *RedisLTISessionRepository) Create(ctx context.Context, session *domain.LTISession) error {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(ToLTISessionStorageDTO(session))
+	expiration := r.ttl
+	if !session.ExpiresAt().IsZero() {
+		expiration = time.Until(session.ExpiresAt())
+	}
+
+	data, err := json.Marshal(ToLTISessionStorageDTO(session))
 	if err != nil {
 		return err
 	}
 
-	return r.client.Set(ctx, r.key(session.State()), buf.Bytes(), r.ttl).Err()
+	return r.client.Set(ctx, r.key(session.State()), data, expiration).Err()
 }
 
 func (r *RedisLTISessionRepository) GetByState(ctx context.Context, state string) (*domain.LTISession, error) {
@@ -62,10 +64,8 @@ func (r *RedisLTISessionRepository) GetByState(ctx context.Context, state string
 		return nil, err
 	}
 
-	dec := gob.NewDecoder(bytes.NewReader(data))
-
 	var dto LTISessionStorageDTO
-	err = dec.Decode(&dto)
+	err = json.Unmarshal(data, &dto)
 	if err != nil {
 		return nil, err
 	}
