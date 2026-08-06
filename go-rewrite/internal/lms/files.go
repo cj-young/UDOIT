@@ -4,11 +4,16 @@ import (
 	"context"
 	"rewritetest/internal/lms/internal/application"
 	"rewritetest/internal/lms/internal/domain"
-	"rewritetest/internal/shared/apperr"
 	"rewritetest/internal/shared/auth"
 )
 
-func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, fileID int64) error {
+type DeleteFileRequest struct {
+	FileID          int64
+	ExternalID  		string
+	ExternalData 		map[string]any
+}
+
+func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, req DeleteFileRequest) error {
 	lmsProvider, tenantConfig, err := application.GetLMSProviderAndConfig(
 		ctx,
 		m.providerRegistry,
@@ -19,20 +24,14 @@ func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, fileI
 		return err
 	}
 
-	fileMapping, err := m.objectMappingRepository.GetByTypeAndInternalID(ctx, domain.LMSObjectTypeFile, fileID)
-	if err != nil {
-		return err
+	file := domain.LMSFile{
+		ID:         		req.FileID,
+		ExternalID: 		req.ExternalID,
+		ExternalData: 	req.ExternalData,
 	}
-	if fileMapping == nil {
-		return apperr.New(
-			apperr.CodeNotFound, "file_not_found", "LMS file not found",
-		)
-	}
-
-	err = lmsProvider.DeleteFile(ctx, principal, tenantConfig, *fileMapping)
+	err = lmsProvider.DeleteFile(ctx, principal, tenantConfig, file)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-

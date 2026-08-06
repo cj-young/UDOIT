@@ -20,7 +20,6 @@ import (
 type Module struct {
 	providerRegistry           domain.LMSProviderRegistry
 	providerConfigRepository   domain.LMSProviderConfigRepository
-	objectMappingRepository domain.LMSObjectMappingRepository
 	handler                    *internal.Handler
 }
 
@@ -30,7 +29,6 @@ func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
 
 	credentialRepository := infrastructure.NewMySQLLMSCredentialRepository(db)
 	providerConfigRepository := infrastructure.NewMySQLLMSProviderConfigRepository(db)
-	lmsObjectMappingRepository := infrastructure.NewMySQLLMSObjectMappingRepository(db)
 	authAttemptRepository := infrastructure.NewRedisAuthAttemptRepository(client, authAttemptTTL, "auth_attempt:")
 
 	// LMS providers
@@ -48,7 +46,6 @@ func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
 	return &Module{
 		providerRegistry:           providerRegistry,
 		providerConfigRepository:   providerConfigRepository,
-		objectMappingRepository:    lmsObjectMappingRepository,
 		handler:                    handler,
 	}
 }

@@ -15,15 +15,30 @@ type File struct {
 	// status bool
 	// isActive bool
 	// updatedAt time.Time
+	externalID string
+	externalData map[string]any
 }
 
-func NewFile(id, courseID, reviewerID int64, reviewedOn time.Time, isReviewed bool) *File {
+func NewFile(courseID, reviewerID int64, reviewedOn time.Time, isReviewed bool, externalID string, externalData map[string]any) *File {
+	return &File{
+		courseID: courseID,
+		reviewerID: reviewerID,
+		reviewedOn: reviewedOn,
+		isReviewed: isReviewed,
+		externalID: externalID,
+		externalData: externalData,
+	}
+}
+
+func RehydrateFile(id, courseID, reviewerID int64, reviewedOn time.Time, isReviewed bool, externalID string, externalData map[string]any) *File {
 	return &File{
 		id: id,
 		courseID: courseID,
 		reviewerID: reviewerID,
 		reviewedOn: reviewedOn,
 		isReviewed: isReviewed,
+		externalID: externalID,
+		externalData: externalData,
 	}
 }
 
@@ -45,4 +60,12 @@ func (f *File) ReviewedOn() time.Time {
 
 func (f *File) IsReviewed() bool {
 	return f.isReviewed
+}
+
+func (f *File) ExternalID() string {
+	return f.externalID
+}
+
+func (f *File) ExternalData() map[string]any {
+	return f.externalData
 }

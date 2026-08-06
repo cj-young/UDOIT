@@ -3,20 +3,24 @@ package domain
 import "time"
 
 type Course struct {
-	id int64
-	title string
-	tenantID int64
-	isActive bool
-	isDirty bool
-	updatedAt time.Time
+	id 						int64
+	title 				string
+	tenantID 			int64
+	isActive 			bool
+	isDirty 			bool
+	externalID 		string
+	externalData 	map[string]any
+	updatedAt 		time.Time
 }
 
-func NewCourse(title string, tenantID int64, isActive bool, isDirty bool, updatedAt time.Time) *Course {
+func NewCourse(title string, tenantID int64, isActive bool, isDirty bool, externalID string, externalData map[string]any, updatedAt time.Time) *Course {
 	return &Course{
 		title: title,
 		tenantID: tenantID,
 		isActive: isActive,
 		isDirty: isDirty,
+		externalID: externalID,
+		externalData: externalData,
 		updatedAt: updatedAt,
 	}
 }
@@ -43,4 +47,12 @@ func (c *Course) IsDirty() bool {
 
 func (c *Course) UpdatedAt() time.Time {
 	return c.updatedAt
+}
+
+func (c *Course) ExternalID() string {
+	return c.externalID
+}
+
+func (c *Course) ExternalData() map[string]any {
+	return c.externalData
 }

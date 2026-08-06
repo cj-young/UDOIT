@@ -19,14 +19,14 @@ type CanvasFile struct {
 
 // Deletes a file from Canvas
 // https://developerdocs.instructure.com/services/canvas/resources/files#method.files.destroy
-func (p *CanvasLMSProvider) DeleteFile(ctx context.Context, principal auth.Principal, config domain.LMSProviderConfig, fileMapping domain.LMSObjectMapping) error {
+func (p *CanvasLMSProvider) DeleteFile(ctx context.Context, principal auth.Principal, config domain.LMSProviderConfig, file domain.LMSFile) error {
 
 	canvasConfig, err := p.asCanvasConfig(config)
 	if err != nil {
 		return err
 	}
 
-	canvasFile, err := p.asCanvasFile(fileMapping)
+	canvasFile, err := p.asCanvasFile(file)
 	if err != nil {
 		return err
 	}

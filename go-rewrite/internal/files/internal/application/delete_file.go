@@ -3,20 +3,21 @@ package application
 import (
 	"context"
 	"rewritetest/internal/files/internal/domain"
+	"rewritetest/internal/lms"
 	"rewritetest/internal/shared/apperr"
 	"rewritetest/internal/shared/auth"
 )
 
 type DeleteFileUseCase struct {
 	fileRepository domain.FileRepository
-	fileDeleter    FileDeleter
+	fileDeleter    LMSFileDeleter
 }
 
-type FileDeleter interface {
-	DeleteFile(ctx context.Context, principal auth.Principal, fileID int64) error
+type LMSFileDeleter interface {
+	DeleteFile(ctx context.Context, principal auth.Principal, req lms.DeleteFileRequest) error
 }
 
-func NewDeleteFileUseCase(fileRepository domain.FileRepository, fileDeleter FileDeleter) *DeleteFileUseCase {
+func NewDeleteFileUseCase(fileRepository domain.FileRepository, fileDeleter LMSFileDeleter) *DeleteFileUseCase {
 	return &DeleteFileUseCase{
 		fileRepository: fileRepository,
 		fileDeleter:    fileDeleter,
@@ -37,7 +38,11 @@ func (u *DeleteFileUseCase) Execute(ctx context.Context, principal auth.Principa
 		)
 	}
 
-	err = u.fileDeleter.DeleteFile(ctx, principal, fileID)
+	err = u.fileDeleter.DeleteFile(ctx, principal, lms.DeleteFileRequest{
+		FileID:     file.ID(),
+		ExternalID: file.ExternalID(),
+		ExternalData: file.ExternalData(),
+	})
 	if err != nil {
 		return err
 	}

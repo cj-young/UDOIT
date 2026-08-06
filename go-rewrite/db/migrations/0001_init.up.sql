@@ -19,9 +19,14 @@ CREATE TABLE tenant (
 CREATE TABLE course (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
-    tenant_id BIGINT UNSIGNED DEFAULT NULL,
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT fk_course_tenant_id
+        FOREIGN KEY (tenant_id) REFERENCES tenant (id)
+        ON DELETE CASCADE,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     is_dirty TINYINT(1) NOT NULL DEFAULT 0,
+    external_id VARCHAR(64) NOT NULL,
+    external_data JSON DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -34,6 +39,8 @@ CREATE TABLE file_item (
     reviewed_by_id BIGINT UNSIGNED DEFAULT NULL,
     reviewed_on DATETIME DEFAULT NULL,
     reviewed TINYINT(1) NOT NULL DEFAULT 0,
+    external_data JSON DEFAULT NULL,
+    external_id VARCHAR(64) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -41,7 +48,10 @@ CREATE TABLE file_item (
     KEY idx_file_item_reviewed_by_id (reviewed_by_id),
     CONSTRAINT fk_file_item_reviewed_by_id
         FOREIGN KEY (reviewed_by_id) REFERENCES user (id)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+    CONSTRAINT fk_file_item_course_id
+        FOREIGN KEY (course_id) REFERENCES course (id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE user_session (
@@ -102,21 +112,6 @@ CREATE TABLE lti_course_link (
         ON DELETE CASCADE
 );
 
-CREATE TABLE lms_user_mapping (
-    user_id BIGINT UNSIGNED NOT NULL,
-    lms_key VARCHAR(64) NOT NULL,
-    external_user_id VARCHAR(191) DEFAULT NULL,
-    api_domain VARCHAR(255) DEFAULT NULL,
-    metadata JSON DEFAULT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id),
-    KEY idx_lms_user_mapping_lms_key (lms_key),
-    CONSTRAINT fk_lms_user_mapping_user_id
-        FOREIGN KEY (user_id) REFERENCES user (id)
-        ON DELETE CASCADE
-);
-
 CREATE TABLE lms_user_credential (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -133,19 +128,6 @@ CREATE TABLE lms_user_credential (
     CONSTRAINT fk_lms_user_credential_user_id
         FOREIGN KEY (user_id) REFERENCES user (id)
         ON DELETE CASCADE
-);
-
-CREATE TABLE lms_object_mapping (
-    internal_id BIGINT UNSIGNED NOT NULL,
-    object_type VARCHAR(64) NOT NULL,
-    lms_key VARCHAR(64) NOT NULL,
-    mapping_json JSON DEFAULT NULL,
-    external_id VARCHAR(64) DEFAULT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (internal_id, object_type),
-    KEY idx_lms_object_mapping_object_type (object_type),
-    KEY idx_lms_object_mapping_lms_key (lms_key)
 );
 
 CREATE TABLE lms_provider_config (

@@ -128,15 +128,8 @@ func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (Can
 	}, nil
 }
 
-func (p *CanvasLMSProvider) asCanvasFile(mapping domain.LMSObjectMapping) (CanvasFile, error) {
-	if mapping.ObjectType() != domain.LMSObjectTypeFile {
-		return CanvasFile{}, apperr.New(
-			apperr.CodeInternal, "Invalid LMS object mapping", fmt.Sprintf("Expected object type '%s', got '%s'", domain.LMSObjectTypeFile, mapping.ObjectType()),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
-		)
-	}
-
-	fileID, ok := mapping.Data()["file_id"].(string)
+func (p *CanvasLMSProvider) asCanvasFile(file domain.LMSFile) (CanvasFile, error) {
+	fileID, ok := file.ExternalData["file_id"].(string)
 	if !ok {
 		return CanvasFile{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'fileId' in mapping data",
@@ -144,7 +137,7 @@ func (p *CanvasLMSProvider) asCanvasFile(mapping domain.LMSObjectMapping) (Canva
 		)
 	}
 
-	contextType, ok := mapping.Data()["context_type"].(string)
+	contextType, ok := file.ExternalData["context_type"].(string)
 	if !ok {
 		return CanvasFile{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'contextType' in mapping data",

@@ -18,13 +18,15 @@ func NewCreateCourseUseCase(courseRepository domain.CourseRepository) *CreateCou
 }
 
 type CreateCourseCommand struct {
-	Title    string
-	TenantID int64
+	Title        string
+	TenantID     int64
+	ExternalID   string
+	ExternalData map[string]any
 }
 
 func (u *CreateCourseUseCase) Execute(ctx context.Context, cmd CreateCourseCommand) (int64, error) {
 
-	course := domain.NewCourse(cmd.Title, cmd.TenantID, true, true, time.Now())
+	course := domain.NewCourse(cmd.Title, cmd.TenantID, true, true, cmd.ExternalID, cmd.ExternalData, time.Now())
 
 	courseID, err := u.courseRepository.Create(ctx, course)
 	if err != nil {

@@ -22,9 +22,11 @@ func New(db *sql.DB) *Module {
 	}
 }
 
-func (m *Module) CreateCourse(ctx context.Context, title string, tenantID int64) (int64, error) {
+func (m *Module) CreateCourse(ctx context.Context, title string, tenantID int64, externalID string, externalData map[string]any) (int64, error) {
 	return m.createCourseUseCase.Execute(ctx, application.CreateCourseCommand{
 		Title:    title,
-		TenantID: tenantID,
+		TenantID:   tenantID,
+		ExternalID: externalID,
+		ExternalData: externalData,
 	})
 }

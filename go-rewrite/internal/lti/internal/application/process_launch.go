@@ -24,7 +24,7 @@ type UserCreator interface {
 }
 
 type CourseCreator interface {
-	CreateCourse(ctx context.Context, title string, tenantID int64) (int64, error)
+	CreateCourse(ctx context.Context, title string, tenantID int64, externalID string, externalData map[string]any) (int64, error)
 }
 
 type ProcessLaunchCommand struct {
@@ -285,7 +285,8 @@ func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.Map
 			courseTitle = "Untitled Course"
 		}
 
-		courseID, err := u.courseCreator.CreateCourse(ctx, courseTitle, tenantID)
+		// TODO: replace contextID and contextClaim with LMS specific external ID and info
+		courseID, err := u.courseCreator.CreateCourse(ctx, courseTitle, tenantID, contextID, contextClaim)
 		if err != nil {
 			return 0, err
 		}

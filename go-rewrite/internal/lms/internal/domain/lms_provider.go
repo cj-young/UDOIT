@@ -11,8 +11,13 @@ type FullLMSProvider interface {
 	ConfigValidator
 }
 
+type LMSFile struct {
+	ID 						int64
+	ExternalID 		string
+	ExternalData 	map[string]any
+}
 type FileProvider interface {
-	DeleteFile(ctx context.Context, principal auth.Principal, config LMSProviderConfig, fileMapping LMSObjectMapping) error
+	DeleteFile(ctx context.Context, principal auth.Principal, config LMSProviderConfig, file LMSFile) error
 }
 
 type AuthenticationProvider interface {
