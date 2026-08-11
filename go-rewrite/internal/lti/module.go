@@ -46,6 +46,8 @@ func New(
 	sessionCreator internal.SessionCreator,
 	courseCreator application.CourseCreator,
 	authenticationInitializer application.AuthenticationInitializer,
+	tenantRetriever application.TenantRetriever,
+	courseInfoRetriever application.CourseInfoRetriever,
 	baseURL string,
 ) *Module {
 	ltiSessionTTL := 10 * time.Minute
@@ -57,7 +59,7 @@ func New(
 	idTokenVerifier := infrastructure.NewJWKSIDTokenVerifier()
 
 	getLaunchRedirectUseCase := application.NewGetLaunchRedirectUseCase(registrationRepository, ltiSessionRepository)
-	processLaunchUseCase := application.NewProcessLaunchUseCase(ltiSessionRepository, registrationRepository, ltiUserLinkRepository, ltiCourseLinkRepository, idTokenVerifier, userCreator, courseCreator)
+	processLaunchUseCase := application.NewProcessLaunchUseCase(ltiSessionRepository, registrationRepository, ltiUserLinkRepository, ltiCourseLinkRepository, tenantRetriever, idTokenVerifier, userCreator, courseCreator, courseInfoRetriever)
 	registerRegistrationUseCase := application.NewRegisterRegistrationUseCase(registrationRepository)
 	beginAuthenticationUseCase := application.NewBeginAuthenticationUseCase(authenticationInitializer)
 

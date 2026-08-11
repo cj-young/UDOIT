@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-
 	"rewritetest/internal/i18n/internal/domain"
 	"rewritetest/internal/shared/apperr"
 )
@@ -23,18 +22,12 @@ func (r *FileLabelRepository) GetLabels(ctx context.Context, code string) (domai
 
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, apperr.New(
-			apperr.CodeNotFound, "labels_not_found", "No translations found for language: "+code,
-			apperr.WithOp("i18n.infrastructure.FileLabelRepository.GetByLanguageCode"),
-		)
+		return nil, apperr.New(apperr.CodeInternal, "labels_source_not_found", "The file containing the requested labels was not found.")
 	}
 
 	var labels domain.Labels
 	if err := json.Unmarshal(content, &labels); err != nil {
-		return nil, apperr.New(
-			apperr.CodeInternal, "labels_unmarshal_error", "Failed to parse translation file for language: "+code,
-			apperr.WithOp("i18n.infrastructure.FileLabelRepository.GetByLanguageCode"),
-		)
+		return nil, apperr.New(apperr.CodeInternal, "labels_unmarshal_error", "Failed to parse translation file for language: " + code)
 	}
 
 	return labels, nil

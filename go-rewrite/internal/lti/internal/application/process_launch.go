@@ -5,18 +5,22 @@ import (
 
 	"rewritetest/internal/lti/internal/domain"
 	"rewritetest/internal/shared/apperr"
+	"rewritetest/internal/tenants"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type ProcessLaunchUseCase struct {
-	ltiSessionRepository    domain.LTISessionRepository
-	registrationRepository  domain.RegistrationRepository
-	ltiUserLinkRepository   domain.LTIUserLinkRepository
-	ltiCourseLinkRepository domain.LTICourseLinkRepository
-	idTokenVerifier         IDTokenVerifier
-	userCreator             UserCreator
-	courseCreator           CourseCreator
+	ltiSessionRepository    	domain.LTISessionRepository
+	registrationRepository  	domain.RegistrationRepository
+	ltiUserLinkRepository   	domain.LTIUserLinkRepository
+	ltiCourseLinkRepository 	domain.LTICourseLinkRepository
+
+	tenantRetriever           TenantRetriever
+	idTokenVerifier         	IDTokenVerifier
+	userCreator             	UserCreator
+	courseCreator           	CourseCreator
+	courseInfoRetriever     	CourseInfoRetriever
 }
 
 type UserCreator interface {
@@ -25,6 +29,14 @@ type UserCreator interface {
 
 type CourseCreator interface {
 	CreateCourse(ctx context.Context, title string, tenantID int64, externalID string, externalData map[string]any) (int64, error)
+}
+
+type TenantRetriever interface {
+	GetTenant(ctx context.Context, tenantID int64) (tenants.Tenant, error)
+}
+
+type CourseInfoRetriever interface {
+	GetCourseInfoFromLTILaunch(ctx context.Context, tenantID int64, claims jwt.MapClaims) (string, map[string]any, error)
 }
 
 type ProcessLaunchCommand struct {
@@ -44,18 +56,24 @@ func NewProcessLaunchUseCase(
 	registrationRepository domain.RegistrationRepository,
 	ltiUserLinkRepository domain.LTIUserLinkRepository,
 	ltiCourseLinkRepository domain.LTICourseLinkRepository,
+	
+	tenantRetriever TenantRetriever,
 	idTokenVerifier IDTokenVerifier,
 	userCreator UserCreator,
 	courseCreator CourseCreator,
+	courseInfoRetriever CourseInfoRetriever,
 ) *ProcessLaunchUseCase {
 	return &ProcessLaunchUseCase{
-		ltiSessionRepository:    ltiSessionRepository,
-		registrationRepository:  registrationRepository,
-		ltiUserLinkRepository:   ltiUserLinkRepository,
-		ltiCourseLinkRepository: ltiCourseLinkRepository,
-		idTokenVerifier:         idTokenVerifier,
-		userCreator:             userCreator,
-		courseCreator:           courseCreator,
+		ltiSessionRepository:    	ltiSessionRepository,
+		registrationRepository:  	registrationRepository,
+		ltiUserLinkRepository:   	ltiUserLinkRepository,
+		ltiCourseLinkRepository: 	ltiCourseLinkRepository,
+
+		tenantRetriever:          tenantRetriever,
+		idTokenVerifier:         	idTokenVerifier,
+		userCreator:             	userCreator,
+		courseCreator:           	courseCreator,
+		courseInfoRetriever:     	courseInfoRetriever,
 	}
 }
 
@@ -75,12 +93,17 @@ func (u *ProcessLaunchUseCase) Execute(ctx context.Context, cmd ProcessLaunchCom
 		return ProcessLaunchResult{}, err
 	}
 
+	tenant, err := u.tenantRetriever.GetTenant(ctx, registration.TenantID)
+	if err != nil {
+		return ProcessLaunchResult{}, err
+	}
+
 	userID, err := u.resolveUser(ctx, claims, session)
 	if err != nil {
 		return ProcessLaunchResult{}, err
 	}
 
-	courseID, err := u.resolveCourse(ctx, claims, registration.TenantID)
+	courseID, err := u.resolveCourse(ctx, claims, tenant)
 	if err != nil {
 		return ProcessLaunchResult{}, err
 	}
@@ -251,7 +274,7 @@ func (u *ProcessLaunchUseCase) resolveUser(ctx context.Context, claims jwt.MapCl
 // in LTI 1.3. However, it is recommended in the spec, and no other
 // one-to-one mapping from a set of claims to a course seems to exist.
 // https://www.imsglobal.org/spec/lti/v1p3#context-claim
-func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.MapClaims, tenantID int64) (int64, error) {
+func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.MapClaims, tenant tenants.Tenant) (int64, error) {
 	contextClaim, ok := claims["https://purl.imsglobal.org/spec/lti/claim/context"].(map[string]any)
 	if !ok {
 		return 0, apperr.New(
@@ -272,7 +295,7 @@ func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.Map
 		)
 	}
 
-	courseLink, err := u.ltiCourseLinkRepository.GetByTenantAndContext(ctx, tenantID, contextID)
+	courseLink, err := u.ltiCourseLinkRepository.GetByTenantAndContext(ctx, tenant.ID, contextID)
 	if err != nil {
 		return 0, err
 	}
@@ -285,16 +308,21 @@ func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.Map
 			courseTitle = "Untitled Course"
 		}
 
-		// TODO: replace contextID and contextClaim with LMS specific external ID and info
-		courseID, err := u.courseCreator.CreateCourse(ctx, courseTitle, tenantID, contextID, contextClaim)
+		externalCourseID, externalCourseInfo, err := u.courseInfoRetriever.GetCourseInfoFromLTILaunch(ctx, tenant.ID,claims)
 		if err != nil {
 			return 0, err
 		}
 
-		courseLink = domain.NewLTICourseLink(tenantID, contextID, courseID)
+		courseID, err := u.courseCreator.CreateCourse(ctx, courseTitle, tenant.ID, externalCourseID, externalCourseInfo)
+		if err != nil {
+			return 0, err
+		}
+
+		courseLink = domain.NewLTICourseLink(tenant.ID, contextID, courseID)
 		if err = u.ltiCourseLinkRepository.Create(ctx, courseLink); err != nil {
 			return 0, err
 		}
+
 	}
 
 	return courseLink.CourseID(), nil

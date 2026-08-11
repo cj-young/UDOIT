@@ -1,7 +1,6 @@
 package canvas
 
 import (
-	"fmt"
 	"net/http"
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/apperr"
@@ -28,46 +27,31 @@ func NewCanvasLMSProvider(
 	}
 }
 
-type CanvasCredential struct {
-	apiToken     string
-	refreshToken string
-	expiresAt    *time.Time
+type canvasContent struct {
+	contentID string
+	updatedAt time.Time
 }
 
-type CanvasConfig struct {
+type canvasConfig struct {
 	baseURL      string
 	clientID     string
 	clientSecret string
 }
 
-func (p *CanvasLMSProvider) asCanvasCredential(cred domain.LMSCredential) (CanvasCredential, error) {
-	if cred.LMSKey() != "canvas" {
-		return CanvasCredential{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Credential", fmt.Sprintf("Expected LMSKey 'canvas', got '%s'", cred.LMSKey()),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasCredential"),
-		)
-	}
-
-	apiToken, ok := cred.Payload()["api_token"].(string)
+func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasContent, error) {
+	contentID, ok := content.ExternalData["content_id"].(string)
 	if !ok {
-		return CanvasCredential{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Credential", "Missing or invalid 'apiToken' in credential data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasCredential"),
-		)
+		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'content_id' in content mapping data")
 	}
 
-	refreshToken, ok := cred.Payload()["refresh_token"].(string)
+	updatedAt, ok := content.ExternalData["updated_at"].(time.Time)
 	if !ok {
-		return CanvasCredential{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Credential", "Missing or invalid 'refreshToken' in credential data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasCredential"),
-		)
+		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'updated_at' in content mapping data")
 	}
 
-	return CanvasCredential{
-		apiToken:     apiToken,
-		refreshToken: refreshToken,
-		expiresAt:    cred.ExpiresAt(),
+	return canvasContent{
+		contentID: contentID,
+		updatedAt: updatedAt,
 	}, nil
 }
 
@@ -96,10 +80,10 @@ func (p *CanvasLMSProvider) ValidateConfig(configData map[string]any) error {
 	return nil
 }
 
-func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (CanvasConfig, error) {
+func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (canvasConfig, error) {
 	baseURL, ok := config.Data()["base_url"].(string)
 	if !ok {
-		return CanvasConfig{}, apperr.New(
+		return canvasConfig{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS Config", "Missing or invalid 'base_url' in config data",
 			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasConfig"),
 		)
@@ -107,7 +91,7 @@ func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (Can
 
 	clientID, ok := config.Data()["client_id"].(string)
 	if !ok {
-		return CanvasConfig{}, apperr.New(
+		return canvasConfig{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS Config", "Missing or invalid 'client_id' in config data",
 			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasConfig"),
 		)
@@ -115,23 +99,23 @@ func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (Can
 
 	clientSecret, ok := config.Data()["client_secret"].(string)
 	if !ok {
-		return CanvasConfig{}, apperr.New(
+		return canvasConfig{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS Config", "Missing or invalid 'client_secret' in config data",
 			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasConfig"),
 		)
 	}
 
-	return CanvasConfig{
+	return canvasConfig{
 		baseURL:      baseURL,
 		clientID:     clientID,
 		clientSecret: clientSecret,
 	}, nil
 }
 
-func (p *CanvasLMSProvider) asCanvasFile(file domain.LMSFile) (CanvasFile, error) {
+func (p *CanvasLMSProvider) asCanvasFile(file domain.LMSFile) (canvasFile, error) {
 	fileID, ok := file.ExternalData["file_id"].(string)
 	if !ok {
-		return CanvasFile{}, apperr.New(
+		return canvasFile{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'fileId' in mapping data",
 			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
 		)
@@ -139,13 +123,13 @@ func (p *CanvasLMSProvider) asCanvasFile(file domain.LMSFile) (CanvasFile, error
 
 	contextType, ok := file.ExternalData["context_type"].(string)
 	if !ok {
-		return CanvasFile{}, apperr.New(
+		return canvasFile{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'contextType' in mapping data",
 			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
 		)
 	}
 
-	return CanvasFile{
+	return canvasFile{
 		fileID:      fileID,
 		contextType: contextType,
 	}, nil

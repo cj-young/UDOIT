@@ -8,6 +8,7 @@ const responseOutputEl = document.getElementById("response-output");
 
 const prefsForm = document.getElementById("prefs-form");
 const checkAuthBtn = document.getElementById("check-auth");
+const scanCourseBtn = document.getElementById("scan-course");
 const helloFilesBtn = document.getElementById("hello-files");
 const deleteFileBtn = document.getElementById("delete-file");
 const saveDefaultsBtn = document.getElementById("save-defaults");
@@ -89,6 +90,15 @@ deleteFileBtn.addEventListener("click", async () => {
     method: "DELETE",
     path: `/go/files/${fileID}`,
   });
+});
+scanCourseBtn.addEventListener("click", async () => {
+  console.log("scanning course")
+  await runRequest({
+    label: "Scan course",
+    method: "POST",
+    path: "/go/scanner/scan/courses/2",
+  });
+  console.log("scanned the course")
 });
 
 saveDefaultsBtn.addEventListener("click", () => {

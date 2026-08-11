@@ -30,4 +30,13 @@ func (r *MySQLTenantRepository) Create(ctx context.Context, lmsKey string) (int6
 	return id, nil
 }
 
+func (r *MySQLTenantRepository) GetByID(ctx context.Context, tenantID int64) (*domain.Tenant, error) {
+	tenant, err := r.queries.GetByID(ctx, uint64(tenantID))
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.NewTenant(int64(tenant.ID), tenant.LmsKey), nil
+}
+
 var _ domain.TenantRepository = (*MySQLTenantRepository)(nil)

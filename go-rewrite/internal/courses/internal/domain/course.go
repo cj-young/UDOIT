@@ -25,6 +25,19 @@ func NewCourse(title string, tenantID int64, isActive bool, isDirty bool, extern
 	}
 }
 
+func RehydrateCourse(id int64, title string, tenantID int64, isActive bool, isDirty bool, externalID string, externalData map[string]any, updatedAt time.Time) *Course {
+	return &Course{
+		id: id,
+		title: title,
+		tenantID: tenantID,
+		isActive: isActive,
+		isDirty: isDirty,
+		externalID: externalID,
+		externalData: externalData,
+		updatedAt: updatedAt,
+	}
+}
+
 func (c *Course) ID() int64 {
 	return c.id
 }

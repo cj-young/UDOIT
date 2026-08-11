@@ -11,7 +11,7 @@ import (
 )
 
 
-type CanvasFile struct {
+type canvasFile struct {
 	fileID string
 	contextType string
 }
@@ -44,7 +44,13 @@ func (p *CanvasLMSProvider) DeleteFile(ctx context.Context, principal auth.Princ
 
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := p.doAuthenticatedRequest(ctx, req, canvasConfig, principal.AgentID)
+	resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
+		Path:   url,
+		Body:   nil,
+		Method: http.MethodDelete,
+		Config: canvasConfig,
+		UserID: principal.AgentID,
+	})
 	if err != nil {
 		return apperr.New(
 			apperr.CodeInternal, "Failed to send HTTP request", err.Error(),

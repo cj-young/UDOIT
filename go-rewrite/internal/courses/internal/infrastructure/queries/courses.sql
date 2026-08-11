@@ -9,3 +9,8 @@ VALUES (
   sqlc.arg(external_data),
   sqlc.arg(updated_at)
 );
+
+-- name: GetCourseByID :one
+SELECT id, title, tenant_id, is_active, is_dirty, external_id, external_data, updated_at
+FROM course
+WHERE id = sqlc.arg(course_id);

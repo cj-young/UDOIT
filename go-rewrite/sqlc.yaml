@@ -77,3 +77,13 @@ sql:
         package: "tenantssqlc"
         out: "internal/tenants/internal/infrastructure/sqlc"
         sql_package: "database/sql"
+  - engine: "mysql"
+    schema:
+      - "db/migrations/*.up.sql"
+    queries:
+      - "internal/content/internal/infrastructure/queries/*.sql"
+    gen:
+      go:
+        package: "contentsqlc"
+        out: "internal/content/internal/infrastructure/sqlc"
+        sql_package: "database/sql"

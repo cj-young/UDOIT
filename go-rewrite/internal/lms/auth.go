@@ -20,7 +20,6 @@ const (
 )
 
 func (m *Module) BeginAuthentication(ctx context.Context, userID int64, tenantID int64, targetLinkURI string) (AuthChallenge, error) {
-
 	providerConfig, err := m.providerConfigRepository.GetByTenant(ctx, tenantID)
 	if err != nil {
 		return AuthChallenge{}, err

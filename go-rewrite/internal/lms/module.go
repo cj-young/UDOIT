@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -69,4 +70,68 @@ func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, conf
 		return err
 	}
 	return provider.ValidateConfig(configData)
+}
+
+type ContentItemDTO struct {
+	ExternalID 	string
+	HTML 				string
+	Type        string
+}
+
+type GetContentRequest struct {
+	CourseID 						int64
+	ExternalCourseID 		string
+	ExternalCourseData	map[string]any
+	TenantID						int64
+	UserID							int64
+}
+
+func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]ContentItemDTO, error) {
+	lmsProvider, tenantConfig, err := application.GetLMSProviderAndConfig(
+		ctx,
+		m.providerRegistry,
+		m.providerConfigRepository,
+		req.TenantID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	
+	contentItems, err := lmsProvider.GetContent(ctx, tenantConfig, domain.LMSCourse{
+		ID:          	req.CourseID,
+		ExternalID:   req.ExternalCourseID,
+		ExternalData: req.ExternalCourseData,
+	}, []domain.LMSContent{}, req.UserID)
+	if err != nil {
+		return nil, err
+	}
+	
+	contentItemDTOs := make([]ContentItemDTO, len(contentItems))
+	for i, item := range contentItems {
+		contentItemDTOs[i] = ContentItemDTO{
+			ExternalID: item.ExternalID,
+			HTML:       item.HTML,
+			Type:       string(item.Type),
+		}
+	}
+	return contentItemDTOs, nil
+}
+
+func (m *Module) GetCourseInfoFromLTILaunch(ctx context.Context, tenantID int64, claims jwt.MapClaims) (string, map[string]any, error) {
+	lmsProvider, tenantConfig, err := application.GetLMSProviderAndConfig(
+		ctx,
+		m.providerRegistry,
+		m.providerConfigRepository,
+		tenantID,
+	)
+	if err != nil {
+		return "", nil, err
+	}
+
+	externalID, externalData, err := lmsProvider.GetCourseInfoFromLTILaunch(ctx, tenantConfig, claims)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return externalID, externalData, nil
 }

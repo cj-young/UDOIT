@@ -31,6 +31,7 @@ CREATE TABLE course (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_course_tenant_id (tenant_id)
+
 );
 
 CREATE TABLE file_item (
@@ -140,4 +141,20 @@ CREATE TABLE lms_provider_config (
     CONSTRAINT fk_lms_provider_config_tenant_id
         FOREIGN KEY (tenant_id) REFERENCES tenant (id)
         ON DELETE CASCADE
+);
+
+CREATE TABLE content_item (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    course_id BIGINT UNSIGNED NOT NULL,
+    content_hash VARCHAR(255) NOT NULL,
+    external_id VARCHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_content_item_course_id (course_id),
+    CONSTRAINT fk_content_item_course_id
+        FOREIGN KEY (course_id) REFERENCES course (id)
+        ON DELETE CASCADE,
+    CONSTRAINT uniq_content_item_course_external
+        UNIQUE (course_id, external_id)
 );
