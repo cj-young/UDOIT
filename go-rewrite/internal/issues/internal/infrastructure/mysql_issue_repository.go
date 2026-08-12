@@ -63,10 +63,10 @@ func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.
 			ContentItemID: 	uint64(issue.ContentItemID()),
 			ScanRule:   		issue.ScanRule().String(),
 			ContentXpath: 	issue.ContentXPath(),
-			IssueStatus: 		issue.Status().String(),
-			IssueSeverity: 	issue.Severity().String(),
+			Status: 		issue.Status().String(),
+			Severity: 	issue.Severity().String(),
 			FixedBy: 				nullableFixedby,
-			FixedOn: 				nullTime(issue.FixedOn()),
+			FixedAt: 				nullTime(issue.FixedAt()),
 			Details: 				detailsJSON,
 		}
 	}
@@ -98,12 +98,12 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 			return nil, err
 		}
 
-		issueStatus, err := domain.ParseIssueStatus(issue.IssueStatus)
+		issueStatus, err := domain.ParseIssueStatus(issue.Status)
 		if err != nil {
 			return nil, err
 		}
 
-		issueSeverity, err := domain.ParseIssueSeverity(issue.IssueSeverity)
+		issueSeverity, err := domain.ParseIssueSeverity(issue.Severity)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +121,7 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 			issueStatus,
 			issueSeverity,
 			int64(issue.FixedBy.Int64),
-			issue.FixedOn.Time,
+			issue.FixedAt.Time,
 			detailsMap,
 			issue.CreatedAt,
 			issue.UpdatedAt,

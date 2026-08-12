@@ -30,7 +30,7 @@ type Issue struct {
 	ContentXPath	string
 	Details				map[string]any
 	FixedBy				int64
-	FixedOn				time.Time
+	FixedAt				time.Time
 }
 
 // RegisterNewIssues removes all persisted issues for the specified contentItem
@@ -96,7 +96,7 @@ func (m *Module) GetByCourseID(ctx context.Context, courseID int64) ([]Issue, er
 			ContentXPath: 	domainIssue.ContentXPath(),
 			Details:      	domainIssue.Details(),
 			FixedBy:       	domainIssue.FixedBy(),
-			FixedOn:       	domainIssue.FixedOn(),
+			FixedAt:       	domainIssue.FixedAt(),
 		}
 	}
 	return issues, nil

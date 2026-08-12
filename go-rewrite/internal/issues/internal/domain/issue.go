@@ -10,7 +10,7 @@ type Issue struct {
 	status				IssueStatus
 	severity 			IssueSeverity
 	fixedBy				int64
-	fixedOn				time.Time
+	fixedAt				time.Time
 
 	// details contains amorphous additional information about the issue
 	details				map[string]any
@@ -40,7 +40,7 @@ func RehydrateIssue(
 	status				IssueStatus,
 	severity 			IssueSeverity,
 	fixedBy 			int64,
-	fixedOn 			time.Time,
+	fixedAt 			time.Time,
 	details 			map[string]any,
 	createdAt 		time.Time,
 	updatedAt 		time.Time,
@@ -53,7 +53,7 @@ func RehydrateIssue(
 		status:        status,
 		severity:     severity,
 		fixedBy:       fixedBy,
-		fixedOn:       fixedOn,
+		fixedAt:       fixedAt,
 		details:       details,
 		createdAt:    createdAt,
 		updatedAt:    updatedAt,
@@ -88,8 +88,8 @@ func (i *Issue) FixedBy() int64 {
 	return i.fixedBy
 }
 
-func (i *Issue) FixedOn() time.Time {
-	return i.fixedOn
+func (i *Issue) FixedAt() time.Time {
+	return i.fixedAt
 }
 
 func (i *Issue) Details() map[string]any {
