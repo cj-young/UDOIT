@@ -13,3 +13,9 @@ VALUES (
   sqlc.arg('fixed_on'),
   sqlc.arg('details')
 );
+
+-- name: GetIssuesByCourseID :many
+SELECT i.id, i.content_item_id, i.scan_rule, i.content_xpath, i.issue_status, i.issue_severity, i.fixed_by, i.fixed_on, i.details, i.created_at, i.updated_at
+FROM issue i
+JOIN content_item ci ON i.content_item_id = ci.id
+WHERE ci.course_id = sqlc.arg('course_id');

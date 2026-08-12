@@ -20,7 +20,7 @@ type ContentItemService interface {
 }
 
 type IssueService interface {
-	RegisterNewIssues(ctx context.Context, newIssues []issues.NewIssue, contentItemIDs []int64) error
+	RegisterNewIssues(ctx context.Context, newIssues []issues.Issue, contentItemIDs []int64) error
 	DeleteByContentItemIDs(ctx context.Context, contentItemIDs []int64) error
 }
 
@@ -144,13 +144,13 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 		return err
 	}
 
-	newIssues := make([]issues.NewIssue, len(scanResults))
+	newIssues := make([]issues.Issue, len(scanResults))
 	for i, result := range scanResults {
-		newIssues[i] = issues.NewIssue{
+		newIssues[i] = issues.Issue{
 			ContentItemID: 	result.ContentItemID,
 			ScanRule:      	result.ScanRule,
-			IssueStatus:		domain.ScanIssueStatusActive.String(),
-			IssueSeverity:	result.Severity.String(),
+			Status:					domain.ScanIssueStatusActive.String(),
+			Severity:				result.Severity.String(),
 			ContentXPath:  	result.ContentXPath,
 			Details:       	result.Details,
 		}

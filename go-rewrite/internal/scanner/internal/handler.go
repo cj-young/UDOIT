@@ -12,11 +12,13 @@ import (
 
 type Handler struct {
 	scanCourseUseCase *application.ScanCourseUseCase
+	createReportUseCase *application.CreateReportUseCase
 }
 
-func NewHandler(scanCourseUseCase *application.ScanCourseUseCase) *Handler {
+func NewHandler(scanCourseUseCase *application.ScanCourseUseCase, createReportUseCase *application.CreateReportUseCase) *Handler {
 	return &Handler{
 		scanCourseUseCase: scanCourseUseCase,
+		createReportUseCase: createReportUseCase,
 	}
 }
 
@@ -48,6 +50,15 @@ func (h *Handler) handleScanCourse(c *gin.Context) {
 	}
 
 	err = h.scanCourseUseCase.Execute(c.Request.Context(), principal, courseID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	err = h.createReportUseCase.Execute(c.Request.Context(), application.CreateReportCommand{
+		UserID:   principal.AgentID,
+		CourseID: courseID,
+	})
 	if err != nil {
 		c.Error(err)
 		return

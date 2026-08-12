@@ -85,6 +85,52 @@ func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.
 	return nil
 }
 
+func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64) ([]*domain.Issue, error) {
+	issues, err := r.queries.GetIssuesByCourseID(ctx, uint64(courseID))
+	if err != nil {
+		return nil, err
+	}
+
+	domainIssues := make([]*domain.Issue, len(issues))
+	for i, issue := range issues {
+		scanRule, err := domain.ParseScanRule(issue.ScanRule)
+		if err != nil {
+			return nil, err
+		}
+
+		issueStatus, err := domain.ParseIssueStatus(issue.IssueStatus)
+		if err != nil {
+			return nil, err
+		}
+
+		issueSeverity, err := domain.ParseIssueSeverity(issue.IssueSeverity)
+		if err != nil {
+			return nil, err
+		}
+		
+		var detailsMap map[string]any
+		if err := json.Unmarshal(issue.Details, &detailsMap); err != nil {
+			return nil, err
+		}
+
+		domainIssues[i] = domain.RehydrateIssue(
+			int64(issue.ID),
+			int64(issue.ContentItemID),
+			scanRule,
+			issue.ContentXpath,
+			issueStatus,
+			issueSeverity,
+			int64(issue.FixedBy.Int64),
+			issue.FixedOn.Time,
+			detailsMap,
+			issue.CreatedAt,
+			issue.UpdatedAt,
+		)
+	}
+
+	return domainIssues, nil
+}
+
 func nullTime(t time.Time) sql.NullTime {
 	if !t.IsZero() {
 		return sql.NullTime{

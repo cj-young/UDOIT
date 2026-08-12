@@ -6,6 +6,7 @@ import (
 	"rewritetest/internal/issues/internal/domain"
 	"rewritetest/internal/issues/internal/infrastructure"
 	"rewritetest/internal/shared/apperr"
+	"time"
 )
 
 type Module struct {
@@ -21,18 +22,20 @@ func New(db *sql.DB) *Module {
 	}
 }
 
-type NewIssue struct {
+type Issue struct {
 	ContentItemID int64
 	ScanRule			string
-	IssueStatus   string
-	IssueSeverity string
+	Status   			string
+	Severity 			string
 	ContentXPath	string
-	Preview				string
 	Details				map[string]any
+	FixedBy				int64
+	FixedOn				time.Time
 }
+
 // RegisterNewIssues removes all persisted issues for the specified contentItem
 // IDs and creates the issues specified in newIssues.
-func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []NewIssue, contentItemIDs []int64) error {
+func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []Issue, contentItemIDs []int64) error {
 	m.issueRepository.DeleteByContentItemIDs(ctx, contentItemIDs)
 	
 	issues := make([]*domain.Issue, len(newIssues))
@@ -43,12 +46,12 @@ func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []NewIssue, co
 			return apperr.New(apperr.CodeInternal, "invalid_scan_rule", "Scan rule "+newIssue.ScanRule+" is invalid")
 		}
 
-		issueSeverity, err := domain.ParseIssueSeverity(newIssue.IssueSeverity)
+		issueSeverity, err := domain.ParseIssueSeverity(newIssue.Severity)
 		if err != nil {
 			return err
 		}
 
-		issueStatus, err := domain.ParseIssueStatus(newIssue.IssueStatus)
+		issueStatus, err := domain.ParseIssueStatus(newIssue.Status)
 		if err != nil {
 			return err
 		}
@@ -75,4 +78,26 @@ func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []NewIssue, co
 
 func (m *Module) DeleteByContentItemIDs(ctx context.Context, contentItemIDs []int64) error {
 	return m.issueRepository.DeleteByContentItemIDs(ctx, contentItemIDs)
+}
+
+func (m *Module) GetByCourseID(ctx context.Context, courseID int64) ([]Issue, error) {
+	domainIssues, err := m.issueRepository.GetByCourseID(ctx, courseID)
+	if err != nil {
+		return nil, err
+	}
+
+	issues := make([]Issue, len(domainIssues))
+	for i, domainIssue := range domainIssues {
+		issues[i] = Issue{
+			ContentItemID: domainIssue.ContentItemID(),
+			ScanRule:     	domainIssue.ScanRule().String(),
+			Status:       	domainIssue.Status().String(),
+			Severity:     	domainIssue.Severity().String(),
+			ContentXPath: 	domainIssue.ContentXPath(),
+			Details:      	domainIssue.Details(),
+			FixedBy:       	domainIssue.FixedBy(),
+			FixedOn:       	domainIssue.FixedOn(),
+		}
+	}
+	return issues, nil
 }

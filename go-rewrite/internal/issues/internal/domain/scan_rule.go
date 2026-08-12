@@ -12,3 +12,7 @@ func (s ScanRule) String() string {
 func (s ScanRule) IsValid() bool {
 	return true
 }
+
+func ParseScanRule(s string) (ScanRule, error) {
+	return ScanRule(s), nil
+}

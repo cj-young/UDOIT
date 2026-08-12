@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"database/sql"
 	"net/http"
 	"rewritetest/internal/scanner/internal"
 	"rewritetest/internal/scanner/internal/application"
@@ -16,10 +17,12 @@ type Module struct {
 }
 
 func New(
+	db *sql.DB,
 	courseRetriever application.CourseRetriever,
 	contentItemService application.ContentItemService,
 	externalContentReceiver application.ExternalContentRetriever,
 	issueService application.IssueService,
+	issueRetriever application.IssueRetriever,
 	authenticator internal.Authenticator,
 ) *Module {
 
@@ -28,9 +31,11 @@ func New(
 	scanner := infrastructure.NewEqualAccessScanner(httpClient, baseURL)
 
 	blake3Hasher := infrastructure.NewBlake3ContentHasher()
+	reportRepository := infrastructure.NewMySQLReportRepository(db)
 
 	scanCourseUseCase := application.NewScanCourseUseCase(courseRetriever, contentItemService, externalContentReceiver, blake3Hasher, issueService, scanner)
-	handler := internal.NewHandler(scanCourseUseCase)
+	createReportUseCase := application.NewCreateReportUseCase(reportRepository, issueRetriever)
+	handler := internal.NewHandler(scanCourseUseCase, createReportUseCase)
 
 	return &Module{
 		handler: handler,

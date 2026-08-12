@@ -181,3 +181,25 @@ CREATE TABLE issue (
         FOREIGN KEY (fixed_by) REFERENCES user (id)
         ON DELETE SET NULL
 );
+
+CREATE TABLE report (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    course_id BIGINT UNSIGNED NOT NULL,
+    error_count INT UNSIGNED NOT NULL,
+    suggestion_count INT UNSIGNED NOT NULL,
+    file_count INT UNSIGNED NOT NULL,
+    scanned_by BIGINT UNSIGNED NOT NULL,
+    content_fixed BIGINT UNSIGNED NOT NULL,
+    content_resolved BIGINT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_report_course_id (course_id),
+    KEY idx_report_scanned_by (scanned_by),
+    CONSTRAINT fk_report_course_id
+        FOREIGN KEY (course_id) REFERENCES course (id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_report_scanned_by
+        FOREIGN KEY (scanned_by) REFERENCES user (id)
+        ON DELETE CASCADE
+);

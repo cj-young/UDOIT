@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS report;
 DROP TABLE IF EXISTS issue;
 DROP TABLE IF EXISTS content_item;
 DROP TABLE IF EXISTS file_item;

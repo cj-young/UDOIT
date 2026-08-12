@@ -7,7 +7,7 @@ type IssueSeverity string
 const (
 	IssueSeverityError 			IssueSeverity = "error"
 	IssueSeverityPotential 	IssueSeverity = "potential"
-	IssueSeveritySuggestion IssueSeverity = "info"
+	IssueSeveritySuggestion IssueSeverity = "suggestion"
 )
 
 func (s IssueSeverity) String() string {
@@ -29,7 +29,7 @@ func ParseIssueSeverity(s string) (IssueSeverity, error) {
 		return IssueSeverityError, nil
 	case "potential":
 		return IssueSeverityPotential, nil
-	case "info":
+	case "suggestion":
 		return IssueSeveritySuggestion, nil
 	default:
 		return "", apperr.New(apperr.CodeInternal, "invalid_issue_severity", "Invalid issue severity '"+s+"'")

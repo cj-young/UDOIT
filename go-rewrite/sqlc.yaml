@@ -97,3 +97,13 @@ sql:
         package: "issuessqlc"
         out: "internal/issues/internal/infrastructure/sqlc"
         sql_package: "database/sql"
+  - engine: "mysql"
+    schema:
+      - "db/migrations/*.up.sql"
+    queries:
+      - "internal/scanner/internal/infrastructure/queries/*.sql"
+    gen:
+      go:
+        package: "scannersqlc"
+        out: "internal/scanner/internal/infrastructure/sqlc"
+        sql_package: "database/sql"
