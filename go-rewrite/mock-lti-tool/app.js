@@ -14,6 +14,7 @@ const deleteFileBtn = document.getElementById("delete-file");
 const saveDefaultsBtn = document.getElementById("save-defaults");
 const replayBtn = document.getElementById("replay");
 const fileIDInput = document.getElementById("file-id");
+const courseIDInput = document.getElementById("course-id-input");
 
 const storedDefaults = loadDefaults();
 applyDefaults(storedDefaults);
@@ -93,10 +94,11 @@ deleteFileBtn.addEventListener("click", async () => {
 });
 scanCourseBtn.addEventListener("click", async () => {
   console.log("scanning course")
+
   await runRequest({
     label: "Scan course",
     method: "POST",
-    path: "/go/scanner/scan/courses/1",
+    path: `/go/scanner/scan/courses/${courseIDInput.value || 1}`,
   });
   console.log("scanned the course")
 });
