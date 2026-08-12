@@ -102,7 +102,7 @@ services:
     working_dir: /app
     volumes:
       - ./go-rewrite:/app
-    command: sh -c "go mod download && go run ./cmd/register-tenant -config ./config/register-tenant.yaml"
+    command: sh -c "go mod download && go run ./cmd/register-tenant -config ./config/register-tenant.secret.yaml"
     depends_on:
       - db-new
     env_file:
