@@ -58,25 +58,21 @@ func (r *MySQLContentItemRepository) GetByCourseID(ctx context.Context, courseID
 }
 
 func (r *MySQLContentItemRepository) Create(ctx context.Context, contentItem *domain.ContentItem) error {
-	return r.queries.CreateContentItem(ctx, contentsqlc.CreateContentItemParams{
+	_, err := r.queries.CreateContentItem(ctx, contentsqlc.CreateContentItemParams{
 		CourseID:    uint64(contentItem.CourseID()),
 		ContentHash: contentItem.ContentHash(),
 		ExternalID:  contentItem.ExternalID(),
 	})
+
+	return err
 }
 
-func (r *MySQLContentItemRepository) CreateMany(ctx context.Context, contentItems []*domain.ContentItem) error {
-	tx, err := r.db.Begin()
+func (r *MySQLContentItemRepository) CreateMany(ctx context.Context, contentItems []*domain.ContentItem) (map[string]int64, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+	defer tx.Rollback()
 
 	qtx := r.queries.WithTx(tx)
 
@@ -89,13 +85,27 @@ func (r *MySQLContentItemRepository) CreateMany(ctx context.Context, contentItem
 		}
 	}
 
+	idMap := map[string]int64{}
+
 	for _, params := range domainContentItemsParams {
-		err := qtx.CreateContentItem(ctx, params)
+		result, err := qtx.CreateContentItem(ctx, params)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		insertedID, err := result.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+
+		idMap[params.ExternalID] = insertedID
 	}
-	return nil
+	
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return idMap, nil
 }
 
 var _ domain.ContentItemRepository = (*MySQLContentItemRepository)(nil)

@@ -2,9 +2,22 @@ package domain
 
 import (
 	"context"
-	"rewritetest/internal/lms"
 )
 
+type ScanResult struct {
+	ContentItemID int64
+	ScanRule 			string
+	ContentXPath 	string
+	Severity 			ScanIssueSeverity
+	Details				map[string]any
+}
+
+type ScanItem struct {
+	ContentItemID int64
+	HTML          string
+	Type          string
+}
+
 type Scanner interface {
-	ScanContent(ctx context.Context, items []lms.ContentItemDTO) error
+	ScanContent(ctx context.Context, items []ScanItem) ([]ScanResult, error)
 }

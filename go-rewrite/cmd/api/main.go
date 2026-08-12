@@ -16,6 +16,7 @@ import (
 	"rewritetest/internal/courses"
 	"rewritetest/internal/files"
 	"rewritetest/internal/i18n"
+	"rewritetest/internal/issues"
 	"rewritetest/internal/lms"
 	"rewritetest/internal/lti"
 	"rewritetest/internal/scanner"
@@ -65,7 +66,8 @@ func main() {
 	i18nModule := i18n.New()
 	usersModule := users.New(db, i18nModule, authModule)
 	contentModule := content.New(db)
-	scannerModule := scanner.New(coursesModule, contentModule, lmsModule, authModule)
+	issuesModule := issues.New(db)
+	scannerModule := scanner.New(coursesModule, contentModule, lmsModule, issuesModule, authModule)
 	tenantsModule := tenants.New(db, lmsModule)
 	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule, lmsModule, tenantsModule, lmsModule, os.Getenv("GO_BASE_URL"))
 

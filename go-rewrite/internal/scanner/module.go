@@ -19,6 +19,7 @@ func New(
 	courseRetriever application.CourseRetriever,
 	contentItemService application.ContentItemService,
 	externalContentReceiver application.ExternalContentRetriever,
+	issueService application.IssueService,
 	authenticator internal.Authenticator,
 ) *Module {
 
@@ -28,7 +29,7 @@ func New(
 
 	blake3Hasher := infrastructure.NewBlake3ContentHasher()
 
-	scanCourseUseCase := application.NewScanCourseUseCase(courseRetriever, contentItemService, externalContentReceiver, blake3Hasher, scanner)
+	scanCourseUseCase := application.NewScanCourseUseCase(courseRetriever, contentItemService, externalContentReceiver, blake3Hasher, issueService, scanner)
 	handler := internal.NewHandler(scanCourseUseCase)
 
 	return &Module{

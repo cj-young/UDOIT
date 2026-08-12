@@ -53,7 +53,9 @@ func (m *Module) CreateContentItem(ctx context.Context, contentItem ContentItem)
 	))
 }
 
-func (m *Module) CreateManyContentItems(ctx context.Context, contentItems []ContentItem) error {
+// CreateManyContentItems upserts content items and returns a mapping of
+// external IDs to their corresponding database IDs.
+func (m *Module) CreateManyContentItems(ctx context.Context, contentItems []ContentItem) (map[string]int64, error) {
 	domainContentItems := make([]*domain.ContentItem, len(contentItems))
 	for i, item := range contentItems {
 		domainContentItems[i] = domain.NewContentItem(

@@ -158,3 +158,26 @@ CREATE TABLE content_item (
     CONSTRAINT uniq_content_item_course_external
         UNIQUE (course_id, external_id)
 );
+
+CREATE TABLE issue (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    content_item_id BIGINT UNSIGNED NOT NULL,
+    scan_rule VARCHAR(255) NOT NULL,
+    content_xpath VARCHAR(255) NOT NULL,
+    issue_status VARCHAR(255) NOT NULL,
+    issue_severity VARCHAR(255) NOT NULL,
+    fixed_by BIGINT UNSIGNED DEFAULT NULL,
+    fixed_on DATETIME DEFAULT NULL,
+    details JSON NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_issue_content_item_id (content_item_id),
+    KEY idx_issue_fixed_by (fixed_by),
+    CONSTRAINT fk_issue_content_item_id
+        FOREIGN KEY (content_item_id) REFERENCES content_item (id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_issue_fixed_by
+        FOREIGN KEY (fixed_by) REFERENCES user (id)
+        ON DELETE SET NULL
+);
