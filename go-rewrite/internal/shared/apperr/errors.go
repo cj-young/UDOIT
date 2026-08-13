@@ -50,10 +50,9 @@ func (a *AppError) Op() string {
 	return a.op
 }
 
-func New(code Code, reason, message string, opts ...Option) *AppError {
+func New(code Code, message string, opts ...Option) *AppError {
 	e := &AppError{
 		Code:    code,
-		Reason:  reason,
 		Message: message,
 		Details: make(map[string]any),
 	}
@@ -83,14 +82,9 @@ func WithDetails(details map[string]any) Option {
 	}
 }
 
-func Internal(op string, cause error) *AppError {
-	return &AppError{
-		Code:    CodeInternal,
-		Reason:  "internal_error",
-		Message: "an unexpected error occurred",
-		Details: make(map[string]any),
-		op:      op,
-		cause:   cause,
+func WithReason(reason string) Option {
+	return func(e *AppError) {
+		e.Reason = reason
 	}
 }
 
@@ -103,3 +97,63 @@ func IsAppError(err error) bool {
 	_, ok := errors.AsType[*AppError](err)
 	return ok
 }
+
+// Helper constructors
+
+func Internal(message string, opts ...Option) *AppError {
+	e := &AppError{
+		Code:    CodeInternal,
+		Reason:  "internal_error",
+		Message: message,
+		Details: make(map[string]any),
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+
+	return e
+}
+
+func Validation(message string, opts ...Option) *AppError {
+	e := &AppError{
+		Code:    CodeValidation,
+		Message: message,
+		Details: make(map[string]any),
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+
+	return e
+}
+
+func Unauthorized(opts ...Option) *AppError {
+	e := &AppError{
+		Code:    CodeUnauthorized,
+		Message: "unauthorized",
+		Details: make(map[string]any),
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+
+	return e
+}
+
+func Forbidden(message string, opts ...Option) *AppError {
+	e := &AppError{
+		Code:    CodeForbidden,
+		Message: message,
+		Details: make(map[string]any),
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+
+	return e
+}
+

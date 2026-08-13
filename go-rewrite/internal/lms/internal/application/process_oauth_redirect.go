@@ -33,8 +33,7 @@ func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string,
 	authAttempt, err := u.authAttemptRepository.GetByState(ctx, state)
 	if err != nil {
 		return "", apperr.New(
-			apperr.CodeInternal, "auth_attempt_not_found", "Failed to find auth attempt by state",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
+			apperr.CodeInternal, "Failed to find auth attempt by state",
 			apperr.WithCause(err),
 		)
 	}
@@ -42,8 +41,7 @@ func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string,
 	provider, err := u.lmsProviderResolver.GetByTenant(ctx, authAttempt.TenantID)
 	if err != nil {
 		return "", apperr.New(
-			apperr.CodeInternal, "provider_not_found", "Failed to find provider by tenant ID",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
+			apperr.CodeInternal, "Failed to find provider by tenant ID",
 			apperr.WithCause(err),
 		)
 	}
@@ -51,18 +49,13 @@ func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string,
 	oauthRedirectProcessor, ok := provider.(domain.OAuthRedirectProcessor)
 	if !ok {
 		return "", apperr.New(
-			apperr.CodeInternal, "provider_not_oauth", "The provider does not support OAuth",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
+			apperr.CodeInternal, "The provider does not support OAuth",
 		)
 	}
 
 	redirectURL, err := oauthRedirectProcessor.ProcessOAuthRedirect(ctx, authAttempt, code)
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "process_oauth_redirect_failed", "Failed to process OAuth redirect",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
-			apperr.WithCause(err),
-		)
+		return "", err
 	}
 
 	return redirectURL, nil

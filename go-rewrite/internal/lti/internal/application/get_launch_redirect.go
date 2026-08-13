@@ -56,42 +56,22 @@ func (u *GetLaunchRedirectUseCase) Execute(ctx context.Context, query GetLaunchR
 		return "", err
 	}
 	if registration == nil {
-		return "", apperr.New(
-			apperr.CodeNotFound,
-			"registration_not_found",
-			"LTI registration not found for the given issuer and client ID",
-			apperr.WithOp("lti.application.GetLaunchRedirectUseCase.Execute"),
-		)
+		return "", apperr.New(apperr.CodeNotFound, "LTI registration not found for the given issuer and client ID")
 	}
 
 	baseURL, err := url.Parse(registration.LoginAuthEndpoint)
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal,
-			"invalid_login_auth_endpoint",
-			"Invalid login/auth endpoint URL in registration",
-			apperr.WithOp("lti.application.GetLaunchRedirectUseCase.Execute"),
-		)
+		return "", apperr.Internal("Invalid login/auth endpoint URL in registration")
 	}
 
 	state, err := generateState()
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal,
-			"state_generation_failed",
-			"Failed to generate state parameter",
-			apperr.WithOp("lti.application.GetLaunchRedirectUseCase.Execute"),
-		)
+		return "", apperr.Internal("Failed to generate state parameter")
 	}
 
 	nonce, err := generateNonce()
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal,
-			"nonce_generation_failed",
-			"Failed to generate nonce parameter",
-			apperr.WithOp("lti.application.GetLaunchRedirectUseCase.Execute"),
-		)
+		return "", apperr.Internal("Failed to generate nonce parameter")
 	}
 
 	params := baseURL.Query()
@@ -111,13 +91,7 @@ func (u *GetLaunchRedirectUseCase) Execute(ctx context.Context, query GetLaunchR
 
 	ltiSession := domain.NewLTISession(state, nonce, query.Issuer, query.ClientID, query.TargetLinkURI, registration.TenantID, time.Now(), time.Now().Add(ttl))
 	if err := u.ltiSessionRepository.Create(ctx, ltiSession); err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal,
-			"lti_session_creation_failed",
-			"Failed to create LTI session",
-			apperr.WithOp("lti.application.GetLaunchRedirectUseCase.Execute"),
-			apperr.WithCause(err),
-		)
+		return "", apperr.Internal("Failed to create LTI session", apperr.WithCause(err))
 	}
 
 	return baseURL.String(), nil

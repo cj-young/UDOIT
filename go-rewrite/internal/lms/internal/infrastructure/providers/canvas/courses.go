@@ -15,7 +15,7 @@ func (p *CanvasLMSProvider) asCanvasCourse(course domain.LMSCourse) (canvasCours
 
 	courseID, ok := course.ExternalData["course_id"].(string)
 	if !ok {
-		return canvasCourse{}, apperr.New(apperr.CodeInternal, "invalid_canvas_course", "Missing or invalid 'course_id' in course mapping data")
+		return canvasCourse{}, apperr.Internal("Missing or invalid course ID in course mapping data")
 	}
 
 	return canvasCourse {

@@ -53,39 +53,19 @@ func toRegistration(cmd RegisterRegistrationCommand) (*domain.Registration, erro
 	serviceLoginEndpoint := strings.TrimSpace(cmd.ServiceLoginEndpoint)
 
 	if issuer == "" {
-		return nil, apperr.New(
-			apperr.CodeValidation,
-			"invalid_issuer",
-			"Issuer is required",
-			apperr.WithOp("lti.application.register_registration.toRegistration"),
-		)
+		return nil, apperr.Validation("Issuer is required")
 	}
 
 	if clientID == "" {
-		return nil, apperr.New(
-			apperr.CodeValidation,
-			"invalid_client_id",
-			"Client ID is required",
-			apperr.WithOp("lti.application.register_registration.toRegistration"),
-		)
+		return nil, apperr.Validation("Client ID is required")
 	}
 
 	if cmd.TenantID <= 0 {
-		return nil, apperr.New(
-			apperr.CodeValidation,
-			"invalid_tenant_id",
-			"Tenant ID must be greater than zero",
-			apperr.WithOp("lti.application.register_registration.toRegistration"),
-		)
+		return nil, apperr.Validation("Tenant ID must be greater than zero")
 	}
 
 	if loginAuthEndpoint == "" || jwkEndpoint == "" || serviceAuthEndpoint == "" || serviceLoginEndpoint == "" {
-		return nil, apperr.New(
-			apperr.CodeValidation,
-			"invalid_registration_endpoints",
-			"All registration endpoint URLs are required",
-			apperr.WithOp("lti.application.register_registration.toRegistration"),
-		)
+		return nil, apperr.Validation("All registration endpoint URLs are required")
 	}
 
 	return domain.NewRegistration(

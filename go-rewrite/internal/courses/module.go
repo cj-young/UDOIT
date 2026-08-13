@@ -47,7 +47,7 @@ func (m *Module) GetCourse(ctx context.Context, courseID int64) (Course, error) 
 		return Course{}, err
 	}
 	if course == nil {
-		return Course{}, apperr.New(apperr.CodeInternal, "course_not_found", "The requested course was not found.")
+		return Course{}, apperr.New(apperr.CodeInternal, "The requested course was not found.")
 	}
 
 

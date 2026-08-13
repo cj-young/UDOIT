@@ -22,12 +22,12 @@ func (r *FileLabelRepository) GetLabels(ctx context.Context, code string) (domai
 
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, apperr.New(apperr.CodeInternal, "labels_source_not_found", "The file containing the requested labels was not found.")
+		return nil, apperr.New(apperr.CodeInternal, "The file containing the requested labels was not found.")
 	}
 
 	var labels domain.Labels
 	if err := json.Unmarshal(content, &labels); err != nil {
-		return nil, apperr.New(apperr.CodeInternal, "labels_unmarshal_error", "Failed to parse translation file for language: " + code)
+		return nil, apperr.New(apperr.CodeInternal, "Failed to parse translation file for language: " + code)
 	}
 
 	return labels, nil

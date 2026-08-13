@@ -32,10 +32,7 @@ func (u *DeleteFileUseCase) Execute(ctx context.Context, principal auth.Principa
 	}
 
 	if file == nil {
-		return apperr.New(
-			apperr.CodeNotFound, "file_not_found", "The file could not be deleted because no file was found.",
-			apperr.WithOp("files.application.delete_file.Execute"),
-		)
+		return apperr.New(apperr.CodeNotFound, "The file could not be deleted because no file was found.")
 	}
 
 	err = u.fileDeleter.DeleteFile(ctx, principal, lms.DeleteFileRequest{

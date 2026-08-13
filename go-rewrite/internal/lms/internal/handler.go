@@ -29,10 +29,7 @@ type OAuthRedirectRequest struct {
 func (h *Handler) handleOauthRedirect(c *gin.Context) {
 	var req OAuthRedirectRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_oauth_redirect_request", "The OAuth redirect request format is not valid",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
-		))
+		c.Error(apperr.Validation("The OAuth redirect request format is not valid"))
 		return
 	}
 

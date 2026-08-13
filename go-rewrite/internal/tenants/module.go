@@ -40,12 +40,7 @@ func (m *Module) GetTenant(ctx context.Context, tenantID int64) (Tenant, error) 
 		return Tenant{}, err
 	}
 	if tenant == nil {
-		return Tenant{}, apperr.New(
-			apperr.CodeInternal,
-			"tenant_not_found",
-			"Tenant not found",
-			apperr.WithOp("tenants.module.GetTenant"),
-		)
+		return Tenant{}, apperr.Internal("Tenant not found")
 	}
 	return Tenant{
 		ID:     tenant.ID(),

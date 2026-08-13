@@ -24,12 +24,10 @@ type canvasCredential struct {
 }
 
 func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, userID int64, targetLinkURI string) (domain.AuthChallenge, error) {
-
 	baseURL, err := url.Parse(p.config.baseURL)
 	if err != nil {
 		return domain.AuthChallenge{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas base URL", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.BeginAuthentication"),
+			apperr.CodeInternal, "Invalid Canvas base URL",
 			apperr.WithCause(err),
 		)
 	}
@@ -46,11 +44,7 @@ func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, userID int6
 
 	state, err := generateState()
 	if err != nil {
-		return domain.AuthChallenge{}, apperr.New(
-			apperr.CodeInternal, "state_generation_failed", "Failed to generate state",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.BeginAuthentication"),
-			apperr.WithCause(err),
-		)
+		return domain.AuthChallenge{}, apperr.Internal("Failed to generate state", apperr.WithCause(err))
 	}
 
 	params := baseURL.Query()
@@ -92,11 +86,7 @@ func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, authAttemp
 
 	baseURL, err := url.Parse(p.config.baseURL)
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "invalid_canvas_base_url", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
-			apperr.WithCause(err),
-		)
+		return "", apperr.Validation("Invalid Canvas base URL", apperr.WithCause(err))
 	}
 
 	baseURL.Path = "/login/oauth2/token"
@@ -111,39 +101,24 @@ func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, authAttemp
 	payload := strings.NewReader(formData.Encode())
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL.String(), payload)
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "failed_to_create_http_request", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
-			apperr.WithCause(err),
-		)
+		return "", apperr.Internal("Failed to create HTTP request", apperr.WithCause(err))
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "failed_to_send_http_request", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
-			apperr.WithCause(err),
-		)
+		return "", apperr.Internal("Failed to send HTTP request", apperr.WithCause(err))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", apperr.New(
-			apperr.CodeInternal, "failed_to_process_oauth_redirect", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
-		)
+		return "", apperr.Internal(fmt.Sprintf("Unexpected status code: %d", resp.StatusCode))
 	}
 
 	var oauthResponse TokenResponse
 	err = json.NewDecoder(resp.Body).Decode(&oauthResponse)
 	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "failed_to_decode_oauth_response", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.ProcessOAuthRedirect"),
-			apperr.WithCause(err),
-		)
+		return "", apperr.Validation("Failed to decode OAuth token JSON response", apperr.WithCause(err))
 	}
 
 	expiresAt := time.Now().Add(time.Duration(oauthResponse.ExpiresIn) * time.Second)
@@ -188,26 +163,17 @@ type RefreshTokenRequest struct {
 
 func (p *CanvasLMSProvider) asCanvasCredential(cred domain.LMSCredential) (canvasCredential, error) {
 	if cred.LMSKey() != "canvas" {
-		return canvasCredential{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Credential", fmt.Sprintf("Expected LMSKey 'canvas', got '%s'", cred.LMSKey()),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasCredential"),
-		)
+		return canvasCredential{}, apperr.Internal("Missing or invalid LMS type in credential data")
 	}
 
 	apiToken, ok := cred.Payload()["api_token"].(string)
 	if !ok {
-		return canvasCredential{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Credential", "Missing or invalid 'apiToken' in credential data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasCredential"),
-		)
+		return canvasCredential{}, apperr.Internal("Missing or invalid API token in credential data")
 	}
 
 	refreshToken, ok := cred.Payload()["refresh_token"].(string)
 	if !ok {
-		return canvasCredential{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Credential", "Missing or invalid 'refreshToken' in credential data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasCredential"),
-		)
+		return canvasCredential{}, apperr.Internal("Missing or invalid refresh token in credential data")
 	}
 
 	return canvasCredential{
@@ -248,10 +214,7 @@ func (p *CanvasLMSProvider) refreshAccessToken(ctx context.Context, cred canvasC
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return canvasCredential{}, apperr.New(
-			apperr.CodeInternal, "failed_to_refresh_access_token", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.refreshAccessToken"),
-		)
+		return canvasCredential{}, apperr.Internal(fmt.Sprintf("Unexpected status code: %d", resp.StatusCode))
 	}
 
 	var tokenResponse TokenResponse
@@ -300,7 +263,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req Canv
 
 	httpReq, err := http.NewRequestWithContext(ctx, req.Method, url, bodyReader)
 	if err != nil {
-		return nil, apperr.New(apperr.CodeInternal, "failed_to_create_request", "Failed to create HTTP request")
+		return nil, apperr.Internal("Failed to create HTTP request")
 	}
 
 	httpReq.Header.Set("Accept", "application/json")
@@ -310,10 +273,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req Canv
 		return nil, err
 	}
 	if cred == nil {
-		return nil, apperr.New(
-			apperr.CodeUnauthorized, "Canvas LMS Credential not found", "",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.doAuthenticatedRequest"),
-		)
+		return nil, apperr.New(apperr.CodeUnauthorized, "Canvas LMS credential not found")
 	}
 
 	credential, err := p.asCanvasCredential(*cred)

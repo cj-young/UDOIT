@@ -28,10 +28,7 @@ func (uc *GetPrincipalFromSessionUseCase) Execute(ctx context.Context, query Get
 		return sharedAuth.Principal{}, err
 	}
 	if session == nil {
-		return sharedAuth.Principal{}, apperr.New(
-			apperr.CodeUnauthorized, "session_not_found", "No user session was found",
-			apperr.WithOp("auth.application.GetPrincipalFromSessionUseCase.Execute"),
-		)
+		return sharedAuth.Principal{}, apperr.Unauthorized()
 	}
 
 	return sharedAuth.Principal{

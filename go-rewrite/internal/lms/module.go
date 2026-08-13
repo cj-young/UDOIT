@@ -76,7 +76,7 @@ func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, conf
 	case domain.LMSTypeCanvas:
 		return canvas.ValidateConfig(configData)
 	default:
-		return apperr.New(apperr.CodeInternal, "unsupported_lms_type", "The provided LMS type is not supported")
+		return apperr.Internal("The provided LMS type is not supported")
 	}
 }
 

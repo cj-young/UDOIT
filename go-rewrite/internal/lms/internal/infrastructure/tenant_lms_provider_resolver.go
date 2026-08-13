@@ -43,9 +43,7 @@ func (r *TenantLMSProviderResolver) GetByTenant(ctx context.Context, tenantID in
 	}
 
 
-	return zero, apperr.New(
-		apperr.CodeInternal, "invalid_lms_key", "An invalid provider key was supplied.",
-	)
+	return zero, apperr.Internal("An invalid provider key was supplied.")
 }
 
 var _ domain.LMSProviderResolver = (*TenantLMSProviderResolver)(nil)

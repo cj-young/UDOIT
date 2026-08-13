@@ -43,7 +43,7 @@ func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []Issue, conte
 
 		scanRule := domain.ScanRule(newIssue.ScanRule)
 		if !scanRule.IsValid() {
-			return apperr.New(apperr.CodeInternal, "invalid_scan_rule", "Scan rule "+newIssue.ScanRule+" is invalid")
+			return apperr.New(apperr.CodeInternal, "Scan rule "+newIssue.ScanRule+" is invalid")
 		}
 
 		issueSeverity, err := domain.ParseIssueSeverity(newIssue.Severity)
@@ -69,7 +69,7 @@ func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []Issue, conte
 	err := m.issueRepository.CreateMany(ctx, issues)
 	if err != nil {
 		return apperr.New(
-			apperr.CodeInternal, "create_many_failed", "Failed to create many issues",
+			apperr.CodeInternal, "Failed to create many issues",
 			apperr.WithCause(err),
 		)
 	}

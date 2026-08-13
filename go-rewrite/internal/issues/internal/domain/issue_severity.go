@@ -32,6 +32,6 @@ func ParseIssueSeverity(s string) (IssueSeverity, error) {
 	case "suggestion":
 		return IssueSeveritySuggestion, nil
 	default:
-		return "", apperr.New(apperr.CodeInternal, "invalid_issue_severity", "Invalid issue severity '"+s+"'")
+		return "", apperr.New(apperr.CodeInternal, "Invalid issue severity '"+s+"'")
 	}
 }

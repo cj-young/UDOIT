@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -46,7 +45,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authenticator Authenticato
 
 func (h *Handler) handleHello(c *gin.Context) {
 	c.Error(apperr.New(
-		apperr.CodeNotFound, "user_not_found", "something went VERY wrong",
+		apperr.CodeNotFound, "something went VERY wrong",
+		apperr.WithReason("user_not_found"),
 		apperr.WithOp("users.handler.handleHello"),
 	))
 
@@ -56,20 +56,14 @@ func (h *Handler) handleHello(c *gin.Context) {
 func (h *Handler) handleUpdatePreferences(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("userId"), 10, 64)
 	if err != nil {
-		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_user_id", "The provided user ID is invalid",
-			apperr.WithOp("users.handler.handleUpdatePreferences"),
-		))
+		c.Error(apperr.Validation("The provided user ID is invalid"))
 		return
 	}
 
 	var updateReq UpdatePreferencesRequest
 
 	if err := c.ShouldBindJSON(&updateReq); err != nil {
-		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_request_body", fmt.Sprintf("Failed to parse request body: %v", err),
-			apperr.WithOp("users.handler.handleUpdatePreferences"),
-		))
+		c.Error(apperr.Validation("Failed to parse request body"))
 		return
 	}
 
@@ -97,10 +91,7 @@ func (h *Handler) handleUpdatePreferences(c *gin.Context) {
 
 	principal, ok := sharedAuth.GetPrincipal(c)
 	if !ok {
-		c.Error(apperr.New(
-			apperr.CodeInternal, "missing_principal", "Failed to retrieve user information from context",
-			apperr.WithOp("users.handler.handleUpdatePreferences"),
-		))
+		c.Error(apperr.Unauthorized())
 		return
 	}
 
@@ -125,19 +116,13 @@ func (h *Handler) handleUpdatePreferencesInferred(c *gin.Context) {
 	var updateReq UpdatePreferencesRequest
 
 	if err := c.ShouldBindJSON(&updateReq); err != nil {
-		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_request_body", fmt.Sprintf("Failed to parse request body: %v", err),
-			apperr.WithOp("users.handler.handleUpdatePreferences"),
-		))
+		c.Error(apperr.Validation("Failed to parse request body"))
 		return
 	}
 
 	principal, ok := sharedAuth.GetPrincipal(c)
 	if !ok {
-		c.Error(apperr.New(
-			apperr.CodeInternal, "missing_principal", "Failed to retrieve user information from context",
-			apperr.WithOp("users.handler.handleUpdatePreferencesInferred"),
-		))
+		c.Error(apperr.Unauthorized())
 		return
 	}
 	userID := principal.AgentID

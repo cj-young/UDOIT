@@ -47,7 +47,7 @@ func handleError(c *gin.Context, err error) {
 	appErr, ok := errors.AsType[*apperr.AppError](err)
 
 	if !ok {
-		appErr = apperr.Internal("middleware.HandleError.fallback", err)
+		appErr = apperr.Internal("An unexpected internal error occurred")
 	}
 
 	status := codeToStatus[appErr.Code]

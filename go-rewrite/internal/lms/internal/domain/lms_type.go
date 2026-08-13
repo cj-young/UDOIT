@@ -25,7 +25,7 @@ func (t LMSType) String() string {
 func ParseLMSType(s string) (LMSType, error) {
 	lmsType := LMSType(s)
 	if !lmsType.IsValid() {
-		return "", apperr.New(apperr.CodeInternal, "invalid_lms_type", "The provided LMS type is invalid")
+		return "", apperr.New(apperr.CodeInternal, "The provided LMS type is invalid")
 	}
 	return lmsType, nil
 }

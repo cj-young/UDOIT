@@ -39,8 +39,7 @@ func RehydrateLMSCredential(userID int64, lmsKey string, payload map[string]any,
 	lmsKeyEnum := LMSType(lmsKey)
 	if !lmsKeyEnum.IsValid() {
 		return LMSCredential{}, apperr.New(
-			apperr.CodeValidation, "invalid_lms_key", "The provided LMS key is not valid",
-			apperr.WithOp("lms.internal.domain.RehydrateLMSCredential"),
+			apperr.CodeValidation, "The provided LMS key is not valid",
 		)
 	}
 

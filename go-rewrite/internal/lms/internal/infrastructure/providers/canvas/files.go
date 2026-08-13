@@ -19,18 +19,12 @@ type canvasFile struct {
 func (p *CanvasLMSProvider) asCanvasFile(file domain.LMSFile) (canvasFile, error) {
 	fileID, ok := file.ExternalData["file_id"].(string)
 	if !ok {
-		return canvasFile{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'fileId' in mapping data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
-		)
+		return canvasFile{}, apperr.Internal("Missing or invalid file ID in mapping data")
 	}
 
 	contextType, ok := file.ExternalData["context_type"].(string)
 	if !ok {
-		return canvasFile{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'contextType' in mapping data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
-		)
+		return canvasFile{}, apperr.Internal("Missing or invalid context type in mapping data")
 	}
 
 	return canvasFile{
@@ -51,11 +45,7 @@ func (p *CanvasLMSProvider) DeleteFile(ctx context.Context, principal auth.Princ
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
-		return apperr.New(
-			apperr.CodeInternal, "Failed to create HTTP request", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.DeleteFile"),
-			apperr.WithCause(err),
-		)
+		return apperr.Internal("Failed to create HTTP request")
 	}
 
 	req.Header.Set("Accept", "application/json")
@@ -68,19 +58,21 @@ func (p *CanvasLMSProvider) DeleteFile(ctx context.Context, principal auth.Princ
 		UserID: principal.AgentID,
 	})
 	if err != nil {
-		return apperr.New(
-			apperr.CodeInternal, "Failed to send HTTP request", err.Error(),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.DeleteFile"),
-			apperr.WithCause(err),
-		)
+		return apperr.Internal("Failed to send HTTP request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return apperr.New(
-			apperr.CodeInternal, "Failed to delete file", fmt.Sprintf("Unexpected status code: %d", resp.StatusCode),
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.DeleteFile"),
-		)
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return apperr.New(apperr.CodeUnauthorized,"Unauthorized to delete file")
+		case http.StatusForbidden:
+			return apperr.Forbidden("Forbidden to delete file")
+		case http.StatusNotFound:
+			return apperr.New(apperr.CodeNotFound, "File not found")
+		default:
+			return apperr.Internal(fmt.Sprintf("Failed to delete file: Unexpected status code: %d", resp.StatusCode))
+		}
 	}
 
 	return nil

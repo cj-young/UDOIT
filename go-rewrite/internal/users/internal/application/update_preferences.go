@@ -36,10 +36,7 @@ func NewUpdatePreferencesUseCase(userRepository domain.UserRepository, i18nServi
 
 func (u *UpdatePreferencesUseCase) Execute(ctx context.Context, principal sharedAuth.Principal, cmd UpdatePreferencesCommand) (map[string]string, error) {
 	if principal.AgentID != cmd.UserID {
-		return nil, apperr.New(
-			apperr.CodeUnauthorized, "forbidden", "You do not have permission to update these preferences",
-			apperr.WithOp("users.application.update_preferences.Execute"),
-		)
+		return nil, apperr.Unauthorized()
 	}
 
 	user, err := u.userRepository.GetByID(ctx, cmd.UserID)
@@ -48,10 +45,7 @@ func (u *UpdatePreferencesUseCase) Execute(ctx context.Context, principal shared
 	}
 
 	if user == nil {
-		return nil, apperr.New(
-			apperr.CodeNotFound, "user_not_found", "The requested user was not found",
-			apperr.WithOp("users.application.update_preferences.Execute"),
-		)
+		return nil, apperr.Internal("User not found")
 	}
 
 	preferences := user.Preferences()
@@ -73,20 +67,14 @@ func (u *UpdatePreferencesUseCase) Execute(ctx context.Context, principal shared
 	if languageChanged {
 		l, err := u.i18nService.GetLabels(ctx, *update.Language)
 		if err != nil {
-			return nil, apperr.New(
-				apperr.CodeInternal, "failed_to_fetch_labels", "An error occurred while fetching labels for the new language",
-				apperr.WithOp("users.application.update_preferences.Execute"),
-			)
+			return nil, apperr.Internal("An error occurred while fetching labels for the new language")
 		}
 		labels = l
 	}
 
 	err = u.userRepository.Update(ctx, user)
 	if err != nil {
-		return nil, apperr.New(
-			apperr.CodeInternal, "failed_to_save_user", "An error occurred while saving the user",
-			apperr.WithOp("users.application.update_preferences.Execute"),
-		)
+		return nil, apperr.Internal("An error occurred while saving the user")
 	}
 
 	return labels, nil
@@ -99,10 +87,7 @@ func toPreferencesUpdate(cmd UpdatePreferencesCommand) (domain.PreferencesUpdate
 		theme := domain.Theme(*cmd.Theme)
 
 		if !theme.IsValid() {
-			return update, apperr.New(
-				apperr.CodeValidation, "invalid_theme", "The provided theme is invalid",
-				apperr.WithOp("users.application.update_preferences.toPreferencesUpdate"),
-			)
+			return update, apperr.Validation("The provided theme is invalid")
 		}
 
 		update.Theme = &theme

@@ -88,10 +88,7 @@ func (r *MySQLUserRepository) Update(ctx context.Context, user *domain.User) err
 	}
 
 	if rowsAffected == 0 {
-		return apperr.New(
-			apperr.CodeNotFound, "user_not_found", "The user to update was not found",
-			apperr.WithOp("users.infrastructure.mysql_user_repository.Update"),
-		)
+		return apperr.New(apperr.CodeNotFound, "The user to update was not found")
 	}
 
 	return nil

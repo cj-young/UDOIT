@@ -53,10 +53,7 @@ func (r *RedisAuthAttemptRepository) GetByState(ctx context.Context, state strin
 	}
 
 	if authAttempt.ExpiresAt.Before(time.Now()) {
-		return domain.AuthAttempt{}, apperr.New(
-			apperr.CodeValidation, "auth_attempt_expired", "The auth attempt has expired",
-			apperr.WithOp("lms.infrastructure.redis_auth_attempt_repository.GetByState"),
-		)
+		return domain.AuthAttempt{}, apperr.Internal("The auth attempt has expired")
 	}
 
 	return authAttempt, nil

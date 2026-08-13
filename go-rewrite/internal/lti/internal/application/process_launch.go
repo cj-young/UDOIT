@@ -125,12 +125,7 @@ func (u *ProcessLaunchUseCase) loadSession(ctx context.Context, state string) (*
 	}
 
 	if session == nil || session.IsExpired() {
-		return nil, apperr.New(
-			apperr.CodeNotFound,
-			"session_not_found",
-			"LTI session not found or expired",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-		)
+		return nil, apperr.New(apperr.CodeUnauthorized, "LTI session not found or expired")
 	}
 
 	return session, nil
@@ -144,12 +139,7 @@ func (u *ProcessLaunchUseCase) loadRegistration(ctx context.Context, issuer stri
 		return nil, err
 	}
 	if registration == nil {
-		return nil, apperr.New(
-			apperr.CodeNotFound,
-			"registration_not_found",
-			"LTI registration not found for issuer and client ID",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-		)
+		return nil, apperr.New(apperr.CodeNotFound, "LTI registration not found for issuer and client ID")
 	}
 	return registration, nil
 }
@@ -164,51 +154,31 @@ func (u *ProcessLaunchUseCase) validateIDToken(ctx context.Context, idToken stri
 		if verificationErr, ok := err.(*IDTokenVerificationError); ok {
 			switch verificationErr.Code {
 			case IDTokenVerificationParseError:
-				return nil, apperr.New(
-					apperr.CodeInternal,
-					"invalid_id_token",
+				return nil, apperr.Validation(
 					"Failed to parse ID token",
-					apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
 					apperr.WithCause(err),
 				)
 			case IDTokenVerificationMissingKID:
-				return nil, apperr.New(
-					apperr.CodeInternal,
-					"invalid_id_token",
+				return nil, apperr.Validation(
 					"ID token missing 'kid' header",
-					apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
 				)
 			case IDTokenVerificationJWKSClientError:
-				return nil, apperr.New(
-					apperr.CodeInternal,
-					"jwks_client_error",
+				return nil, apperr.Validation(
 					"Failed to create JWKS client",
-					apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
 					apperr.WithCause(err),
 				)
 			case IDTokenVerificationValidationError:
-				return nil, apperr.New(
-					apperr.CodeInternal,
-					"invalid_id_token",
+				return nil, apperr.Validation(
 					"ID token validation failed",
-					apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
 					apperr.WithCause(err),
 				)
 			case IDTokenVerificationInvalidClaims:
-				return nil, apperr.New(
-					apperr.CodeInternal,
-					"invalid_id_token",
-					"Invalid ID token claims",
-					apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-				)
+				return nil, apperr.Validation("Invalid ID token claims")
 			}
 		}
 
-		return nil, apperr.New(
-			apperr.CodeInternal,
-			"invalid_id_token",
+		return nil, apperr.Internal(
 			"ID token validation failed",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
 			apperr.WithCause(err),
 		)
 	}
@@ -231,12 +201,7 @@ func (u *ProcessLaunchUseCase) validateIDToken(ctx context.Context, idToken stri
 func (u *ProcessLaunchUseCase) resolveUser(ctx context.Context, claims jwt.MapClaims, session *domain.LTISession) (int64, error) {
 	sub, ok := claims["sub"].(string)
 	if !ok || sub == "" {
-		return 0, apperr.New(
-			apperr.CodeValidation,
-			"missing_sub_claim",
-			"ID token missing 'sub' claim",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-		)
+		return 0, apperr.Validation("ID token missing 'sub' claim")
 	}
 
 	userLink, err := u.ltiUserLinkRepository.GetBySubAndIssuer(ctx, sub, session.Issuer())
@@ -246,12 +211,7 @@ func (u *ProcessLaunchUseCase) resolveUser(ctx context.Context, claims jwt.MapCl
 	if userLink == nil {
 		name, ok := claims["name"].(string)
 		if !ok || name == "" {
-			return 0, apperr.New(
-				apperr.CodeValidation,
-				"missing_name_claim",
-				"ID token missing 'name' claim",
-				apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-			)
+			return 0, apperr.Validation("ID token missing 'name' claim")
 		}
 
 		userID, err := u.userCreator.CreateUser(ctx, sub, name)
@@ -277,22 +237,12 @@ func (u *ProcessLaunchUseCase) resolveUser(ctx context.Context, claims jwt.MapCl
 func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.MapClaims, tenant tenants.Tenant) (int64, error) {
 	contextClaim, ok := claims["https://purl.imsglobal.org/spec/lti/claim/context"].(map[string]any)
 	if !ok {
-		return 0, apperr.New(
-			apperr.CodeValidation,
-			"missing_context_claim",
-			"ID token missing 'context' claim",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-		)
+		return 0, apperr.Validation("ID token missing 'context' claim")
 	}
 
 	contextID, ok := contextClaim["id"].(string)
 	if !ok || contextID == "" {
-		return 0, apperr.New(
-			apperr.CodeValidation,
-			"missing_context_id",
-			"ID token context claim missing 'id'",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.Execute"),
-		)
+		return 0, apperr.Validation("ID token context claim missing 'id'")
 	}
 
 	courseLink, err := u.ltiCourseLinkRepository.GetByTenantAndContext(ctx, tenant.ID, contextID)
@@ -335,39 +285,19 @@ func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.Map
 // and `aud` claims are consistent with the session.
 func validateLaunchClaims(claims jwt.MapClaims, session *domain.LTISession) error {
 	if iss, _ := claims["iss"].(string); iss != session.Issuer() {
-		return apperr.New(
-			apperr.CodeValidation,
-			"invalid_id_token",
-			"ID token 'iss' claim does not match session issuer",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.validateLaunchClaims"),
-		)
+		return apperr.Validation("ID token 'iss' claim does not match session issuer")
 	}
 
 	if nonce, _ := claims["nonce"].(string); nonce != session.Nonce() {
-		return apperr.New(
-			apperr.CodeValidation,
-			"invalid_id_token",
-			"ID token 'nonce' claim does not match session nonce",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.validateLaunchClaims"),
-		)
+		return apperr.Validation("ID token 'nonce' claim does not match session nonce")
 	}
 
 	if targetLinkURI, _ := claims["https://purl.imsglobal.org/spec/lti/claim/target_link_uri"].(string); targetLinkURI != session.TargetLinkURI() {
-		return apperr.New(
-			apperr.CodeValidation,
-			"invalid_id_token",
-			"ID token 'target_link_uri' claim does not match session target link URI",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.validateLaunchClaims"),
-		)
+		return apperr.Validation("ID token 'target_link_uri' claim does not match session target link URI")
 	}
 
 	if !audienceContains(claims["aud"], session.ClientID()) {
-		return apperr.New(
-			apperr.CodeValidation,
-			"invalid_id_token",
-			"ID token 'aud' claim does not contain session client ID",
-			apperr.WithOp("lti.application.ProcessLaunchUseCase.validateLaunchClaims"),
-		)
+		return apperr.Validation("ID token 'aud' claim does not contain session client ID")
 	}
 
 	return nil

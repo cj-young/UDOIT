@@ -28,10 +28,7 @@ func (uc *GetFileUseCase) Execute(ctx context.Context, fileID int64) (GetFileRes
 	}
 
 	if file == nil {
-		return GetFileResult{}, apperr.New(
-			apperr.CodeNotFound, "file_not_found", "The requested file was not found",
-			apperr.WithOp("files.application.get_file.Execute"),
-		)
+		return GetFileResult{}, apperr.New(apperr.CodeNotFound, "The requested file was not found")
 	}
 
 	return GetFileResult{

@@ -50,12 +50,12 @@ type canvasContent struct {
 func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasContent, error) {
 	contentID, ok := content.ExternalData["content_id"].(string)
 	if !ok {
-		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'content_id' in content mapping data")
+		return canvasContent{}, apperr.Internal("Missing or invalid content ID in content mapping data")
 	}
 
 	updatedAt, ok := content.ExternalData["updated_at"].(time.Time)
 	if !ok {
-		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'updated_at' in content mapping data")
+		return canvasContent{}, apperr.Internal("Missing or invalid updated timestamp in content mapping data")
 	}
 
 	return canvasContent{
@@ -93,18 +93,18 @@ func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string,
 			})
 			if err != nil {
 				slog.Info("failed to send request", "url", url, "error", err)
-				return apperr.New(apperr.CodeInternal, "failed_to_send_request", "Failed to send HTTP request")
+				return apperr.Internal("Failed to send HTTP request")
 			}
 
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
-				return apperr.New(apperr.CodeInternal, "unexpected_status_code", "Unexpected status code: "+resp.Status)
+				return apperr.Internal("Unexpected status code: "+resp.Status)
 			}
 
 			var newPages []PageResponse
 			if err := json.NewDecoder(resp.Body).Decode(&newPages); err != nil {
-				return apperr.New(apperr.CodeInternal, "failed_to_decode_response", "Failed to decode response body")
+				return apperr.Internal("Failed to decode response body")
 			}
 			pages = append(pages, newPages...)
 

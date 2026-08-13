@@ -19,7 +19,7 @@ func ParseIssueStatus(s string) (IssueStatus, error) {
 	case "marked_as_reviewed":
 		return IssueStatusMarkedAsReviewed, nil
 	default:
-		return "", apperr.New(apperr.CodeInternal, "invalid_issue_status", "Invalid issue status '"+s+"'")
+		return "", apperr.New(apperr.CodeInternal, "Invalid issue status '"+s+"'")
 	}
 }
 

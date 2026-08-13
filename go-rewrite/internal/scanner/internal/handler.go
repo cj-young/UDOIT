@@ -34,18 +34,18 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authenticator Authenticato
 func (h *Handler) handleScanCourse(c *gin.Context) {
 	principal, ok := auth.GetPrincipal(c)
 	if !ok {
-		c.Error(apperr.New(apperr.CodeUnauthorized, "unauthorized", "The user is not authorized"))
+		c.Error(apperr.Unauthorized())
 		return
 	}
 
 	courseIDParam := c.Param("courseId")
 	if courseIDParam == "" {
-		c.Error(apperr.New(apperr.CodeValidation, "missing_course_id", "Course ID is required"))
+		c.Error(apperr.Validation("Course ID is required"))
 		return
 	}
 	courseID, err := strconv.ParseInt(courseIDParam, 10, 64)
 	if err != nil {
-		c.Error(apperr.New(apperr.CodeValidation, "invalid_course_id", "Course ID must be a valid integer"))
+		c.Error(apperr.Validation("Course ID must be a valid integer"))
 		return
 	}
 

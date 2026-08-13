@@ -12,10 +12,7 @@ const (
 func NewTheme(value string) (*Theme, error) {
 	t := Theme(value)
 	if !t.IsValid() {
-		return nil, apperr.New(
-			apperr.CodeValidation, "invalid_theme", "The provided theme is invalid",
-			apperr.WithOp("users.domain.NewTheme"),
-		)
+		return nil, apperr.Validation("The provided theme is invalid")
 	}
 
 	return &t, nil

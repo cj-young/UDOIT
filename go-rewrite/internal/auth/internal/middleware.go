@@ -15,11 +15,7 @@ func GetAuthMiddleware(getPrincipalFromSessionUseCase *application.GetPrincipalF
 		authToken, err := c.Cookie(authCookieName)
 		if err != nil || authToken == "" {
 			c.Error(
-				apperr.New(
-					apperr.CodeUnauthorized, "missing_auth_cookie", "Missing auth cookie",
-					apperr.WithOp("auth.internal.GetAuthMiddleware"),
-					apperr.WithCause(err),
-				),
+				apperr.Unauthorized(),
 			)
 			c.Abort()
 			return
@@ -32,11 +28,7 @@ func GetAuthMiddleware(getPrincipalFromSessionUseCase *application.GetPrincipalF
 		principal, err := getPrincipalFromSessionUseCase.Execute(c.Request.Context(), getPrincipalFromSessionQuery)
 		if err != nil {
 			c.Error(
-				apperr.New(
-					apperr.CodeUnauthorized, "invalid_session", "Invalid session",
-					apperr.WithOp("auth.internal.GetAuthMiddleware"),
-					apperr.WithCause(err),
-				),
+				apperr.Unauthorized(apperr.WithCause(err)),
 			)
 			c.Abort()
 			return

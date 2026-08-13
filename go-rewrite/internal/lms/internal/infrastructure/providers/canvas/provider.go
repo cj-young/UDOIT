@@ -44,24 +44,15 @@ type canvasConfig struct {
 
 func ValidateConfig(configData map[string]any) error {
 	if _, ok := configData["base_url"].(string); !ok {
-		return apperr.New(
-			apperr.CodeValidation, "invalid_canvas_config", "Missing or non-string 'base_url' in Canvas provider config",
-			apperr.WithOp("lms.infrastructure.canvas.ValidateConfig"),
-		)
+		return apperr.Validation("Missing or non-string 'base_url' in Canvas provider config")
 	}
 
 	if _, ok := configData["client_id"].(string); !ok {
-		return apperr.New(
-			apperr.CodeValidation, "invalid_canvas_config", "Missing or non-string 'client_id' in Canvas provider config",
-			apperr.WithOp("lms.infrastructure.canvas.ValidateConfig"),
-		)
+		return apperr.Validation("Missing or non-string 'client_id' in Canvas provider config")
 	}
 
 	if _, ok := configData["client_secret"].(string); !ok {
-		return apperr.New(
-			apperr.CodeValidation, "invalid_canvas_config", "Missing or non-string 'client_secret' in Canvas provider config",
-			apperr.WithOp("lms.infrastructure.canvas.ValidateConfig"),
-		)
+		return apperr.Validation("Missing or non-string 'client_secret' in Canvas provider config")
 	}
 
 	return nil
@@ -70,26 +61,17 @@ func ValidateConfig(configData map[string]any) error {
 func asCanvasConfig(config domain.LMSProviderConfig) (canvasConfig, error) {
 	baseURL, ok := config.Data()["base_url"].(string)
 	if !ok {
-		return canvasConfig{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Config", "Missing or invalid 'base_url' in config data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasConfig"),
-		)
+		return canvasConfig{}, apperr.Internal("Missing or invalid base URL in config data")
 	}
 
 	clientID, ok := config.Data()["client_id"].(string)
 	if !ok {
-		return canvasConfig{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Config", "Missing or invalid 'client_id' in config data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasConfig"),
-		)
+		return canvasConfig{}, apperr.Internal("Missing or invalid client ID in config data")
 	}
 
 	clientSecret, ok := config.Data()["client_secret"].(string)
 	if !ok {
-		return canvasConfig{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS Config", "Missing or invalid 'client_secret' in config data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasConfig"),
-		)
+		return canvasConfig{}, apperr.Internal("Missing or invalid client secret in config data")
 	}
 
 	return canvasConfig{

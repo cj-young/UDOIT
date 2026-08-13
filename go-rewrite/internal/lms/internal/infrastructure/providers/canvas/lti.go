@@ -26,14 +26,14 @@ func (p *CanvasLMSProvider) GetCourseInfoFromLTILaunch(ctx context.Context, clai
 func (p *CanvasLMSProvider) asCanvasCustomClaims(claims map[string]any) (CanvasClaims, error) {
 	customClaims, ok := claims["https://purl.imsglobal.org/spec/lti/claim/custom"].(map[string]any)
 	if !ok {
-		return CanvasClaims{}, apperr.New(apperr.CodeInternal, "invalid_lti_launch", "Missing or invalid custom claims in LTI launch")
+		return CanvasClaims{}, apperr.Internal("Missing or invalid custom claims in LTI launch")
 	}
 
 	slog.Info("These are the custom claims", "customClaims", customClaims)
 
 	lmsCourseID, ok := customClaims["course_id"].(string)
 	if !ok {
-		return CanvasClaims{}, apperr.New(apperr.CodeInternal, "invalid_lti_launch", "Missing or invalid 'course_id' in custom claims")
+		return CanvasClaims{}, apperr.Internal("Missing or invalid course ID in custom claims")
 	}
 
 	return CanvasClaims{

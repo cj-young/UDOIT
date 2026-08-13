@@ -38,20 +38,15 @@ func (h *Handler) HandleReviewFile(c *gin.Context) {
 	fileID, err := strconv.ParseInt(c.Param("file"), 10, 64)
 	if err != nil {
 		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_file_id", "File ID must be a valid integer",
+			apperr.CodeValidation, "File ID must be a valid integer",
 			apperr.WithCause(err),
-			apperr.WithOp("files.handler.HandleReviewFile"),
 		))
 		return
 	}
 
 	_, err = h.getFileUseCase.Execute(c.Request.Context(), fileID)
 	if err != nil {
-		c.Error(apperr.New(
-			apperr.CodeInternal, "failed_to_get_file", "Failed to retrieve file information",
-			apperr.WithCause(err),
-			apperr.WithOp("files.handler.HandleReviewFile"),
-		))
+		c.Error(err)
 		return
 	}
 
@@ -60,19 +55,15 @@ func (h *Handler) HandleReviewFile(c *gin.Context) {
 func (h *Handler) HandleDeleteFile(c *gin.Context) {
 	principal, ok := auth.GetPrincipal(c)
 	if !ok {
-		c.Error(apperr.New(
-			apperr.CodeUnauthorized, "unauthorized", "Unauthorized",
-			apperr.WithOp("files.handler.HandleDeleteFile"),
-		))
+		c.Error(apperr.Unauthorized())
 		return
 	}
 
 	fileID, err := strconv.ParseInt(c.Param("file"), 10, 64)
 	if err != nil {
 		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_file_id", "File ID must be a valid integer",
+			apperr.CodeValidation, "File ID must be a valid integer",
 			apperr.WithCause(err),
-			apperr.WithOp("files.handler.HandleDeleteFile"),
 		))
 		return
 	}
@@ -87,3 +78,4 @@ func (h *Handler) HandleDeleteFile(c *gin.Context) {
 		"message": "File deleted successfully",
 	})
 }
+

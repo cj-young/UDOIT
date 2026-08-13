@@ -51,10 +51,7 @@ type LoginInitiationRequest struct {
 func (h *Handler) handleLoginInitiation(c *gin.Context) {
 	var req LoginInitiationRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_request_payload", "Invalid request payload",
-			apperr.WithOp("lti.handler.handleLoginInitiation"),
-		))
+		c.Error(apperr.New(apperr.CodeValidation, "Invalid request payload"))
 		return
 	}
 
@@ -71,16 +68,7 @@ func (h *Handler) handleLoginInitiation(c *gin.Context) {
 
 	redirectURL, err := h.getLaunchRedirectUseCase.Execute(c.Request.Context(), getLaunchRedirectQuery)
 	if err != nil {
-		if apperr.IsAppError(err) {
-			c.Error(err)
-			return
-		}
-
-		c.Error(apperr.New(
-			apperr.CodeInternal, "launch_redirect_error", "Failed to get launch redirect URL",
-			apperr.WithOp("lti.handler.handleLoginInitiation"),
-			apperr.WithCause(err),
-		))
+		c.Error(err)
 		return
 	}
 
@@ -95,10 +83,7 @@ type LaunchCallbackRequest struct {
 func (h *Handler) handleLaunch(c *gin.Context) {
 	var req LaunchCallbackRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.Error(apperr.New(
-			apperr.CodeValidation, "invalid_request_payload", "Invalid request payload",
-			apperr.WithOp("lti.handler.handleLaunch"),
-		))
+		c.Error(apperr.Validation("Invalid request payload"))
 		return
 	}
 
@@ -109,31 +94,13 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 
 	result, err := h.processLaunchUseCase.Execute(c.Request.Context(), processLaunchCommand)
 	if err != nil {
-		if apperr.IsAppError(err) {
-			c.Error(err)
-			return
-		}
-
-		c.Error(apperr.New(
-			apperr.CodeInternal, "launch_processing_error", "Failed to process launch",
-			apperr.WithOp("lti.handler.handleLaunch"),
-			apperr.WithCause(err),
-		))
+		c.Error(err)
 		return
 	}
 
 	session, err := h.sessionCreator.CreateSession(c.Request.Context(), result.UserID, result.TenantID)
 	if err != nil {
-		if apperr.IsAppError(err) {
-			c.Error(err)
-			return
-		}
-
-		c.Error(apperr.New(
-			apperr.CodeInternal, "session_creation_error", "Failed to create user session",
-			apperr.WithOp("lti.handler.handleLaunch"),
-			apperr.WithCause(err),
-		))
+		c.Error(err)
 		return
 	}
 
@@ -143,16 +110,7 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 		TargetLinkURI: result.TargetLinkURI, 
 	})
 	if err != nil {
-		if apperr.IsAppError(err) {
-			c.Error(err)
-			return
-		}
-
-		c.Error(apperr.New(
-			apperr.CodeInternal, "authentication_error", "Failed to begin authentication",
-			apperr.WithOp("lti.handler.handleLaunch"),
-			apperr.WithCause(err),
-		))
+		c.Error(err)
 		return
 	}
 
@@ -176,10 +134,7 @@ func (h *Handler) handleLaunch(c *gin.Context) {
 			c.Redirect(302, result.TargetLinkURI)
 			return
 		default:
-			c.Error(apperr.New(
-				apperr.CodeInternal, "unknown_auth_challenge_kind", "Unknown authentication challenge kind",
-				apperr.WithOp("lti.handler.handleLaunch"),
-			))
+			c.Error(apperr.Internal("Unknown authentication challenge kind"))
 			return
 	}
 }

@@ -32,9 +32,7 @@ func (r *MySQLLMSProviderConfigRepository) GetByTenant(ctx context.Context, tena
 
 	lmsType := domain.LMSType(result.LmsType)
 	if !lmsType.IsValid() {
-		return nil, apperr.New(
-			apperr.CodeInternal, "invalid_lms_type", "An invalid LMS type was found in the requested LMS config.",
-		)
+		return nil, apperr.Internal("An invalid LMS type was found in the requested LMS config.")
 	}
 
 	return domain.NewLMSProviderConfig(
@@ -47,10 +45,7 @@ func (r *MySQLLMSProviderConfigRepository) GetByTenant(ctx context.Context, tena
 func (r *MySQLLMSProviderConfigRepository) UpsertByTenant(ctx context.Context, tenantID int64, lmsKey domain.LMSType, data map[string]any) error {
 	configJSON, err := json.Marshal(data)
 	if err != nil {
-		return apperr.New(
-			apperr.CodeInternal, "config_marshal_failed", "Failed to marshal LMS provider config",
-			apperr.WithOp("lms.internal.infrastructure.UpsertByTenant"),
-		)
+		return apperr.Internal("Failed to marshal LMS provider config")
 	}
 
 	return r.queries.UpsertLMSProviderConfigByTenant(ctx, lmssqlc.UpsertLMSProviderConfigByTenantParams{
