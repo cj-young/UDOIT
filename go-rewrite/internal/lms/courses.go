@@ -6,7 +6,16 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+func (m *Module) GetCourseInfoFromLTILaunch(ctx context.Context, tenantID int64, claims jwt.MapClaims) (string, map[string]any, error) {
+	lmsProvider, err := m.providerResolver.GetByTenant(ctx, tenantID)
+	if err != nil {
+		return "", nil, err
+	}
 
-func (m *Module) GetCourseDataFromLTILaunch(ctx context.Context, tenantID int64, claims jwt.MapClaims, courseID int64) error {
-	return nil
+	externalID, externalData, err := lmsProvider.GetCourseInfoFromLTILaunch(ctx, claims)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return externalID, externalData, nil
 }

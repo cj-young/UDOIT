@@ -10,18 +10,18 @@ import (
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/lms/internal/infrastructure"
 	"rewritetest/internal/lms/internal/infrastructure/providers/canvas"
+	"rewritetest/internal/shared/apperr"
 
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 )
 
 type Module struct {
-	providerRegistry           domain.LMSProviderRegistry
-	providerConfigRepository   domain.LMSProviderConfigRepository
-	handler                    *internal.Handler
+	providerResolver						domain.LMSProviderResolver
+	providerConfigRepository   	domain.LMSProviderConfigRepository
+	handler                    	*internal.Handler
 }
 
 func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
@@ -35,17 +35,15 @@ func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
 	// LMS providers
 
 	oauthRedirectURI := fmt.Sprintf("%s/oauth/callback", baseURL)
-	canvasProvider := canvas.NewCanvasLMSProvider(credentialRepository, authAttemptRepository, oauthRedirectURI)
 
-	providerRegistry := infrastructure.NewMapLMSProviderRegistry()
-	providerRegistry.RegisterProvider(domain.LMSTypeCanvas, canvasProvider)
+	providerResolver := infrastructure.NewTenantLMSProviderResolver(providerConfigRepository, credentialRepository, authAttemptRepository, oauthRedirectURI)
 
-	processOAuthRedirectUseCase := application.NewProcessOAuthRedirectUseCase(providerRegistry, providerConfigRepository, authAttemptRepository)
+	processOAuthRedirectUseCase := application.NewProcessOAuthRedirectUseCase(providerResolver, providerConfigRepository, authAttemptRepository)
 
 	handler := internal.NewHandler(processOAuthRedirectUseCase)
 
 	return &Module{
-		providerRegistry:           providerRegistry,
+		providerResolver:           providerResolver,
 		providerConfigRepository:   providerConfigRepository,
 		handler:                    handler,
 	}
@@ -65,11 +63,21 @@ func (m *Module) SaveProviderConfig(ctx context.Context, tenantID int64, lmsKey 
 }
 
 func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, configData map[string]any) error {
-	provider, err := m.providerRegistry.Get(ctx, domain.LMSType(lmsKey))
+
+	lmsType, err := domain.ParseLMSType(lmsKey)
 	if err != nil {
 		return err
 	}
-	return provider.ValidateConfig(configData)
+
+	// This is a second switch statement (the first one found in the provider
+	// resolver). Abstracting it into some registry could be valuable in the
+	// future.
+	switch lmsType {
+	case domain.LMSTypeCanvas:
+		return canvas.ValidateConfig(configData)
+	default:
+		return apperr.New(apperr.CodeInternal, "unsupported_lms_type", "The provided LMS type is not supported")
+	}
 }
 
 type ContentItemDTO struct {
@@ -87,17 +95,12 @@ type GetContentRequest struct {
 }
 
 func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]ContentItemDTO, error) {
-	lmsProvider, tenantConfig, err := application.GetLMSProviderAndConfig(
-		ctx,
-		m.providerRegistry,
-		m.providerConfigRepository,
-		req.TenantID,
-	)
+	lmsProvider, err := m.providerResolver.GetByTenant(ctx, req.TenantID)
 	if err != nil {
 		return nil, err
 	}
 	
-	contentItems, err := lmsProvider.GetContent(ctx, tenantConfig, domain.LMSCourse{
+	contentItems, err := lmsProvider.GetContent(ctx, domain.LMSCourse{
 		ID:          	req.CourseID,
 		ExternalID:   req.ExternalCourseID,
 		ExternalData: req.ExternalCourseData,
@@ -115,23 +118,4 @@ func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]Conte
 		}
 	}
 	return contentItemDTOs, nil
-}
-
-func (m *Module) GetCourseInfoFromLTILaunch(ctx context.Context, tenantID int64, claims jwt.MapClaims) (string, map[string]any, error) {
-	lmsProvider, tenantConfig, err := application.GetLMSProviderAndConfig(
-		ctx,
-		m.providerRegistry,
-		m.providerConfigRepository,
-		tenantID,
-	)
-	if err != nil {
-		return "", nil, err
-	}
-
-	externalID, externalData, err := lmsProvider.GetCourseInfoFromLTILaunch(ctx, tenantConfig, claims)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return externalID, externalData, nil
 }

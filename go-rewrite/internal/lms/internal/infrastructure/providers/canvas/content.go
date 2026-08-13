@@ -8,20 +8,15 @@ import (
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/apperr"
 	"strings"
+	"time"
 )
 
 func (p *CanvasLMSProvider) GetContent(
 	ctx context.Context,
-	tenantConfig domain.LMSProviderConfig,
 	course domain.LMSCourse,
 	currentContent []domain.LMSContent,
 	userID int64,
 ) ([]domain.CourseContent, error) {
-	
-	canvasConfig, err := p.asCanvasConfig(tenantConfig)
-	if err != nil {
-		return nil, err
-	}
 
 	canvasCourse, err := p.asCanvasCourse(course)
 	if err != nil {
@@ -29,7 +24,7 @@ func (p *CanvasLMSProvider) GetContent(
 	}
 
 	// TODO: use current content mappings to skip fetching content that is already up to date.
-	pages, err := p.getPages(ctx, canvasConfig, canvasCourse.courseID, userID)
+	pages, err := p.getPages(ctx, canvasCourse.courseID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +42,28 @@ func (p *CanvasLMSProvider) GetContent(
 }
 
 
+type canvasContent struct {
+	contentID string
+	updatedAt time.Time
+}
+
+func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasContent, error) {
+	contentID, ok := content.ExternalData["content_id"].(string)
+	if !ok {
+		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'content_id' in content mapping data")
+	}
+
+	updatedAt, ok := content.ExternalData["updated_at"].(time.Time)
+	if !ok {
+		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'updated_at' in content mapping data")
+	}
+
+	return canvasContent{
+		contentID: contentID,
+		updatedAt: updatedAt,
+	}, nil
+}
+
 
 type PageResponse struct {
 	PageID 			int `json:"page_id"`
@@ -56,7 +73,7 @@ type PageResponse struct {
 	Body 				string `json:"body"`
 }
 
-func (p *CanvasLMSProvider) getPages(ctx context.Context, config canvasConfig, canvasCourseID string, userID int64) ([]PageResponse, error) {
+func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string, userID int64) ([]PageResponse, error) {
 
 	path := "/api/v1/courses/"+canvasCourseID+"/pages?include[]=body&per_page=100"
 	url := ""
@@ -71,7 +88,7 @@ func (p *CanvasLMSProvider) getPages(ctx context.Context, config canvasConfig, c
 					URL:    url,
 					Body:   nil,
 					Method: http.MethodGet,
-					Config: config,
+					Config: p.config,
 					UserID: userID,
 			})
 			if err != nil {

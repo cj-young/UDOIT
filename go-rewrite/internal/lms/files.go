@@ -2,7 +2,6 @@ package lms
 
 import (
 	"context"
-	"rewritetest/internal/lms/internal/application"
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/auth"
 )
@@ -14,12 +13,7 @@ type DeleteFileRequest struct {
 }
 
 func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, req DeleteFileRequest) error {
-	lmsProvider, tenantConfig, err := application.GetLMSProviderAndConfig(
-		ctx,
-		m.providerRegistry,
-		m.providerConfigRepository,
-		principal.TenantID,
-	)
+	lmsProvider, err := m.providerResolver.GetByTenant(ctx, principal.TenantID)
 	if err != nil {
 		return err
 	}
@@ -29,7 +23,7 @@ func (m *Module) DeleteFile(ctx context.Context, principal auth.Principal, req D
 		ExternalID: 		req.ExternalID,
 		ExternalData: 	req.ExternalData,
 	}
-	err = lmsProvider.DeleteFile(ctx, principal, tenantConfig, file)
+	err = lmsProvider.DeleteFile(ctx, principal, file)
 	if err != nil {
 		return err
 	}

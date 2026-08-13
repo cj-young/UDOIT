@@ -1,5 +1,7 @@
 package domain
 
+import "rewritetest/internal/shared/apperr"
+
 type LMSType string
 
 const (
@@ -14,4 +16,16 @@ func (t LMSType) IsValid() bool {
 	default:
 		return false
 	}
+}
+
+func (t LMSType) String() string {
+	return string(t)
+}
+
+func ParseLMSType(s string) (LMSType, error) {
+	lmsType := LMSType(s)
+	if !lmsType.IsValid() {
+		return "", apperr.New(apperr.CodeInternal, "invalid_lms_type", "The provided LMS type is invalid")
+	}
+	return lmsType, nil
 }

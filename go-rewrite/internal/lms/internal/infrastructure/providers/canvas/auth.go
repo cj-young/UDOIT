@@ -23,14 +23,9 @@ type canvasCredential struct {
 	expiresAt    *time.Time
 }
 
-func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, config domain.LMSProviderConfig, userID int64, targetLinkURI string) (domain.AuthChallenge, error) {
-	
-	canvasConfig, err := p.asCanvasConfig(config)
-	if err != nil {
-		return domain.AuthChallenge{}, err
-	}
+func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, userID int64, targetLinkURI string) (domain.AuthChallenge, error) {
 
-	baseURL, err := url.Parse(canvasConfig.baseURL)
+	baseURL, err := url.Parse(p.config.baseURL)
 	if err != nil {
 		return domain.AuthChallenge{}, apperr.New(
 			apperr.CodeInternal, "Invalid Canvas base URL", err.Error(),
@@ -39,7 +34,7 @@ func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, config doma
 		)
 	}
 
-	isAuthenticated, err := p.checkIsAuthenticated(ctx, canvasConfig, userID)
+	isAuthenticated, err := p.checkIsAuthenticated(ctx, p.config, userID)
 	if err != nil {
 		return domain.AuthChallenge{}, err
 	}
@@ -59,7 +54,7 @@ func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, config doma
 	}
 
 	params := baseURL.Query()
-	params.Set("client_id", canvasConfig.clientID)
+	params.Set("client_id", p.config.clientID)
 	params.Set("response_type", "code")
 	params.Set("redirect_uri", p.oauthRedirectURI)
 	params.Set("state", state)
@@ -68,7 +63,7 @@ func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, config doma
 
 	authAttempt := domain.AuthAttempt{
 		UserID:  userID,
-		TenantID: config.TenantID(),
+		TenantID: p.config.tenantID,
 		State: state,
 		TargetLinkURI: targetLinkURI,
 		CreatedAt: time.Now(),
@@ -93,14 +88,9 @@ type TokenResponse struct {
 	TokenType    string `json:"token_type"`
 }
 
-func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, config domain.LMSProviderConfig, authAttempt domain.AuthAttempt, code string) (string, error) {
-	
-	canvasConfig, err := p.asCanvasConfig(config)
-	if err != nil {
-		return "", err
-	}
+func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, authAttempt domain.AuthAttempt, code string) (string, error) {
 
-	baseURL, err := url.Parse(canvasConfig.baseURL)
+	baseURL, err := url.Parse(p.config.baseURL)
 	if err != nil {
 		return "", apperr.New(
 			apperr.CodeInternal, "invalid_canvas_base_url", err.Error(),
@@ -113,8 +103,8 @@ func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, config dom
 
 	formData := url.Values{}
 	formData.Set("grant_type", "authorization_code")
-	formData.Set("client_id", canvasConfig.clientID)
-	formData.Set("client_secret", canvasConfig.clientSecret)
+	formData.Set("client_id", p.config.clientID)
+	formData.Set("client_secret", p.config.clientSecret)
 	formData.Set("redirect_uri", p.oauthRedirectURI)
 	formData.Set("code", code)
 

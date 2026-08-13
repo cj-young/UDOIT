@@ -20,17 +20,12 @@ const (
 )
 
 func (m *Module) BeginAuthentication(ctx context.Context, userID int64, tenantID int64, targetLinkURI string) (AuthChallenge, error) {
-	providerConfig, err := m.providerConfigRepository.GetByTenant(ctx, tenantID)
+	lmsProvider, err := m.providerResolver.GetByTenant(ctx, tenantID)
 	if err != nil {
 		return AuthChallenge{}, err
 	}
 
-	provider, err := m.providerRegistry.Get(ctx, providerConfig.LMSKey())
-	if err != nil {
-		return AuthChallenge{}, err
-	}
-
-	challenge, err := provider.BeginAuthentication(ctx, *providerConfig, userID, targetLinkURI)
+	challenge, err := lmsProvider.BeginAuthentication(ctx, userID, targetLinkURI)
 	if err != nil {
 		return AuthChallenge{}, err
 	}

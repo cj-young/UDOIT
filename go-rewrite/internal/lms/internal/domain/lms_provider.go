@@ -13,7 +13,6 @@ import (
 type FullLMSProvider interface {
 	FileProvider
 	AuthenticationProvider
-	ConfigValidator
 	ScanProvider
 	LTIProvider
 }
@@ -24,15 +23,11 @@ type LMSFile struct {
 	ExternalData 	map[string]any
 }
 type FileProvider interface {
-	DeleteFile(ctx context.Context, principal auth.Principal, config LMSProviderConfig, file LMSFile) error
+	DeleteFile(ctx context.Context, principal auth.Principal, file LMSFile) error
 }
 
 type AuthenticationProvider interface {
-	BeginAuthentication(ctx context.Context, config LMSProviderConfig, userID int64, targetLinkURI string) (AuthChallenge, error)
-}
-
-type ConfigValidator interface {
-	ValidateConfig(configData map[string]any) error
+	BeginAuthentication(ctx context.Context, userID int64, targetLinkURI string) (AuthChallenge, error)
 }
 
 type LMSCourse struct {
@@ -49,14 +44,14 @@ type LMSContent struct {
 }
 
 type ScanProvider interface {
-	// The current course content is sent to the LMS provider to allow it to
-	// skip fetching content that is already up to date.
-	// If new internal content items are created out of the return, the LMS provider
-	// expects them to be explicitly registered later.
-	GetContent(ctx context.Context, tenantConfig LMSProviderConfig, course LMSCourse, currentContent []LMSContent, userID int64) ([]CourseContent, error)
+	// The current course content is sent to the LMS provider to allow it to skip
+	// fetching content that is already up to date. If new internal content items
+	// are created out of the return, the LMS provider expects them to be
+	// explicitly registered later.
+	GetContent(ctx context.Context, course LMSCourse, currentContent []LMSContent, userID int64) ([]CourseContent, error)
 }
 
 type LTIProvider interface {
-	GetCourseInfoFromLTILaunch(ctx context.Context, tenantConfig LMSProviderConfig, claims jwt.MapClaims) (string, map[string]any, error)
+	GetCourseInfoFromLTILaunch(ctx context.Context, claims jwt.MapClaims) (string, map[string]any, error)
 }
 

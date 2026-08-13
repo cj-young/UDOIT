@@ -3,7 +3,6 @@ package canvas
 import (
 	"context"
 	"log/slog"
-	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/apperr"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,7 +12,7 @@ type CanvasClaims struct {
 	CourseID string `json:"course_id"`
 }
 
-func (p *CanvasLMSProvider) GetCourseInfoFromLTILaunch(ctx context.Context, tenantConfig domain.LMSProviderConfig, claims jwt.MapClaims) (string, map[string]any, error) {
+func (p *CanvasLMSProvider) GetCourseInfoFromLTILaunch(ctx context.Context, claims jwt.MapClaims) (string, map[string]any, error) {
 	customClaims, err := p.asCanvasCustomClaims(claims)
 	if err != nil {
 		return "", nil, err

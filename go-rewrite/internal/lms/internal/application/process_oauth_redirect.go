@@ -7,18 +7,18 @@ import (
 )
 
 type ProcessOAuthRedirectUseCase struct {
-	lmsProviderRegistry domain.LMSProviderRegistry
+	lmsProviderResolver domain.LMSProviderResolver
 	lmsProviderConfigRepository domain.LMSProviderConfigRepository
 	authAttemptRepository domain.AuthAttemptRepository
 }
 
 func NewProcessOAuthRedirectUseCase(
-	lmsProviderRegistry domain.LMSProviderRegistry,
+	lmsProviderResolver domain.LMSProviderResolver,
 	lmsProviderConfigRepository domain.LMSProviderConfigRepository,
 	authAttemptRepository domain.AuthAttemptRepository,
 ) *ProcessOAuthRedirectUseCase {
 	return &ProcessOAuthRedirectUseCase{
-		lmsProviderRegistry: lmsProviderRegistry,
+		lmsProviderResolver: lmsProviderResolver,
 		lmsProviderConfigRepository: lmsProviderConfigRepository,
 		authAttemptRepository: authAttemptRepository,
 	}
@@ -39,33 +39,12 @@ func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string,
 		)
 	}
 
-	providerConfig, err := u.lmsProviderConfigRepository.GetByTenant(ctx, authAttempt.TenantID)
-	if err != nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "provider_config_not_found", "Failed to find provider config by tenant ID",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
-			apperr.WithCause(err),
-		)
-	}
-	if providerConfig == nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "provider_config_not_found", "Provider config is nil",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
-		)
-	}
-
-	provider, err := u.lmsProviderRegistry.Get(ctx, providerConfig.LMSKey())
+	provider, err := u.lmsProviderResolver.GetByTenant(ctx, authAttempt.TenantID)
 	if err != nil {
 		return "", apperr.New(
 			apperr.CodeInternal, "provider_not_found", "Failed to find provider by tenant ID",
 			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
 			apperr.WithCause(err),
-		)
-	}
-	if provider == nil {
-		return "", apperr.New(
-			apperr.CodeInternal, "provider_not_found", "Provider is nil",
-			apperr.WithOp("lms.internal.handler.handleOauthRedirect"),
 		)
 	}
 	
@@ -77,7 +56,7 @@ func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string,
 		)
 	}
 
-	redirectURL, err := oauthRedirectProcessor.ProcessOAuthRedirect(ctx, *providerConfig, authAttempt, code)
+	redirectURL, err := oauthRedirectProcessor.ProcessOAuthRedirect(ctx, authAttempt, code)
 	if err != nil {
 		return "", apperr.New(
 			apperr.CodeInternal, "process_oauth_redirect_failed", "Failed to process OAuth redirect",

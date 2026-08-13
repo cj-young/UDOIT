@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/apperr"
-	"time"
 )
 
 type CanvasLMSProvider struct {
@@ -12,50 +11,38 @@ type CanvasLMSProvider struct {
 	authAttemptRepository   domain.AuthAttemptRepository
 	httpClient              *http.Client
 	oauthRedirectURI        string
+	config                  canvasConfig
 }
 
 func NewCanvasLMSProvider(
-	lmsCredentialRepository domain.LMSCredentialRepository,
-	authAttemptRepository domain.AuthAttemptRepository,
-	oauthRedirectURI string,
-) *CanvasLMSProvider {
+	lmsCredentialRepository 	domain.LMSCredentialRepository,
+	authAttemptRepository 		domain.AuthAttemptRepository,
+	oauthRedirectURI 					string,
+	config 										domain.LMSProviderConfig,									
+) (*CanvasLMSProvider, error) {
+
+	canvasConfig, err := asCanvasConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &CanvasLMSProvider{
 		lmsCredentialRepository: lmsCredentialRepository,
 		authAttemptRepository:   authAttemptRepository,
 		httpClient:              http.DefaultClient,
 		oauthRedirectURI:        oauthRedirectURI,
-	}
-}
-
-type canvasContent struct {
-	contentID string
-	updatedAt time.Time
-}
-
-type canvasConfig struct {
-	baseURL      string
-	clientID     string
-	clientSecret string
-}
-
-func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasContent, error) {
-	contentID, ok := content.ExternalData["content_id"].(string)
-	if !ok {
-		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'content_id' in content mapping data")
-	}
-
-	updatedAt, ok := content.ExternalData["updated_at"].(time.Time)
-	if !ok {
-		return canvasContent{}, apperr.New(apperr.CodeInternal, "invalid_canvas_content", "Missing or invalid 'updated_at' in content mapping data")
-	}
-
-	return canvasContent{
-		contentID: contentID,
-		updatedAt: updatedAt,
+		config:                  canvasConfig,
 	}, nil
 }
 
-func (p *CanvasLMSProvider) ValidateConfig(configData map[string]any) error {
+type canvasConfig struct {
+	baseURL      	string
+	clientID     	string
+	clientSecret 	string
+	tenantID			int64
+}
+
+func ValidateConfig(configData map[string]any) error {
 	if _, ok := configData["base_url"].(string); !ok {
 		return apperr.New(
 			apperr.CodeValidation, "invalid_canvas_config", "Missing or non-string 'base_url' in Canvas provider config",
@@ -80,7 +67,7 @@ func (p *CanvasLMSProvider) ValidateConfig(configData map[string]any) error {
 	return nil
 }
 
-func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (canvasConfig, error) {
+func asCanvasConfig(config domain.LMSProviderConfig) (canvasConfig, error) {
 	baseURL, ok := config.Data()["base_url"].(string)
 	if !ok {
 		return canvasConfig{}, apperr.New(
@@ -109,29 +96,7 @@ func (p *CanvasLMSProvider) asCanvasConfig(config domain.LMSProviderConfig) (can
 		baseURL:      baseURL,
 		clientID:     clientID,
 		clientSecret: clientSecret,
-	}, nil
-}
-
-func (p *CanvasLMSProvider) asCanvasFile(file domain.LMSFile) (canvasFile, error) {
-	fileID, ok := file.ExternalData["file_id"].(string)
-	if !ok {
-		return canvasFile{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'fileId' in mapping data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
-		)
-	}
-
-	contextType, ok := file.ExternalData["context_type"].(string)
-	if !ok {
-		return canvasFile{}, apperr.New(
-			apperr.CodeInternal, "Invalid Canvas LMS File", "Missing or invalid 'contextType' in mapping data",
-			apperr.WithOp("lms.infrastructure.canvas_lms_provider.asCanvasFile"),
-		)
-	}
-
-	return canvasFile{
-		fileID:      fileID,
-		contextType: contextType,
+		tenantID:     config.TenantID(),
 	}, nil
 }
 
