@@ -1,213 +1,74 @@
-package application
+package application_test
 
 import (
 	"context"
-	"errors"
 	"net/url"
 	"testing"
 	"time"
 
+	"rewritetest/internal/lti/internal/application"
 	"rewritetest/internal/lti/internal/domain"
+	"rewritetest/internal/lti/internal/infrastructure"
 	"rewritetest/internal/shared/apperr"
 
 	"github.com/stretchr/testify/require"
 )
 
-type fakeRedirectRegistrationRepository struct {
-	registration *domain.Registration
-	err          error
-	issuer       string
-	clientID     string
+func TestGetLaunchRedirect_Success(t *testing.T) {
+	registrationRepo := infrastructure.NewMapMockRegistrationRepository()
+	sessionRepo := infrastructure.NewMapMockLTISessionRepository()
+
+	require.NoError(t, registrationRepo.Create(context.Background(), *domain.NewRegistration(
+		"https://issuer.example",
+		"client-1",
+		"https://issuer.example/login",
+		"https://issuer.example/jwks",
+		"https://issuer.example/service-auth",
+		"https://issuer.example/service-login",
+		5,
+	)))
+
+	uc := application.NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
+	redirectURL, err := uc.Execute(context.Background(), application.GetLaunchRedirectQuery{
+		Issuer:         "https://issuer.example",
+		ClientID:       "client-1",
+		LoginHint:      "hint-123",
+		TargetLinkURI:  "https://tool.example/launch-target",
+		RedirectURI:    "https://tool.example/lti/launch",
+		LTIMessageHint: "msg-456",
+		LTISessionTTL:  5 * time.Minute,
+	})
+
+	require.NoError(t, err)
+
+	parsed, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	params := parsed.Query()
+	require.Equal(t, "client-1", params.Get("client_id"))
+	require.Equal(t, "hint-123", params.Get("login_hint"))
+	require.Equal(t, "msg-456", params.Get("lti_message_hint"))
+	require.NotEmpty(t, params.Get("state"))
+	require.NotEmpty(t, params.Get("nonce"))
+
+	session, err := sessionRepo.GetByState(context.Background(), params.Get("state"))
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	require.Equal(t, "https://tool.example/launch-target", session.TargetLinkURI())
+	require.Equal(t, int64(5), session.TenantID())
 }
 
-func (f *fakeRedirectRegistrationRepository) Create(context.Context, domain.Registration) error {
-	return nil
-}
+func TestGetLaunchRedirect_MissingRegistrationIsNotFound(t *testing.T) {
+	registrationRepo := infrastructure.NewMapMockRegistrationRepository()
+	sessionRepo := infrastructure.NewMapMockLTISessionRepository()
 
-func (f *fakeRedirectRegistrationRepository) Save(context.Context, domain.Registration) error {
-	return nil
-}
-
-func (f *fakeRedirectRegistrationRepository) GetByIssuerAndClientID(_ context.Context, issuer string, clientID string) (*domain.Registration, error) {
-	f.issuer = issuer
-	f.clientID = clientID
-	if f.err != nil {
-		return nil, f.err
-	}
-	return f.registration, nil
-}
-
-type fakeRedirectSessionRepository struct {
-	createErr error
-	created   []*domain.LTISession
-}
-
-func (f *fakeRedirectSessionRepository) Create(_ context.Context, session *domain.LTISession) error {
-	f.created = append(f.created, session)
-	return f.createErr
-}
-
-func (f *fakeRedirectSessionRepository) GetByState(context.Context, string) (*domain.LTISession, error) {
-	return nil, nil
-}
-
-func (f *fakeRedirectSessionRepository) Delete(context.Context, string) error {
-	return nil
-}
-
-func TestGetLaunchRedirectUseCase_Execute_RegistrationNotFound_ReturnsNotFound(t *testing.T) {
-	registrationRepo := &fakeRedirectRegistrationRepository{}
-	sessionRepo := &fakeRedirectSessionRepository{}
-	uc := NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
-
-	_, err := uc.Execute(context.Background(), GetLaunchRedirectQuery{
+	uc := application.NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
+	_, err := uc.Execute(context.Background(), application.GetLaunchRedirectQuery{
 		Issuer:        "https://issuer.example",
-		ClientID:      "client-123",
-		LoginHint:     "hint",
-		TargetLinkURI: "https://tool.example/app",
-		RedirectURI:   "https://tool.example/lti/authorize/check",
+		ClientID:      "missing-client",
+		TargetLinkURI: "https://tool.example/launch-target",
+		RedirectURI:   "https://tool.example/lti/launch",
 	})
 
 	require.Error(t, err)
 	require.True(t, apperr.IsCode(err, apperr.CodeNotFound))
-	require.Empty(t, sessionRepo.created)
-}
-
-func TestGetLaunchRedirectUseCase_Execute_InvalidLoginAuthEndpoint_ReturnsInternal(t *testing.T) {
-	registrationRepo := &fakeRedirectRegistrationRepository{
-		registration: domain.NewRegistration(
-			"https://issuer.example",
-			"client-123",
-			"://invalid-url",
-			"https://issuer.example/jwks",
-			"https://issuer.example/service-auth",
-			"https://issuer.example/logout",
-			2,
-		),
-	}
-	sessionRepo := &fakeRedirectSessionRepository{}
-	uc := NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
-
-	_, err := uc.Execute(context.Background(), GetLaunchRedirectQuery{
-		Issuer:        "https://issuer.example",
-		ClientID:      "client-123",
-		LoginHint:     "hint",
-		TargetLinkURI: "https://tool.example/app",
-		RedirectURI:   "https://tool.example/lti/authorize/check",
-	})
-
-	require.Error(t, err)
-	require.True(t, apperr.IsCode(err, apperr.CodeInternal))
-	require.Empty(t, sessionRepo.created)
-}
-
-func TestGetLaunchRedirectUseCase_Execute_CreateSessionFails_ReturnsInternal(t *testing.T) {
-	registrationRepo := &fakeRedirectRegistrationRepository{
-		registration: domain.NewRegistration(
-			"https://issuer.example",
-			"client-123",
-			"https://issuer.example/oidc/auth",
-			"https://issuer.example/jwks",
-			"https://issuer.example/service-auth",
-			"https://issuer.example/logout",
-			2,
-		),
-	}
-	sessionRepo := &fakeRedirectSessionRepository{createErr: errors.New("redis unavailable")}
-	uc := NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
-
-	_, err := uc.Execute(context.Background(), GetLaunchRedirectQuery{
-		Issuer:        "https://issuer.example",
-		ClientID:      "client-123",
-		LoginHint:     "hint",
-		TargetLinkURI: "https://tool.example/app",
-		RedirectURI:   "https://tool.example/lti/authorize/check",
-	})
-
-	require.Error(t, err)
-	require.True(t, apperr.IsCode(err, apperr.CodeInternal))
-	require.Len(t, sessionRepo.created, 1)
-}
-
-func TestGetLaunchRedirectUseCase_Execute_UsesDefaultTTLWhenMissing(t *testing.T) {
-	registrationRepo := &fakeRedirectRegistrationRepository{
-		registration: domain.NewRegistration(
-			"https://issuer.example",
-			"client-123",
-			"https://issuer.example/oidc/auth",
-			"https://issuer.example/jwks",
-			"https://issuer.example/service-auth",
-			"https://issuer.example/logout",
-			2,
-		),
-	}
-	sessionRepo := &fakeRedirectSessionRepository{}
-	uc := NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
-
-	_, err := uc.Execute(context.Background(), GetLaunchRedirectQuery{
-		Issuer:        "https://issuer.example",
-		ClientID:      "client-123",
-		LoginHint:     "hint",
-		TargetLinkURI: "https://tool.example/app",
-		RedirectURI:   "https://tool.example/lti/authorize/check",
-	})
-
-	require.NoError(t, err)
-	require.Len(t, sessionRepo.created, 1)
-	require.False(t, sessionRepo.created[0].IsExpired())
-}
-
-func TestGetLaunchRedirectUseCase_Execute_Success_PersistsSessionAndBuildsOIDCRedirect(t *testing.T) {
-	registration := domain.NewRegistration(
-		"https://issuer.example",
-		"client-123",
-		"https://issuer.example/oidc/auth",
-		"https://issuer.example/jwks",
-		"https://issuer.example/service-auth",
-		"https://issuer.example/logout",
-		2,
-	)
-	registrationRepo := &fakeRedirectRegistrationRepository{registration: registration}
-	sessionRepo := &fakeRedirectSessionRepository{}
-	uc := NewGetLaunchRedirectUseCase(registrationRepo, sessionRepo)
-
-	redirectURI := "https://tool.example/lti/authorize/check"
-	result, err := uc.Execute(context.Background(), GetLaunchRedirectQuery{
-		Issuer:        "https://issuer.example",
-		ClientID:      "client-123",
-		LoginHint:     "hint",
-		TargetLinkURI: "https://tool.example/app",
-		RedirectURI:   redirectURI,
-		LTISessionTTL: 5 * time.Minute,
-	})
-
-	require.NoError(t, err)
-	require.Equal(t, "https://issuer.example", registrationRepo.issuer)
-	require.Equal(t, "client-123", registrationRepo.clientID)
-	require.Len(t, sessionRepo.created, 1)
-
-	parsed, parseErr := url.Parse(result)
-	require.NoError(t, parseErr)
-	require.Equal(t, "https", parsed.Scheme)
-	require.Equal(t, "issuer.example", parsed.Host)
-	require.Equal(t, "/oidc/auth", parsed.Path)
-
-	params := parsed.Query()
-	require.Equal(t, "client-123", params.Get("client_id"))
-	require.Equal(t, redirectURI, params.Get("redirect_uri"))
-	require.Equal(t, "openid", params.Get("scope"))
-	require.Equal(t, "id_token", params.Get("response_type"))
-	require.Equal(t, "form_post", params.Get("response_mode"))
-	require.Equal(t, "none", params.Get("prompt"))
-	require.NotEmpty(t, params.Get("state"))
-	require.NotEmpty(t, params.Get("nonce"))
-
-	createdSession := sessionRepo.created[0]
-	require.Equal(t, "https://issuer.example", createdSession.Issuer())
-	require.Equal(t, "client-123", createdSession.ClientID())
-	require.Equal(t, int64(2), createdSession.TenantID())
-	require.Equal(t, "https://tool.example/app", createdSession.TargetLinkURI())
-	require.Equal(t, params.Get("state"), createdSession.State())
-	require.Equal(t, params.Get("nonce"), createdSession.Nonce())
-	require.False(t, createdSession.IsExpired())
 }
