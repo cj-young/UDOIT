@@ -36,6 +36,9 @@ func (r *MySQLFileRepository) GetFileByID(ctx context.Context, fileID int64) (*d
 	)
 	err := row.Scan(&fileID, &courseID, &reviewerID, &reviewedOn, &isReviewed, &externalID, &externalDataStr)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 
