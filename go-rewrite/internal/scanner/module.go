@@ -3,6 +3,7 @@ package scanner
 import (
 	"database/sql"
 	"net/http"
+
 	"rewritetest/internal/scanner/internal"
 	"rewritetest/internal/scanner/internal/application"
 	"rewritetest/internal/scanner/internal/infrastructure"
@@ -10,9 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 type Module struct {
-	handler *internal.Handler
+	handler       *internal.Handler
 	authenticator internal.Authenticator
 }
 
@@ -25,7 +25,6 @@ func New(
 	issueRetriever application.IssueRetriever,
 	authenticator internal.Authenticator,
 ) *Module {
-
 	httpClient := &http.Client{}
 	baseURL := "http://udoit3-ace:3000"
 	scanner := infrastructure.NewEqualAccessScanner(httpClient, baseURL)
@@ -38,7 +37,7 @@ func New(
 	handler := internal.NewHandler(scanCourseUseCase, createReportUseCase)
 
 	return &Module{
-		handler: handler,
+		handler:       handler,
 		authenticator: authenticator,
 	}
 }

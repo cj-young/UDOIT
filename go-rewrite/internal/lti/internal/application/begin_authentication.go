@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+
 	"rewritetest/internal/lms"
 )
 
@@ -10,8 +11,8 @@ type BeginAuthenticationUseCase struct {
 }
 
 type BeginAuthenticationRequest struct {
-	UserID int64
-	TenantID int64
+	UserID        int64
+	TenantID      int64
 	TargetLinkURI string
 }
 

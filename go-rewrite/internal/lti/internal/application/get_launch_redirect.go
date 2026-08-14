@@ -17,24 +17,24 @@ type GetLaunchRedirectUseCase struct {
 }
 
 type GetLaunchRedirectQuery struct {
-	Issuer        string
-	ClientID      string
-	LoginHint     string
-	TargetLinkURI string
-	RedirectURI   string
+	Issuer         string
+	ClientID       string
+	LoginHint      string
+	TargetLinkURI  string
+	RedirectURI    string
 	LTIMessageHint string
-	LTISessionTTL time.Duration
+	LTISessionTTL  time.Duration
 }
 
 type LaunchRedirectParams struct {
-	ClientID     string `json:"client_id"`
-	State        string `json:"state"`
-	Nonce        string `json:"nonce"`
-	RedirectURI  string `json:"redirect_uri"`
-	Scope        string `json:"scope"`
-	ResponseType string `json:"response_type"`
-	ResponseMode string `json:"response_mode"`
-	Prompt       string `json:"prompt"`
+	ClientID       string `json:"client_id"`
+	State          string `json:"state"`
+	Nonce          string `json:"nonce"`
+	RedirectURI    string `json:"redirect_uri"`
+	Scope          string `json:"scope"`
+	ResponseType   string `json:"response_type"`
+	ResponseMode   string `json:"response_mode"`
+	Prompt         string `json:"prompt"`
 	LTIMessageHint string `json:"lti_message_hint"`
 }
 

@@ -5,8 +5,8 @@ import "rewritetest/internal/shared/apperr"
 type IssueStatus string
 
 const (
-	IssueStatusActive 					IssueStatus = "active"
-	IssueStatusFixed 						IssueStatus = "fixed"
+	IssueStatusActive           IssueStatus = "active"
+	IssueStatusFixed            IssueStatus = "fixed"
 	IssueStatusMarkedAsReviewed IssueStatus = "marked_as_reviewed"
 )
 

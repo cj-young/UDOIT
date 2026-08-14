@@ -30,7 +30,7 @@ func (m *Module) BeginAuthentication(ctx context.Context, userID int64, tenantID
 		return AuthChallenge{}, err
 	}
 	return AuthChallenge{
-		Kind: AuthChallengeKind(challenge.Kind),
+		Kind:        AuthChallengeKind(challenge.Kind),
 		RedirectURL: challenge.RedirectURL,
 	}, nil
 }

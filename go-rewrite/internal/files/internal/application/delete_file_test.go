@@ -16,7 +16,7 @@ import (
 
 type mockFileDeleter struct {
 	deletedFileRequests []lms.DeleteFileRequest
-	err error
+	err                 error
 }
 
 var _ LMSFileDeleter = (*mockFileDeleter)(nil)

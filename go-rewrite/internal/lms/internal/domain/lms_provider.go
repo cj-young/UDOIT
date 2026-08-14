@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"rewritetest/internal/shared/auth"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -18,9 +19,9 @@ type FullLMSProvider interface {
 }
 
 type LMSFile struct {
-	ID 						int64
-	ExternalID 		string
-	ExternalData 	map[string]any
+	ID           int64
+	ExternalID   string
+	ExternalData map[string]any
 }
 type FileProvider interface {
 	DeleteFile(ctx context.Context, principal auth.Principal, file LMSFile) error
@@ -31,16 +32,16 @@ type AuthenticationProvider interface {
 }
 
 type LMSCourse struct {
-	ID						int64
-	ExternalID		string
-	ExternalData	map[string]any
+	ID           int64
+	ExternalID   string
+	ExternalData map[string]any
 }
 
 type LMSContent struct {
-	ID						int64
-	ExternalID		string
-	ExternalData	map[string]any
-	HTML					string
+	ID           int64
+	ExternalID   string
+	ExternalData map[string]any
+	HTML         string
 }
 
 type ScanProvider interface {
@@ -54,4 +55,3 @@ type ScanProvider interface {
 type LTIProvider interface {
 	GetCourseInfoFromLTILaunch(ctx context.Context, claims jwt.MapClaims) (string, map[string]any, error)
 }
-

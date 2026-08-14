@@ -3,10 +3,11 @@ package issues
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"rewritetest/internal/issues/internal/domain"
 	"rewritetest/internal/issues/internal/infrastructure"
 	"rewritetest/internal/shared/apperr"
-	"time"
 )
 
 type Module struct {
@@ -14,9 +15,8 @@ type Module struct {
 }
 
 func New(db *sql.DB) *Module {
-
 	issueRepository := infrastructure.NewMySQLIssueRepository(db)
-	
+
 	return &Module{
 		issueRepository: issueRepository,
 	}
@@ -24,20 +24,20 @@ func New(db *sql.DB) *Module {
 
 type Issue struct {
 	ContentItemID int64
-	ScanRule			string
-	Status   			string
-	Severity 			string
-	ContentXPath	string
-	Details				map[string]any
-	FixedBy				int64
-	FixedAt				time.Time
+	ScanRule      string
+	Status        string
+	Severity      string
+	ContentXPath  string
+	Details       map[string]any
+	FixedBy       int64
+	FixedAt       time.Time
 }
 
 // RegisterNewIssues removes all persisted issues for the specified contentItem
 // IDs and creates the issues specified in newIssues.
 func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []Issue, contentItemIDs []int64) error {
 	m.issueRepository.DeleteByContentItemIDs(ctx, contentItemIDs)
-	
+
 	issues := make([]*domain.Issue, len(newIssues))
 	for i, newIssue := range newIssues {
 
@@ -55,7 +55,7 @@ func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []Issue, conte
 		if err != nil {
 			return err
 		}
-		
+
 		issues[i] = domain.NewIssue(
 			newIssue.ContentItemID,
 			scanRule,
@@ -65,7 +65,7 @@ func (m *Module) RegisterNewIssues(ctx context.Context, newIssues []Issue, conte
 			newIssue.Details,
 		)
 	}
-	
+
 	err := m.issueRepository.CreateMany(ctx, issues)
 	if err != nil {
 		return apperr.New(
@@ -90,13 +90,13 @@ func (m *Module) GetByCourseID(ctx context.Context, courseID int64) ([]Issue, er
 	for i, domainIssue := range domainIssues {
 		issues[i] = Issue{
 			ContentItemID: domainIssue.ContentItemID(),
-			ScanRule:     	domainIssue.ScanRule().String(),
-			Status:       	domainIssue.Status().String(),
-			Severity:     	domainIssue.Severity().String(),
-			ContentXPath: 	domainIssue.ContentXPath(),
-			Details:      	domainIssue.Details(),
-			FixedBy:       	domainIssue.FixedBy(),
-			FixedAt:       	domainIssue.FixedAt(),
+			ScanRule:      domainIssue.ScanRule().String(),
+			Status:        domainIssue.Status().String(),
+			Severity:      domainIssue.Severity().String(),
+			ContentXPath:  domainIssue.ContentXPath(),
+			Details:       domainIssue.Details(),
+			FixedBy:       domainIssue.FixedBy(),
+			FixedAt:       domainIssue.FixedAt(),
 		}
 	}
 	return issues, nil

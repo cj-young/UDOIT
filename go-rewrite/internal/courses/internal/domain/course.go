@@ -3,38 +3,38 @@ package domain
 import "time"
 
 type Course struct {
-	id 						int64
-	title 				string
-	tenantID 			int64
-	isActive 			bool
-	isDirty 			bool
-	externalID 		string
-	externalData 	map[string]any
-	updatedAt 		time.Time
+	id           int64
+	title        string
+	tenantID     int64
+	isActive     bool
+	isDirty      bool
+	externalID   string
+	externalData map[string]any
+	updatedAt    time.Time
 }
 
 func NewCourse(title string, tenantID int64, isActive bool, isDirty bool, externalID string, externalData map[string]any, updatedAt time.Time) *Course {
 	return &Course{
-		title: title,
-		tenantID: tenantID,
-		isActive: isActive,
-		isDirty: isDirty,
-		externalID: externalID,
+		title:        title,
+		tenantID:     tenantID,
+		isActive:     isActive,
+		isDirty:      isDirty,
+		externalID:   externalID,
 		externalData: externalData,
-		updatedAt: updatedAt,
+		updatedAt:    updatedAt,
 	}
 }
 
 func RehydrateCourse(id int64, title string, tenantID int64, isActive bool, isDirty bool, externalID string, externalData map[string]any, updatedAt time.Time) *Course {
 	return &Course{
-		id: id,
-		title: title,
-		tenantID: tenantID,
-		isActive: isActive,
-		isDirty: isDirty,
-		externalID: externalID,
+		id:           id,
+		title:        title,
+		tenantID:     tenantID,
+		isActive:     isActive,
+		isDirty:      isDirty,
+		externalID:   externalID,
 		externalData: externalData,
-		updatedAt: updatedAt,
+		updatedAt:    updatedAt,
 	}
 }
 

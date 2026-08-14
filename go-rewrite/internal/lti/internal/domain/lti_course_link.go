@@ -1,16 +1,16 @@
 package domain
 
 type LTICourseLink struct {
-	tenantID int64
+	tenantID  int64
 	contextID string
-	courseID int64
+	courseID  int64
 }
 
 func NewLTICourseLink(tenantID int64, contextID string, courseID int64) LTICourseLink {
 	return LTICourseLink{
-		tenantID: tenantID,
+		tenantID:  tenantID,
 		contextID: contextID,
-		courseID: courseID,
+		courseID:  courseID,
 	}
 }
 

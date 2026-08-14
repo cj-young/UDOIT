@@ -5,9 +5,9 @@ package domain
 type ScanIssueSeverity string
 
 const (
-	ScanIssueSeverityError       ScanIssueSeverity = "error"
-	ScanIssueSeverityPotential   ScanIssueSeverity = "potential"
-	ScanIssueSeveritySuggestion  ScanIssueSeverity = "suggestion"
+	ScanIssueSeverityError      ScanIssueSeverity = "error"
+	ScanIssueSeverityPotential  ScanIssueSeverity = "potential"
+	ScanIssueSeveritySuggestion ScanIssueSeverity = "suggestion"
 )
 
 func (s ScanIssueSeverity) String() string {

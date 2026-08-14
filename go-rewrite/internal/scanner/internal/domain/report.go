@@ -3,16 +3,16 @@ package domain
 import "time"
 
 type Report struct {
-	id 								int64
-	courseID 					int64
-	errorCount				int
-	suggestionCount 	int
-	fileCount					int
-	scannedBy					int64
-	contentFixed			int
-	contentResolved		int
-	createdAt					time.Time
-	updatedAt					time.Time
+	id              int64
+	courseID        int64
+	errorCount      int
+	suggestionCount int
+	fileCount       int
+	scannedBy       int64
+	contentFixed    int
+	contentResolved int
+	createdAt       time.Time
+	updatedAt       time.Time
 }
 
 func NewReport(
@@ -25,15 +25,15 @@ func NewReport(
 	contentResolved int,
 ) *Report {
 	return &Report{
-		courseID:        	courseID,
-		errorCount:       errorCount,
-		suggestionCount:  suggestionCount,
-		fileCount:   			fileCount,
-		createdAt:				time.Now(),
-		updatedAt:				time.Now(),
-		scannedBy:       	scannedBy,
-		contentFixed:    	contentFixed,
-		contentResolved: 	contentResolved,
+		courseID:        courseID,
+		errorCount:      errorCount,
+		suggestionCount: suggestionCount,
+		fileCount:       fileCount,
+		createdAt:       time.Now(),
+		updatedAt:       time.Now(),
+		scannedBy:       scannedBy,
+		contentFixed:    contentFixed,
+		contentResolved: contentResolved,
 	}
 }
 
@@ -48,14 +48,14 @@ func RehydrateReport(
 	contentResolved int,
 ) *Report {
 	return &Report{
-		id:              	id,
-		courseID:        	courseID,
-		errorCount:       errorCount,
-		suggestionCount:  suggestionCount,
-		fileCount:   			fileCount,
-		scannedBy:       	scannedBy,
-		contentFixed:    	contentFixed,
-		contentResolved: 	contentResolved,
+		id:              id,
+		courseID:        courseID,
+		errorCount:      errorCount,
+		suggestionCount: suggestionCount,
+		fileCount:       fileCount,
+		scannedBy:       scannedBy,
+		contentFixed:    contentFixed,
+		contentResolved: contentResolved,
 	}
 }
 

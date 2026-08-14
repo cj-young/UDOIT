@@ -11,13 +11,13 @@ import (
 )
 
 type MySQLLMSCredentialRepository struct {
-	db *sql.DB
+	db      *sql.DB
 	queries *lmssqlc.Queries
 }
 
 func NewMySQLLMSCredentialRepository(db *sql.DB) *MySQLLMSCredentialRepository {
 	return &MySQLLMSCredentialRepository{
-		db: db,
+		db:      db,
 		queries: lmssqlc.New(db),
 	}
 }
@@ -29,11 +29,11 @@ func (r *MySQLLMSCredentialRepository) UpsertActive(ctx context.Context, credent
 	}
 
 	err = r.queries.UpsertLMSUserCredential(ctx, lmssqlc.UpsertLMSUserCredentialParams{
-		UserID:        uint64(credential.UserID()),
-		LmsKey:        string(credential.LMSKey()),
-		SchemaName:   "",
+		UserID:         uint64(credential.UserID()),
+		LmsKey:         string(credential.LMSKey()),
+		SchemaName:     "",
 		CredentialJson: payloadJSON,
-		ExpiresAt:     nullableTime(credential.ExpiresAt()),
+		ExpiresAt:      nullableTime(credential.ExpiresAt()),
 	})
 
 	return err
@@ -113,6 +113,5 @@ func nullTimePtr(value sql.NullTime) *time.Time {
 	copy := value.Time
 	return &copy
 }
-
 
 var _ domain.LMSCredentialRepository = (*MySQLLMSCredentialRepository)(nil)

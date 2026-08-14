@@ -11,7 +11,7 @@ import (
 )
 
 type MySQLIssueRepository struct {
-	db *sql.DB
+	db      *sql.DB
 	queries *issuessqlc.Queries
 }
 
@@ -23,7 +23,6 @@ func NewMySQLIssueRepository(db *sql.DB) *MySQLIssueRepository {
 }
 
 func (r *MySQLIssueRepository) DeleteByContentItemIDs(ctx context.Context, contentItemIDs []int64) error {
-
 	uintContentItemIDs := make([]uint64, len(contentItemIDs))
 	for i, v := range contentItemIDs {
 		uintContentItemIDs[i] = uint64(v)
@@ -60,14 +59,14 @@ func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.
 		}
 
 		domainIssuesParams[i] = issuessqlc.CreateIssueParams{
-			ContentItemID: 	uint64(issue.ContentItemID()),
-			ScanRule:   		issue.ScanRule().String(),
-			ContentXpath: 	issue.ContentXPath(),
-			Status: 		issue.Status().String(),
-			Severity: 	issue.Severity().String(),
-			FixedBy: 				nullableFixedby,
-			FixedAt: 				nullTime(issue.FixedAt()),
-			Details: 				detailsJSON,
+			ContentItemID: uint64(issue.ContentItemID()),
+			ScanRule:      issue.ScanRule().String(),
+			ContentXpath:  issue.ContentXPath(),
+			Status:        issue.Status().String(),
+			Severity:      issue.Severity().String(),
+			FixedBy:       nullableFixedby,
+			FixedAt:       nullTime(issue.FixedAt()),
+			Details:       detailsJSON,
 		}
 	}
 
@@ -107,7 +106,7 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 		if err != nil {
 			return nil, err
 		}
-		
+
 		var detailsMap map[string]any
 		if err := json.Unmarshal(issue.Details, &detailsMap); err != nil {
 			return nil, err
@@ -140,7 +139,5 @@ func nullTime(t time.Time) sql.NullTime {
 	}
 	return sql.NullTime{Valid: false}
 }
-
-
 
 var _ domain.IssueRepository = (*MySQLIssueRepository)(nil)

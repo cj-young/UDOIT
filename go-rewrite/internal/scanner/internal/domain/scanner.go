@@ -6,10 +6,10 @@ import (
 
 type ScanResult struct {
 	ContentItemID int64
-	ScanRule 			string
-	ContentXPath 	string
-	Severity 			ScanIssueSeverity
-	Details				map[string]any
+	ScanRule      string
+	ContentXPath  string
+	Severity      ScanIssueSeverity
+	Details       map[string]any
 }
 
 type ScanItem struct {

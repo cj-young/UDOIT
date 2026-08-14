@@ -14,9 +14,9 @@ type CreateSessionUseCase struct {
 }
 
 type CreateSessionCommand struct {
-	UserID int64
+	UserID   int64
 	TenantID int64
-	TTL    time.Duration
+	TTL      time.Duration
 }
 
 type CreateSessionResponse struct {

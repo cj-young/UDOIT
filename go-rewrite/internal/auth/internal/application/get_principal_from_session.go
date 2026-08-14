@@ -32,7 +32,7 @@ func (uc *GetPrincipalFromSessionUseCase) Execute(ctx context.Context, query Get
 	}
 
 	return sharedAuth.Principal{
-		AgentID: session.UserID(),
+		AgentID:  session.UserID(),
 		TenantID: session.TenantID(),
 	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+
 	"rewritetest/internal/courses/internal/domain"
 	coursessqlc "rewritetest/internal/courses/internal/infrastructure/sqlc"
 )

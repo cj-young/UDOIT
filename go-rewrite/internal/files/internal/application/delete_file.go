@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+
 	"rewritetest/internal/files/internal/domain"
 	"rewritetest/internal/lms"
 	"rewritetest/internal/shared/apperr"
@@ -25,7 +26,6 @@ func NewDeleteFileUseCase(fileRepository domain.FileRepository, fileDeleter LMSF
 }
 
 func (u *DeleteFileUseCase) Execute(ctx context.Context, principal auth.Principal, fileID int64) error {
-
 	file, err := u.fileRepository.GetFileByID(ctx, fileID)
 	if err != nil {
 		return err
@@ -36,8 +36,8 @@ func (u *DeleteFileUseCase) Execute(ctx context.Context, principal auth.Principa
 	}
 
 	err = u.fileDeleter.DeleteFile(ctx, principal, lms.DeleteFileRequest{
-		FileID:     file.ID(),
-		ExternalID: file.ExternalID(),
+		FileID:       file.ID(),
+		ExternalID:   file.ExternalID(),
 		ExternalData: file.ExternalData(),
 	})
 	if err != nil {

@@ -1,14 +1,14 @@
 package domain
 
 type Registration struct {
-	id                    int64
-	Issuer                string
-	ClientID              string
-	LoginAuthEndpoint     string
-	JWKEndpoint           string
-	ServiceAuthEndpoint   string
+	id                   int64
+	Issuer               string
+	ClientID             string
+	LoginAuthEndpoint    string
+	JWKEndpoint          string
+	ServiceAuthEndpoint  string
 	ServiceLoginEndpoint string
-	TenantID int64
+	TenantID             int64
 }
 
 func (r *Registration) ID() int64 {
@@ -17,25 +17,25 @@ func (r *Registration) ID() int64 {
 
 func NewRegistration(issuer, clientID, loginAuthEndpoint, jwkEndpoint, serviceAuthEndpoint, serviceLoginEndpoint string, tenantID int64) *Registration {
 	return &Registration{
-		Issuer:                issuer,
-		ClientID:              clientID,
-		LoginAuthEndpoint:     loginAuthEndpoint,
-		JWKEndpoint:           jwkEndpoint,
-		ServiceAuthEndpoint:   serviceAuthEndpoint,
+		Issuer:               issuer,
+		ClientID:             clientID,
+		LoginAuthEndpoint:    loginAuthEndpoint,
+		JWKEndpoint:          jwkEndpoint,
+		ServiceAuthEndpoint:  serviceAuthEndpoint,
 		ServiceLoginEndpoint: serviceLoginEndpoint,
-		TenantID:              tenantID,
+		TenantID:             tenantID,
 	}
 }
 
 func RehydrateRegistration(id int64, issuer, clientID, loginAuthEndpoint, jwkEndpoint, serviceAuthEndpoint, serviceLoginEndpoint string, tenantID int64) *Registration {
 	return &Registration{
-		id:                    id,
-		Issuer:                issuer,
-		ClientID:              clientID,
-		LoginAuthEndpoint:     loginAuthEndpoint,
-		JWKEndpoint:           jwkEndpoint,
-		ServiceAuthEndpoint:   serviceAuthEndpoint,
+		id:                   id,
+		Issuer:               issuer,
+		ClientID:             clientID,
+		LoginAuthEndpoint:    loginAuthEndpoint,
+		JWKEndpoint:          jwkEndpoint,
+		ServiceAuthEndpoint:  serviceAuthEndpoint,
 		ServiceLoginEndpoint: serviceLoginEndpoint,
-		TenantID:              tenantID,
+		TenantID:             tenantID,
 	}
 }

@@ -2,15 +2,15 @@ package domain
 
 type LMSProviderConfig struct {
 	tenantID int64
-	lmsKey LMSType
-	data map[string]any
+	lmsKey   LMSType
+	data     map[string]any
 }
 
 func NewLMSProviderConfig(tenantID int64, lmsKey LMSType, data map[string]any) *LMSProviderConfig {
 	return &LMSProviderConfig{
 		tenantID: tenantID,
-		lmsKey: lmsKey,
-		data: data,
+		lmsKey:   lmsKey,
+		data:     data,
 	}
 }
 

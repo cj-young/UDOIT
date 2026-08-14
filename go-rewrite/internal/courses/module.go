@@ -12,33 +12,32 @@ import (
 
 type Module struct {
 	createCourseUseCase *application.CreateCourseUseCase
-	courseRepository domain.CourseRepository
+	courseRepository    domain.CourseRepository
 }
 
 func New(db *sql.DB) *Module {
-
 	courseRepository := infrastructure.NewMySQLCourseRepository(db)
 	createCourseUseCase := application.NewCreateCourseUseCase(courseRepository)
 
 	return &Module{
 		createCourseUseCase: createCourseUseCase,
-		courseRepository: courseRepository,
+		courseRepository:    courseRepository,
 	}
 }
 
 func (m *Module) CreateCourse(ctx context.Context, title string, tenantID int64, externalID string, externalData map[string]any) (int64, error) {
 	return m.createCourseUseCase.Execute(ctx, application.CreateCourseCommand{
-		Title:    title,
-		TenantID:   tenantID,
-		ExternalID: externalID,
+		Title:        title,
+		TenantID:     tenantID,
+		ExternalID:   externalID,
 		ExternalData: externalData,
 	})
 }
 
 type Course struct {
-	ID						int64
-	ExternalID   	string
-	ExternalData 	map[string]any
+	ID           int64
+	ExternalID   string
+	ExternalData map[string]any
 }
 
 func (m *Module) GetCourse(ctx context.Context, courseID int64) (Course, error) {
@@ -49,7 +48,6 @@ func (m *Module) GetCourse(ctx context.Context, courseID int64) (Course, error) 
 	if course == nil {
 		return Course{}, apperr.New(apperr.CodeInternal, "The requested course was not found.")
 	}
-
 
 	return Course{
 		ID:           course.ID(),

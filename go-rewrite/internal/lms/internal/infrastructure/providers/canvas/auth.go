@@ -10,12 +10,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"rewritetest/internal/lms/internal/domain"
-	"rewritetest/internal/shared/apperr"
 	"strings"
 	"time"
-)
 
+	"rewritetest/internal/lms/internal/domain"
+	"rewritetest/internal/shared/apperr"
+)
 
 type canvasCredential struct {
 	apiToken     string
@@ -56,12 +56,12 @@ func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, userID int6
 	baseURL.RawQuery = params.Encode()
 
 	authAttempt := domain.AuthAttempt{
-		UserID:  userID,
-		TenantID: p.config.tenantID,
-		State: state,
+		UserID:        userID,
+		TenantID:      p.config.tenantID,
+		State:         state,
 		TargetLinkURI: targetLinkURI,
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(time.Hour), //TODO: Make expiration time configurable
+		CreatedAt:     time.Now(),
+		ExpiresAt:     time.Now().Add(time.Hour), // TODO: Make expiration time configurable
 	}
 	err = p.authAttemptRepository.Create(ctx, authAttempt)
 	if err != nil {
@@ -69,11 +69,10 @@ func (p *CanvasLMSProvider) BeginAuthentication(ctx context.Context, userID int6
 	}
 
 	return domain.AuthChallenge{
-		Kind: domain.AuthChallengeKindRedirect,
+		Kind:        domain.AuthChallengeKindRedirect,
 		RedirectURL: baseURL.String(),
 	}, nil
 }
-
 
 type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -83,7 +82,6 @@ type TokenResponse struct {
 }
 
 func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, authAttempt domain.AuthAttempt, code string) (string, error) {
-
 	baseURL, err := url.Parse(p.config.baseURL)
 	if err != nil {
 		return "", apperr.Validation("Invalid Canvas base URL", apperr.WithCause(err))
@@ -123,7 +121,6 @@ func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, authAttemp
 
 	expiresAt := time.Now().Add(time.Duration(oauthResponse.ExpiresIn) * time.Second)
 
-
 	// TODO: move map creation somewhere that gives type safety when Canvas credential schema changes
 	lmsCredential := domain.NewLMSCredential(
 		authAttempt.UserID,
@@ -135,7 +132,6 @@ func (p *CanvasLMSProvider) ProcessOAuthRedirect(ctx context.Context, authAttemp
 		&expiresAt,
 		time.Now(),
 	)
-
 
 	err = p.lmsCredentialRepository.UpsertActive(ctx, lmsCredential)
 	if err != nil {
@@ -231,14 +227,12 @@ func (p *CanvasLMSProvider) refreshAccessToken(ctx context.Context, cred canvasC
 	cred.expiresAt = &expiresAt
 
 	return cred, nil
-
 }
 
-
 type CanvasRequest struct {
-	Path  string
-	URL		string
-	Body any
+	Path   string
+	URL    string
+	Body   any
 	Method string
 	Config canvasConfig
 	UserID int64
@@ -267,7 +261,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req Canv
 	}
 
 	httpReq.Header.Set("Accept", "application/json")
-	
+
 	cred, err := p.lmsCredentialRepository.GetActiveByUser(ctx, req.UserID)
 	if err != nil {
 		return nil, err
@@ -280,7 +274,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req Canv
 	if err != nil {
 		return nil, err
 	}
-	
+
 	maxAttempts := 2
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
@@ -310,7 +304,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req Canv
 			req.UserID,
 			domain.LMSTypeCanvas,
 			map[string]any{
-				"api_token": credential.apiToken,
+				"api_token":     credential.apiToken,
 				"refresh_token": credential.refreshToken,
 			},
 			credential.expiresAt,
@@ -322,7 +316,7 @@ func (p *CanvasLMSProvider) doAuthenticatedRequest(ctx context.Context, req Canv
 		}
 
 	}
-  
+
 	panic("unreachable")
 }
 
@@ -345,7 +339,6 @@ func (p *CanvasLMSProvider) executeRequest(ctx context.Context, req *http.Reques
 // Should return false if the user is not authenticated.
 // Should only error if there is an unexpected issue, not simply because the user is not authenticated.
 func (p *CanvasLMSProvider) checkIsAuthenticated(ctx context.Context, config canvasConfig, userID int64) (bool, error) {
-
 	res, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
 		Path:   "/api/v1/users/self",
 		Body:   nil,
@@ -362,5 +355,4 @@ func (p *CanvasLMSProvider) checkIsAuthenticated(ctx context.Context, config can
 	}
 
 	return false, nil
-
 }

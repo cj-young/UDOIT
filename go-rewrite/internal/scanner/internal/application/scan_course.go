@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+
 	"rewritetest/internal/content"
 	"rewritetest/internal/courses"
 	"rewritetest/internal/issues"
@@ -33,18 +34,18 @@ type ContentHasher interface {
 }
 
 type HashedContentItem struct {
-	ExternalID  	string
-	ContentHash		string
-	Type					string
+	ExternalID  string
+	ContentHash string
+	Type        string
 }
 
 type ScanCourseUseCase struct {
-	courseRetriever 					CourseRetriever
-	contentItemService 				ContentItemService
-	externalContentRetriever 	ExternalContentRetriever
-	contentHasher 						ContentHasher
-	issueService 							IssueService
-	scanner 									domain.Scanner
+	courseRetriever          CourseRetriever
+	contentItemService       ContentItemService
+	externalContentRetriever ExternalContentRetriever
+	contentHasher            ContentHasher
+	issueService             IssueService
+	scanner                  domain.Scanner
 }
 
 func NewScanCourseUseCase(
@@ -57,21 +58,20 @@ func NewScanCourseUseCase(
 ) *ScanCourseUseCase {
 	return &ScanCourseUseCase{
 		courseRetriever:          courseRetriever,
-		contentItemService:     	contentItemService,
+		contentItemService:       contentItemService,
 		externalContentRetriever: externalContentRetriever,
 		contentHasher:            contentHasher,
-		issueService:          		issueService,
+		issueService:             issueService,
 		scanner:                  scanner,
 	}
 }
 
 type FullContentItem struct {
-	ExternalID 	string
-	HTML 				string
-	ContentHash	string
+	ExternalID  string
+	HTML        string
+	ContentHash string
 	Type        string
 }
-
 
 func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principal, courseID int64) error {
 	currentContentItems, err := u.contentItemService.GetByCourse(ctx, courseID)
@@ -85,11 +85,11 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 	}
 
 	externalContentItems, err := u.externalContentRetriever.GetContent(ctx, lms.GetContentRequest{
-		CourseID:            courseID,
-		TenantID:            principal.TenantID,
-		UserID:              principal.AgentID,
-		ExternalCourseID:    course.ExternalID,
-		ExternalCourseData:  course.ExternalData,
+		CourseID:           courseID,
+		TenantID:           principal.TenantID,
+		UserID:             principal.AgentID,
+		ExternalCourseID:   course.ExternalID,
+		ExternalCourseData: course.ExternalData,
 	})
 	if err != nil {
 		return err
@@ -103,17 +103,17 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 	changedContentItemsHashed := make([]content.ContentItem, len(changedContentItems))
 	for i, item := range changedContentItems {
 		changedContentItemsHashed[i] = content.ContentItem{
-			ID:  						item.ID,
-			ExternalID:     item.ExternalID,
-			ContentHash: 		item.ContentHash,
-			CourseID:       item.CourseID,
+			ID:          item.ID,
+			ExternalID:  item.ExternalID,
+			ContentHash: item.ContentHash,
+			CourseID:    item.CourseID,
 		}
 	}
 	idMap, err := u.contentItemService.CreateManyContentItems(ctx, changedContentItemsHashed)
 	if err != nil {
 		return err
 	}
-	
+
 	// Update the IDs of the changed content items with the upserted IDs returned
 	// from the database
 	for _, item := range changedContentItems {
@@ -121,13 +121,13 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 			item.ID = id
 		}
 	}
-	
+
 	scanItems := make([]domain.ScanItem, len(changedContentItems))
 	for i, item := range changedContentItems {
 		scanItems[i] = domain.ScanItem{
-			ContentItemID: 	item.ID,
-			HTML:          	item.HTML,
-			Type:          	item.Type,
+			ContentItemID: item.ID,
+			HTML:          item.HTML,
+			Type:          item.Type,
 		}
 	}
 	scanResults, err := u.scanner.ScanContent(ctx, scanItems)
@@ -147,12 +147,12 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 	newIssues := make([]issues.Issue, len(scanResults))
 	for i, result := range scanResults {
 		newIssues[i] = issues.Issue{
-			ContentItemID: 	result.ContentItemID,
-			ScanRule:      	result.ScanRule,
-			Status:					domain.ScanIssueStatusActive.String(),
-			Severity:				result.Severity.String(),
-			ContentXPath:  	result.ContentXPath,
-			Details:       	result.Details,
+			ContentItemID: result.ContentItemID,
+			ScanRule:      result.ScanRule,
+			Status:        domain.ScanIssueStatusActive.String(),
+			Severity:      result.Severity.String(),
+			ContentXPath:  result.ContentXPath,
+			Details:       result.Details,
 		}
 	}
 
@@ -164,14 +164,13 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 	return nil
 }
 
-
 type ChangedContentItem struct {
-	ID						int64
-	CourseID			int64
-	ExternalID   	string
-	ContentHash  	string
-	Type        	string
-	HTML        	string
+	ID          int64
+	CourseID    int64
+	ExternalID  string
+	ContentHash string
+	Type        string
+	HTML        string
 }
 
 func (u *ScanCourseUseCase) getChangedContentItems(
@@ -196,12 +195,12 @@ func (u *ScanCourseUseCase) getChangedContentItems(
 				id = currentItem.ID
 			}
 			changedContentItems = append(changedContentItems, &ChangedContentItem{
-				ID:           id,
-				CourseID:     courseID,
-				ExternalID:   item.ExternalID,
-				ContentHash:  contentHash,
-				Type:        	item.Type,
-				HTML:        	item.HTML,
+				ID:          id,
+				CourseID:    courseID,
+				ExternalID:  item.ExternalID,
+				ContentHash: contentHash,
+				Type:        item.Type,
+				HTML:        item.HTML,
 			})
 		}
 	}

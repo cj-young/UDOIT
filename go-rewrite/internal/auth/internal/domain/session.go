@@ -5,7 +5,7 @@ import "time"
 type Session struct {
 	id        string
 	userId    int64
-	tenantID int64
+	tenantID  int64
 	createdAt time.Time
 	expiresAt time.Time
 }

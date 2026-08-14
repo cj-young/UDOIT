@@ -43,9 +43,9 @@ func New(client *redis.Client, db *sql.DB) *Module {
 
 func (m *Module) CreateSession(ctx context.Context, userID int64, tenantID int64) (Session, error) {
 	createSessionCommand := application.CreateSessionCommand{
-		UserID: userID,
+		UserID:   userID,
 		TenantID: tenantID,
-		TTL:    m.sessionTTL,
+		TTL:      m.sessionTTL,
 	}
 
 	sessionResponse, err := m.createSessionUseCase.Execute(ctx, createSessionCommand)

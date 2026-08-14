@@ -2,14 +2,15 @@ package application
 
 import (
 	"context"
+
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/apperr"
 )
 
 type ProcessOAuthRedirectUseCase struct {
-	lmsProviderResolver domain.LMSProviderResolver
+	lmsProviderResolver         domain.LMSProviderResolver
 	lmsProviderConfigRepository domain.LMSProviderConfigRepository
-	authAttemptRepository domain.AuthAttemptRepository
+	authAttemptRepository       domain.AuthAttemptRepository
 }
 
 func NewProcessOAuthRedirectUseCase(
@@ -18,9 +19,9 @@ func NewProcessOAuthRedirectUseCase(
 	authAttemptRepository domain.AuthAttemptRepository,
 ) *ProcessOAuthRedirectUseCase {
 	return &ProcessOAuthRedirectUseCase{
-		lmsProviderResolver: lmsProviderResolver,
+		lmsProviderResolver:         lmsProviderResolver,
 		lmsProviderConfigRepository: lmsProviderConfigRepository,
-		authAttemptRepository: authAttemptRepository,
+		authAttemptRepository:       authAttemptRepository,
 	}
 }
 
@@ -29,7 +30,6 @@ type ProcessOAuthRedirectResponse struct {
 }
 
 func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string, code string) (string, error) {
-	
 	authAttempt, err := u.authAttemptRepository.GetByState(ctx, state)
 	if err != nil {
 		return "", apperr.New(
@@ -45,7 +45,7 @@ func (u *ProcessOAuthRedirectUseCase) Execute(ctx context.Context, state string,
 			apperr.WithCause(err),
 		)
 	}
-	
+
 	oauthRedirectProcessor, ok := provider.(domain.OAuthRedirectProcessor)
 	if !ok {
 		return "", apperr.New(

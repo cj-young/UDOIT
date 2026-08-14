@@ -3,6 +3,7 @@ package canvas
 import (
 	"context"
 	"log/slog"
+
 	"rewritetest/internal/shared/apperr"
 
 	"github.com/golang-jwt/jwt/v5"

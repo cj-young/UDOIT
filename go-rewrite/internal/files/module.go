@@ -2,6 +2,7 @@ package files
 
 import (
 	"database/sql"
+
 	"rewritetest/internal/files/internal"
 	"rewritetest/internal/files/internal/application"
 	"rewritetest/internal/files/internal/infrastructure"
@@ -14,7 +15,6 @@ type Module struct {
 }
 
 func New(db *sql.DB, fileDeleter application.LMSFileDeleter) *Module {
-
 	fileRepository := infrastructure.NewMySQLFileRepository(db)
 	getFileUseCase := application.NewGetFileUseCase(fileRepository)
 	deleteFileUseCase := application.NewDeleteFileUseCase(fileRepository, fileDeleter)

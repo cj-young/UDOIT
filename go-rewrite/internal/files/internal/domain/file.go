@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type File struct {
-	id int64
+	id       int64
 	courseID int64
 	// fileName string
 	// fileType string
@@ -15,29 +15,29 @@ type File struct {
 	// status bool
 	// isActive bool
 	// updatedAt time.Time
-	externalID string
+	externalID   string
 	externalData map[string]any
 }
 
 func NewFile(courseID, reviewerID int64, reviewedOn time.Time, isReviewed bool, externalID string, externalData map[string]any) *File {
 	return &File{
-		courseID: courseID,
-		reviewerID: reviewerID,
-		reviewedOn: reviewedOn,
-		isReviewed: isReviewed,
-		externalID: externalID,
+		courseID:     courseID,
+		reviewerID:   reviewerID,
+		reviewedOn:   reviewedOn,
+		isReviewed:   isReviewed,
+		externalID:   externalID,
 		externalData: externalData,
 	}
 }
 
 func RehydrateFile(id, courseID, reviewerID int64, reviewedOn time.Time, isReviewed bool, externalID string, externalData map[string]any) *File {
 	return &File{
-		id: id,
-		courseID: courseID,
-		reviewerID: reviewerID,
-		reviewedOn: reviewedOn,
-		isReviewed: isReviewed,
-		externalID: externalID,
+		id:           id,
+		courseID:     courseID,
+		reviewerID:   reviewerID,
+		reviewedOn:   reviewedOn,
+		isReviewed:   isReviewed,
+		externalID:   externalID,
 		externalData: externalData,
 	}
 }

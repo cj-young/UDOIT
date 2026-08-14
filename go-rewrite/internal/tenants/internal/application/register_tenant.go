@@ -9,7 +9,7 @@ import (
 
 type RegisterTenantUseCase struct {
 	tenantRepository domain.TenantRepository
-	lmsTypeValidator  LMSTypeValidator
+	lmsTypeValidator LMSTypeValidator
 }
 
 type RegisterTenantCommand struct {
@@ -23,7 +23,7 @@ type LMSTypeValidator interface {
 func NewRegisterTenantUseCase(tenantRepository domain.TenantRepository, lmsTypeValidator LMSTypeValidator) *RegisterTenantUseCase {
 	return &RegisterTenantUseCase{
 		tenantRepository: tenantRepository,
-		lmsTypeValidator:  lmsTypeValidator,
+		lmsTypeValidator: lmsTypeValidator,
 	}
 }
 

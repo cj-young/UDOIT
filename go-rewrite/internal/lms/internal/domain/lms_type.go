@@ -6,7 +6,7 @@ type LMSType string
 
 const (
 	LMSTypeCanvas LMSType = "canvas"
-	LMSTypeD2L	LMSType = "d2l"
+	LMSTypeD2L    LMSType = "d2l"
 )
 
 func (t LMSType) IsValid() bool {

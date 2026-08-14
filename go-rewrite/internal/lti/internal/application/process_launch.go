@@ -11,16 +11,16 @@ import (
 )
 
 type ProcessLaunchUseCase struct {
-	ltiSessionRepository    	domain.LTISessionRepository
-	registrationRepository  	domain.RegistrationRepository
-	ltiUserLinkRepository   	domain.LTIUserLinkRepository
-	ltiCourseLinkRepository 	domain.LTICourseLinkRepository
+	ltiSessionRepository    domain.LTISessionRepository
+	registrationRepository  domain.RegistrationRepository
+	ltiUserLinkRepository   domain.LTIUserLinkRepository
+	ltiCourseLinkRepository domain.LTICourseLinkRepository
 
-	tenantRetriever           TenantRetriever
-	idTokenVerifier         	IDTokenVerifier
-	userCreator             	UserCreator
-	courseCreator           	CourseCreator
-	courseInfoRetriever     	CourseInfoRetriever
+	tenantRetriever     TenantRetriever
+	idTokenVerifier     IDTokenVerifier
+	userCreator         UserCreator
+	courseCreator       CourseCreator
+	courseInfoRetriever CourseInfoRetriever
 }
 
 type UserCreator interface {
@@ -46,9 +46,9 @@ type ProcessLaunchCommand struct {
 
 type ProcessLaunchResult struct {
 	TargetLinkURI string
-	UserID      int64
-	CourseID    int64
-	TenantID    int64
+	UserID        int64
+	CourseID      int64
+	TenantID      int64
 }
 
 func NewProcessLaunchUseCase(
@@ -56,7 +56,7 @@ func NewProcessLaunchUseCase(
 	registrationRepository domain.RegistrationRepository,
 	ltiUserLinkRepository domain.LTIUserLinkRepository,
 	ltiCourseLinkRepository domain.LTICourseLinkRepository,
-	
+
 	tenantRetriever TenantRetriever,
 	idTokenVerifier IDTokenVerifier,
 	userCreator UserCreator,
@@ -64,16 +64,16 @@ func NewProcessLaunchUseCase(
 	courseInfoRetriever CourseInfoRetriever,
 ) *ProcessLaunchUseCase {
 	return &ProcessLaunchUseCase{
-		ltiSessionRepository:    	ltiSessionRepository,
-		registrationRepository:  	registrationRepository,
-		ltiUserLinkRepository:   	ltiUserLinkRepository,
-		ltiCourseLinkRepository: 	ltiCourseLinkRepository,
+		ltiSessionRepository:    ltiSessionRepository,
+		registrationRepository:  registrationRepository,
+		ltiUserLinkRepository:   ltiUserLinkRepository,
+		ltiCourseLinkRepository: ltiCourseLinkRepository,
 
-		tenantRetriever:          tenantRetriever,
-		idTokenVerifier:         	idTokenVerifier,
-		userCreator:             	userCreator,
-		courseCreator:           	courseCreator,
-		courseInfoRetriever:     	courseInfoRetriever,
+		tenantRetriever:     tenantRetriever,
+		idTokenVerifier:     idTokenVerifier,
+		userCreator:         userCreator,
+		courseCreator:       courseCreator,
+		courseInfoRetriever: courseInfoRetriever,
 	}
 }
 
@@ -110,9 +110,9 @@ func (u *ProcessLaunchUseCase) Execute(ctx context.Context, cmd ProcessLaunchCom
 
 	return ProcessLaunchResult{
 		TargetLinkURI: session.TargetLinkURI(),
-		UserID:      userID,
-		CourseID:    courseID,
-		TenantID:    session.TenantID(),
+		UserID:        userID,
+		CourseID:      courseID,
+		TenantID:      session.TenantID(),
 	}, nil
 }
 
@@ -227,9 +227,8 @@ func (u *ProcessLaunchUseCase) resolveUser(ctx context.Context, claims jwt.MapCl
 	return userLink.UserID(), nil
 }
 
-
-// `resolveCourse` checks if a course link exists for the given tenant and 
-// context. If no link exists, a new course is created. The pair 
+// `resolveCourse` checks if a course link exists for the given tenant and
+// context. If no link exists, a new course is created. The pair
 // (`tenantID`, `contextID`) is assumed to be unique. This is not guaranteed
 // in LTI 1.3. However, it is recommended in the spec, and no other
 // one-to-one mapping from a set of claims to a course seems to exist.
@@ -258,7 +257,7 @@ func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.Map
 			courseTitle = "Untitled Course"
 		}
 
-		externalCourseID, externalCourseInfo, err := u.courseInfoRetriever.GetCourseInfoFromLTILaunch(ctx, tenant.ID,claims)
+		externalCourseID, externalCourseInfo, err := u.courseInfoRetriever.GetCourseInfoFromLTILaunch(ctx, tenant.ID, claims)
 		if err != nil {
 			return 0, err
 		}
@@ -276,11 +275,9 @@ func (u *ProcessLaunchUseCase) resolveCourse(ctx context.Context, claims jwt.Map
 	}
 
 	return courseLink.CourseID(), nil
-
 }
 
-
-// `validateLaunchClaims` checks that the claims in the ID token match the 
+// `validateLaunchClaims` checks that the claims in the ID token match the
 // expected values in the LTI session. It ensures that the `iss`, `nonce`,
 // and `aud` claims are consistent with the session.
 func validateLaunchClaims(claims jwt.MapClaims, session *domain.LTISession) error {

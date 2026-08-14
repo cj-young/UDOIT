@@ -1,10 +1,11 @@
 package internal
 
 import (
+	"strconv"
+
 	"rewritetest/internal/files/internal/application"
 	"rewritetest/internal/shared/apperr"
 	"rewritetest/internal/shared/auth"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +35,6 @@ func (h *Handler) HandleHelloFiles(c *gin.Context) {
 }
 
 func (h *Handler) HandleReviewFile(c *gin.Context) {
-
 	fileID, err := strconv.ParseInt(c.Param("file"), 10, 64)
 	if err != nil {
 		c.Error(apperr.New(
@@ -49,7 +49,6 @@ func (h *Handler) HandleReviewFile(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
 }
 
 func (h *Handler) HandleDeleteFile(c *gin.Context) {
@@ -78,4 +77,3 @@ func (h *Handler) HandleDeleteFile(c *gin.Context) {
 		"message": "File deleted successfully",
 	})
 }
-

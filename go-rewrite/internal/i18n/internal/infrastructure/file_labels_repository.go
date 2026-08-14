@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
 	"rewritetest/internal/i18n/internal/domain"
 	"rewritetest/internal/shared/apperr"
 )
@@ -27,7 +28,7 @@ func (r *FileLabelRepository) GetLabels(ctx context.Context, code string) (domai
 
 	var labels domain.Labels
 	if err := json.Unmarshal(content, &labels); err != nil {
-		return nil, apperr.New(apperr.CodeInternal, "Failed to parse translation file for language: " + code)
+		return nil, apperr.New(apperr.CodeInternal, "Failed to parse translation file for language: "+code)
 	}
 
 	return labels, nil

@@ -19,12 +19,12 @@ type Module struct {
 }
 
 type RegisterRegistrationInput struct {
-	Issuer                string
-	ClientID              string
-	TenantID              int64
-	LoginAuthEndpoint     string
-	JWKEndpoint           string
-	ServiceAuthEndpoint   string
+	Issuer               string
+	ClientID             string
+	TenantID             int64
+	LoginAuthEndpoint    string
+	JWKEndpoint          string
+	ServiceAuthEndpoint  string
 	ServiceLoginEndpoint string
 }
 
@@ -72,19 +72,19 @@ func New(
 	)
 
 	return &Module{
-		handler: handler,
+		handler:                     handler,
 		registerRegistrationUseCase: registerRegistrationUseCase,
 	}
 }
 
 func (m *Module) RegisterRegistration(ctx context.Context, input RegisterRegistrationInput) error {
 	return m.registerRegistrationUseCase.Execute(ctx, application.RegisterRegistrationCommand{
-		Issuer: input.Issuer,
-		ClientID: input.ClientID,
-		TenantID: input.TenantID,
-		LoginAuthEndpoint: input.LoginAuthEndpoint,
-		JWKEndpoint: input.JWKEndpoint,
-		ServiceAuthEndpoint: input.ServiceAuthEndpoint,
+		Issuer:               input.Issuer,
+		ClientID:             input.ClientID,
+		TenantID:             input.TenantID,
+		LoginAuthEndpoint:    input.LoginAuthEndpoint,
+		JWKEndpoint:          input.JWKEndpoint,
+		ServiceAuthEndpoint:  input.ServiceAuthEndpoint,
 		ServiceLoginEndpoint: input.ServiceLoginEndpoint,
 	})
 }

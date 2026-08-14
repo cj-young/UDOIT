@@ -12,12 +12,12 @@ import (
 
 type Module struct {
 	registerTenantUseCase *application.RegisterTenantUseCase
-	tenantRepository domain.TenantRepository
+	tenantRepository      domain.TenantRepository
 }
 
 type Tenant struct {
-	ID			int64
-	LMSKey	string
+	ID     int64
+	LMSKey string
 }
 
 func New(db *sql.DB, lmsTypeValidator application.LMSTypeValidator) *Module {
@@ -26,7 +26,7 @@ func New(db *sql.DB, lmsTypeValidator application.LMSTypeValidator) *Module {
 
 	return &Module{
 		registerTenantUseCase: registerTenantUseCase,
-		tenantRepository: tenantRepository,
+		tenantRepository:      tenantRepository,
 	}
 }
 

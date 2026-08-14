@@ -22,7 +22,7 @@ func TestGetFile_Success(t *testing.T) {
 	uc := NewGetFileUseCase(fileRepo)
 	gotFile, err := uc.Execute(context.Background(), file.ID())
 	require.NoError(t, err)
-	require.Equal(t, file.ID(), gotFile.ID) 
+	require.Equal(t, file.ID(), gotFile.ID)
 }
 
 func TestGetFile_FileNotFoundReturnsNotFoundError(t *testing.T) {

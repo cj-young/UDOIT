@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"rewritetest/internal/shared/apperr"
 	"time"
+
+	"rewritetest/internal/shared/apperr"
 )
 
 type LMSCredential struct {
@@ -55,7 +56,7 @@ func RehydrateLMSCredential(userID int64, lmsKey string, payload map[string]any,
 }
 
 func (c LMSCredential) UserID() int64           { return c.userID }
-func (c LMSCredential) LMSKey() LMSType          { return c.lmsKey }
+func (c LMSCredential) LMSKey() LMSType         { return c.lmsKey }
 func (c LMSCredential) Payload() map[string]any { return c.payload }
 func (c LMSCredential) ExpiresAt() *time.Time   { return c.expiresAt }
 func (c LMSCredential) Active() bool            { return c.active }

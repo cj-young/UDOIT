@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+
 	"rewritetest/internal/files/internal/domain"
 	"rewritetest/internal/shared/apperr"
 )

@@ -2,12 +2,13 @@ package infrastructure
 
 import (
 	"context"
+
 	"rewritetest/internal/auth/internal/domain"
 )
 
 type MockSessionRepository struct {
-	CreateFunc func(ctx context.Context, session domain.Session) error
-	GetByIDFunc func(ctx context.Context, id string) (*domain.Session, error)
+	CreateFunc     func(ctx context.Context, session domain.Session) error
+	GetByIDFunc    func(ctx context.Context, id string) (*domain.Session, error)
 	DeleteByIDFunc func(ctx context.Context, id string) error
 }
 
@@ -15,7 +16,7 @@ func (m *MockSessionRepository) Create(ctx context.Context, session domain.Sessi
 	if m.CreateFunc != nil {
 		return m.CreateFunc(ctx, session)
 	}
-	
+
 	panic("CreateFunc not implemented")
 }
 
@@ -34,7 +35,6 @@ func (m *MockSessionRepository) DeleteByID(ctx context.Context, id string) error
 }
 
 var _ domain.SessionRepository = (*MockSessionRepository)(nil)
-
 
 // Helper implementations
 

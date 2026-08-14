@@ -2,6 +2,7 @@ package canvas
 
 import (
 	"net/http"
+
 	"rewritetest/internal/lms/internal/domain"
 	"rewritetest/internal/shared/apperr"
 )
@@ -15,12 +16,11 @@ type CanvasLMSProvider struct {
 }
 
 func NewCanvasLMSProvider(
-	lmsCredentialRepository 	domain.LMSCredentialRepository,
-	authAttemptRepository 		domain.AuthAttemptRepository,
-	oauthRedirectURI 					string,
-	config 										domain.LMSProviderConfig,									
+	lmsCredentialRepository domain.LMSCredentialRepository,
+	authAttemptRepository domain.AuthAttemptRepository,
+	oauthRedirectURI string,
+	config domain.LMSProviderConfig,
 ) (*CanvasLMSProvider, error) {
-
 	canvasConfig, err := asCanvasConfig(config)
 	if err != nil {
 		return nil, err
@@ -36,10 +36,10 @@ func NewCanvasLMSProvider(
 }
 
 type canvasConfig struct {
-	baseURL      	string
-	clientID     	string
-	clientSecret 	string
-	tenantID			int64
+	baseURL      string
+	clientID     string
+	clientSecret string
+	tenantID     int64
 }
 
 func ValidateConfig(configData map[string]any) error {
@@ -82,5 +82,7 @@ func asCanvasConfig(config domain.LMSProviderConfig) (canvasConfig, error) {
 	}, nil
 }
 
-var _ domain.FullLMSProvider = (*CanvasLMSProvider)(nil)
-var _ domain.OAuthRedirectProcessor = (*CanvasLMSProvider)(nil)
+var (
+	_ domain.FullLMSProvider        = (*CanvasLMSProvider)(nil)
+	_ domain.OAuthRedirectProcessor = (*CanvasLMSProvider)(nil)
+)

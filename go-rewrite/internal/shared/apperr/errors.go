@@ -156,4 +156,3 @@ func Forbidden(message string, opts ...Option) *AppError {
 
 	return e
 }
-

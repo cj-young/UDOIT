@@ -3,47 +3,47 @@ package domain
 import "time"
 
 type Issue struct {
-	id 						int64
+	id            int64
 	contentItemID int64
-	scanRule			ScanRule
-	contentXPath	string
-	status				IssueStatus
-	severity 			IssueSeverity
-	fixedBy				int64
-	fixedAt				time.Time
+	scanRule      ScanRule
+	contentXPath  string
+	status        IssueStatus
+	severity      IssueSeverity
+	fixedBy       int64
+	fixedAt       time.Time
 
 	// details contains amorphous additional information about the issue
-	details				map[string]any
+	details map[string]any
 
-	createdAt			time.Time
-	updatedAt			time.Time
+	createdAt time.Time
+	updatedAt time.Time
 }
 
 func NewIssue(contentItemID int64, scanRule ScanRule, contentXPath string, status IssueStatus, severity IssueSeverity, details map[string]any) *Issue {
 	return &Issue{
-		contentItemID: 	contentItemID,
-		scanRule:      	scanRule,
-		contentXPath:  	contentXPath,
-		status:   	status,
-		severity: 	severity,
-		details:       	details,
-		createdAt:   	 	time.Now(),
-		updatedAt:    	time.Now(),
+		contentItemID: contentItemID,
+		scanRule:      scanRule,
+		contentXPath:  contentXPath,
+		status:        status,
+		severity:      severity,
+		details:       details,
+		createdAt:     time.Now(),
+		updatedAt:     time.Now(),
 	}
 }
 
 func RehydrateIssue(
-	id 						int64,
+	id int64,
 	contentItemID int64,
-	scanRule 			ScanRule,
-	contentXPath 	string,
-	status				IssueStatus,
-	severity 			IssueSeverity,
-	fixedBy 			int64,
-	fixedAt 			time.Time,
-	details 			map[string]any,
-	createdAt 		time.Time,
-	updatedAt 		time.Time,
+	scanRule ScanRule,
+	contentXPath string,
+	status IssueStatus,
+	severity IssueSeverity,
+	fixedBy int64,
+	fixedAt time.Time,
+	details map[string]any,
+	createdAt time.Time,
+	updatedAt time.Time,
 ) *Issue {
 	return &Issue{
 		id:            id,
@@ -51,12 +51,12 @@ func RehydrateIssue(
 		scanRule:      scanRule,
 		contentXPath:  contentXPath,
 		status:        status,
-		severity:     severity,
+		severity:      severity,
 		fixedBy:       fixedBy,
 		fixedAt:       fixedAt,
 		details:       details,
-		createdAt:    createdAt,
-		updatedAt:    updatedAt,
+		createdAt:     createdAt,
+		updatedAt:     updatedAt,
 	}
 }
 

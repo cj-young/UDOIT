@@ -21,25 +21,25 @@ func NewMySQLRegistrationRepository(db *sql.DB) *MySQLRegistrationRepository {
 
 func (r *MySQLRegistrationRepository) Create(ctx context.Context, registration domain.Registration) error {
 	return r.queries.CreateRegistration(ctx, ltisqlc.CreateRegistrationParams{
-		Issuer:                registration.Issuer,
-		ClientID:              registration.ClientID,
-		TenantID:              uint64(registration.TenantID),
-		LoginAuthEndpoint:     registration.LoginAuthEndpoint,
-		JwkEndpoint:           registration.JWKEndpoint,
-		ServiceAuthEndpoint:   registration.ServiceAuthEndpoint,
+		Issuer:               registration.Issuer,
+		ClientID:             registration.ClientID,
+		TenantID:             uint64(registration.TenantID),
+		LoginAuthEndpoint:    registration.LoginAuthEndpoint,
+		JwkEndpoint:          registration.JWKEndpoint,
+		ServiceAuthEndpoint:  registration.ServiceAuthEndpoint,
 		ServiceLoginEndpoint: registration.ServiceLoginEndpoint,
 	})
 }
 
 func (r *MySQLRegistrationRepository) Save(ctx context.Context, registration domain.Registration) error {
 	_, err := r.queries.UpdateRegistration(ctx, ltisqlc.UpdateRegistrationParams{
-		TenantID:              uint64(registration.TenantID),
-		LoginAuthEndpoint:     registration.LoginAuthEndpoint,
-		JwkEndpoint:           registration.JWKEndpoint,
-		ServiceAuthEndpoint:   registration.ServiceAuthEndpoint,
+		TenantID:             uint64(registration.TenantID),
+		LoginAuthEndpoint:    registration.LoginAuthEndpoint,
+		JwkEndpoint:          registration.JWKEndpoint,
+		ServiceAuthEndpoint:  registration.ServiceAuthEndpoint,
 		ServiceLoginEndpoint: registration.ServiceLoginEndpoint,
-		Issuer:                registration.Issuer,
-		ClientID:              registration.ClientID,
+		Issuer:               registration.Issuer,
+		ClientID:             registration.ClientID,
 	})
 	if err != nil {
 		return err

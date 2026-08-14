@@ -101,12 +101,11 @@ func (h *Handler) handleUpdatePreferences(c *gin.Context) {
 		return
 	}
 
-
 	c.JSON(http.StatusOK, map[string]any{
 		"user": map[string]any{
-			"id": principal.AgentID,
+			"id":       principal.AgentID,
 			"username": "doesn't matter I don't care",
-			"name": "idgaf this shouldn't be returned anyway",
+			"name":     "idgaf this shouldn't be returned anyway",
 		},
 		"labels": labels,
 	})

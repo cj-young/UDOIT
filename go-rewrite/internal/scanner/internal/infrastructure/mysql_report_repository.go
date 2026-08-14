@@ -7,6 +7,7 @@ import (
 	"rewritetest/internal/scanner/internal/domain"
 	scannersqlc "rewritetest/internal/scanner/internal/infrastructure/sqlc"
 )
+
 type MySQLReportRepository struct {
 	queries *scannersqlc.Queries
 }

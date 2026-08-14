@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"rewritetest/internal/files/internal/domain"
 	"time"
+
+	"rewritetest/internal/files/internal/domain"
 )
 
 type MySQLFileRepository struct {
@@ -27,11 +28,11 @@ func (r *MySQLFileRepository) GetFileByID(ctx context.Context, fileID int64) (*d
 	row := r.db.QueryRowContext(ctx, query, fileID)
 
 	var (
-		courseID int64
-		reviewerID sql.NullInt64
-		reviewedOn sql.NullTime
-		isReviewed bool
-		externalID sql.NullString
+		courseID        int64
+		reviewerID      sql.NullInt64
+		reviewedOn      sql.NullTime
+		isReviewed      bool
+		externalID      sql.NullString
 		externalDataStr sql.NullString
 	)
 	err := row.Scan(&fileID, &courseID, &reviewerID, &reviewedOn, &isReviewed, &externalID, &externalDataStr)

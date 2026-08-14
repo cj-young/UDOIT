@@ -1,7 +1,7 @@
 package domain
 
 type AuthChallenge struct {
-	Kind AuthChallengeKind
+	Kind        AuthChallengeKind
 	RedirectURL string
 }
 
@@ -9,5 +9,5 @@ type AuthChallengeKind string
 
 const (
 	AuthChallengeKindRedirect AuthChallengeKind = "redirect"
-	AuthChallengeKindNone AuthChallengeKind = "none"
+	AuthChallengeKindNone     AuthChallengeKind = "none"
 )

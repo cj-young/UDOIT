@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"rewritetest/internal/lms/internal"
 	"rewritetest/internal/lms/internal/application"
@@ -12,20 +13,17 @@ import (
 	"rewritetest/internal/lms/internal/infrastructure/providers/canvas"
 	"rewritetest/internal/shared/apperr"
 
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )
 
 type Module struct {
-	providerResolver						domain.LMSProviderResolver
-	providerConfigRepository   	domain.LMSProviderConfigRepository
-	handler                    	*internal.Handler
+	providerResolver         domain.LMSProviderResolver
+	providerConfigRepository domain.LMSProviderConfigRepository
+	handler                  *internal.Handler
 }
 
 func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
-
 	authAttemptTTL := time.Hour
 
 	credentialRepository := infrastructure.NewMySQLLMSCredentialRepository(db)
@@ -43,9 +41,9 @@ func New(db *sql.DB, client *redis.Client, baseURL string) *Module {
 	handler := internal.NewHandler(processOAuthRedirectUseCase)
 
 	return &Module{
-		providerResolver:           providerResolver,
-		providerConfigRepository:   providerConfigRepository,
-		handler:                    handler,
+		providerResolver:         providerResolver,
+		providerConfigRepository: providerConfigRepository,
+		handler:                  handler,
 	}
 }
 
@@ -63,7 +61,6 @@ func (m *Module) SaveProviderConfig(ctx context.Context, tenantID int64, lmsKey 
 }
 
 func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, configData map[string]any) error {
-
 	lmsType, err := domain.ParseLMSType(lmsKey)
 	if err != nil {
 		return err
@@ -81,17 +78,17 @@ func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, conf
 }
 
 type ContentItemDTO struct {
-	ExternalID 	string
-	HTML 				string
-	Type        string
+	ExternalID string
+	HTML       string
+	Type       string
 }
 
 type GetContentRequest struct {
-	CourseID 						int64
-	ExternalCourseID 		string
-	ExternalCourseData	map[string]any
-	TenantID						int64
-	UserID							int64
+	CourseID           int64
+	ExternalCourseID   string
+	ExternalCourseData map[string]any
+	TenantID           int64
+	UserID             int64
 }
 
 func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]ContentItemDTO, error) {
@@ -99,16 +96,16 @@ func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]Conte
 	if err != nil {
 		return nil, err
 	}
-	
+
 	contentItems, err := lmsProvider.GetContent(ctx, domain.LMSCourse{
-		ID:          	req.CourseID,
+		ID:           req.CourseID,
 		ExternalID:   req.ExternalCourseID,
 		ExternalData: req.ExternalCourseData,
 	}, []domain.LMSContent{}, req.UserID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	contentItemDTOs := make([]ContentItemDTO, len(contentItems))
 	for i, item := range contentItems {
 		contentItemDTOs[i] = ContentItemDTO{

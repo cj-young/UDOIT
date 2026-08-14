@@ -29,16 +29,15 @@ func (r *RedisLTISessionRepository) key(state string) string {
 }
 
 type LTISessionStorageDTO struct {
-	State 					string		`json:"state"`
-	Nonce 					string		`json:"nonce"`
-	Issuer 					string		`json:"issuer"`
-	ClientID 				string		`json:"client_id"`
-	TargetLinkURI 	string		`json:"target_link_uri"`
-	TenantID 				int64			`json:"tenant_id"`
-	CreatedAt 			time.Time	`json:"created_at"`
-	ExpiresAt 			time.Time	`json:"expires_at"`
+	State         string    `json:"state"`
+	Nonce         string    `json:"nonce"`
+	Issuer        string    `json:"issuer"`
+	ClientID      string    `json:"client_id"`
+	TargetLinkURI string    `json:"target_link_uri"`
+	TenantID      int64     `json:"tenant_id"`
+	CreatedAt     time.Time `json:"created_at"`
+	ExpiresAt     time.Time `json:"expires_at"`
 }
-
 
 func (r *RedisLTISessionRepository) Create(ctx context.Context, session *domain.LTISession) error {
 	expiration := r.ttl

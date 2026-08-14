@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
+
 	"rewritetest/internal/content/internal/domain"
 	contentsqlc "rewritetest/internal/content/internal/infrastructure/sqlc"
 )
@@ -35,6 +36,7 @@ func (r *MySQLContentItemRepository) GetByID(ctx context.Context, id int64) (*do
 	)
 	return contentItem, nil
 }
+
 func (r *MySQLContentItemRepository) GetByCourseID(ctx context.Context, courseID int64) ([]*domain.ContentItem, error) {
 	rows, err := r.queries.GetContentItemsByCourseID(ctx, uint64(courseID))
 	if err != nil {
@@ -100,7 +102,7 @@ func (r *MySQLContentItemRepository) CreateMany(ctx context.Context, contentItem
 
 		idMap[params.ExternalID] = insertedID
 	}
-	
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}

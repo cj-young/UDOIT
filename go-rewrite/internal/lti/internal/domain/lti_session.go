@@ -8,7 +8,7 @@ type LTISession struct {
 	issuer        string
 	clientID      string
 	targetLinkURI string
-	tenantID			int64
+	tenantID      int64
 	createdAt     time.Time
 	expiresAt     time.Time
 }

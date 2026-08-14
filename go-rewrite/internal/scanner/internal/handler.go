@@ -1,23 +1,23 @@
 package internal
 
 import (
+	"strconv"
+
 	"rewritetest/internal/scanner/internal/application"
 	"rewritetest/internal/shared/apperr"
 	"rewritetest/internal/shared/auth"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-
 type Handler struct {
-	scanCourseUseCase *application.ScanCourseUseCase
+	scanCourseUseCase   *application.ScanCourseUseCase
 	createReportUseCase *application.CreateReportUseCase
 }
 
 func NewHandler(scanCourseUseCase *application.ScanCourseUseCase, createReportUseCase *application.CreateReportUseCase) *Handler {
 	return &Handler{
-		scanCourseUseCase: scanCourseUseCase,
+		scanCourseUseCase:   scanCourseUseCase,
 		createReportUseCase: createReportUseCase,
 	}
 }

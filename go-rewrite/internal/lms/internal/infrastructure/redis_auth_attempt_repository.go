@@ -13,7 +13,7 @@ import (
 
 type RedisAuthAttemptRepository struct {
 	client *redis.Client
-	ttl time.Duration
+	ttl    time.Duration
 	prefix string
 }
 
@@ -27,7 +27,7 @@ func (r *RedisAuthAttemptRepository) Create(ctx context.Context, authAttempt dom
 	if err != nil {
 		return err
 	}
-	
+
 	err = r.client.Set(ctx, key, data, r.ttl).Err()
 	if err != nil {
 		return err
@@ -62,7 +62,5 @@ func (r *RedisAuthAttemptRepository) GetByState(ctx context.Context, state strin
 func (r *RedisAuthAttemptRepository) key(state string) string {
 	return r.prefix + state
 }
-
-
 
 var _ domain.AuthAttemptRepository = (*RedisAuthAttemptRepository)(nil)

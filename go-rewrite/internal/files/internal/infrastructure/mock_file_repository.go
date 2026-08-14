@@ -2,24 +2,24 @@ package infrastructure
 
 import (
 	"context"
+
 	"rewritetest/internal/files/internal/domain"
 )
 
 type MockFileRepository struct {
 	GetFileByIDFunc func(ctx context.Context, id int64) (*domain.File, error)
-	UpdateFileFunc    func(ctx context.Context, file *domain.File) error
-	DeleteFileFunc    func(ctx context.Context, id int64) error
-	SeedFilesFunc    func(seed ...*domain.File)
+	UpdateFileFunc  func(ctx context.Context, file *domain.File) error
+	DeleteFileFunc  func(ctx context.Context, id int64) error
+	SeedFilesFunc   func(seed ...*domain.File)
 }
 
 var _ domain.FileRepository = (*MockFileRepository)(nil)
-
 
 func (m *MockFileRepository) GetFileByID(ctx context.Context, id int64) (*domain.File, error) {
 	if m.GetFileByIDFunc != nil {
 		return m.GetFileByIDFunc(ctx, id)
 	}
-	
+
 	panic("GetFileByIDFunc is not defined")
 }
 
@@ -27,7 +27,7 @@ func (m *MockFileRepository) UpdateFile(ctx context.Context, file *domain.File) 
 	if m.UpdateFileFunc != nil {
 		return m.UpdateFileFunc(ctx, file)
 	}
-	
+
 	panic("UpdateFileFunc is not defined")
 }
 
@@ -46,7 +46,6 @@ func (m *MockFileRepository) SeedFiles(seed ...*domain.File) {
 		m.SeedFilesFunc(seed...)
 	}
 }
-
 
 // Helper implementations
 

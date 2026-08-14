@@ -71,7 +71,6 @@ func main() {
 	tenantsModule := tenants.New(db, lmsModule)
 	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule, lmsModule, tenantsModule, lmsModule, os.Getenv("GO_BASE_URL"))
 
-
 	// Register routes
 	usersModule.RegisterRoutes(router.Group("/users"))
 	ltiModule.RegisterRoutes(router.Group("/lti"))

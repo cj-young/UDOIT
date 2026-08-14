@@ -9,7 +9,7 @@ import (
 
 type CreateReportUseCase struct {
 	reportRepository domain.ReportRepository
-	issueRetriever IssueRetriever
+	issueRetriever   IssueRetriever
 }
 
 type IssueRetriever interface {
@@ -19,12 +19,12 @@ type IssueRetriever interface {
 func NewCreateReportUseCase(reportRepository domain.ReportRepository, issueRetriever IssueRetriever) *CreateReportUseCase {
 	return &CreateReportUseCase{
 		reportRepository: reportRepository,
-		issueRetriever:  issueRetriever,
+		issueRetriever:   issueRetriever,
 	}
 }
 
 type CreateReportCommand struct {
-	UserID int64
+	UserID   int64
 	CourseID int64
 }
 

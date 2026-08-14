@@ -3,12 +3,12 @@ package domain
 import "time"
 
 type ContentItem struct {
-	id        		int64
-	courseID  		int64
-	contentHash 	string
-	externalID 		string
-	createdAt 		time.Time
-	updatedAt 		time.Time
+	id          int64
+	courseID    int64
+	contentHash string
+	externalID  string
+	createdAt   time.Time
+	updatedAt   time.Time
 }
 
 func NewContentItem(courseID int64, contentHash string, externalID string) *ContentItem {

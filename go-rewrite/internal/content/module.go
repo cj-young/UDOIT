@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"database/sql"
+
 	"rewritetest/internal/content/internal/domain"
 	"rewritetest/internal/content/internal/infrastructure"
 )
@@ -12,14 +13,13 @@ type Module struct {
 }
 
 type ContentItem struct {
-	ID 						int64
-	ExternalID 		string
-	ContentHash		string
-	CourseID 			int64
+	ID          int64
+	ExternalID  string
+	ContentHash string
+	CourseID    int64
 }
 
 func New(db *sql.DB) *Module {
-
 	contentItemRepository := infrastructure.NewMySQLContentItemRepository(db)
 
 	return &Module{
@@ -36,10 +36,10 @@ func (m *Module) GetByCourse(ctx context.Context, courseID int64) ([]ContentItem
 	contentItemsResult := make([]ContentItem, len(contentItems))
 	for i, item := range contentItems {
 		contentItemsResult[i] = ContentItem{
-			ID:            	item.ID(),
-			ExternalID:    	item.ExternalID(),
-			ContentHash: 		item.ContentHash(),
-			CourseID:      	item.CourseID(),
+			ID:          item.ID(),
+			ExternalID:  item.ExternalID(),
+			ContentHash: item.ContentHash(),
+			CourseID:    item.CourseID(),
 		}
 	}
 	return contentItemsResult, nil

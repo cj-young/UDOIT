@@ -10,9 +10,8 @@ import (
 	"rewritetest/internal/shared/auth"
 )
 
-
 type canvasFile struct {
-	fileID string
+	fileID      string
 	contextType string
 }
 
@@ -65,7 +64,7 @@ func (p *CanvasLMSProvider) DeleteFile(ctx context.Context, principal auth.Princ
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		switch resp.StatusCode {
 		case http.StatusUnauthorized:
-			return apperr.New(apperr.CodeUnauthorized,"Unauthorized to delete file")
+			return apperr.New(apperr.CodeUnauthorized, "Unauthorized to delete file")
 		case http.StatusForbidden:
 			return apperr.Forbidden("Forbidden to delete file")
 		case http.StatusNotFound:

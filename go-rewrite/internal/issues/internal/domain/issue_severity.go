@@ -5,8 +5,8 @@ import "rewritetest/internal/shared/apperr"
 type IssueSeverity string
 
 const (
-	IssueSeverityError 			IssueSeverity = "error"
-	IssueSeverityPotential 	IssueSeverity = "potential"
+	IssueSeverityError      IssueSeverity = "error"
+	IssueSeverityPotential  IssueSeverity = "potential"
 	IssueSeveritySuggestion IssueSeverity = "suggestion"
 )
 

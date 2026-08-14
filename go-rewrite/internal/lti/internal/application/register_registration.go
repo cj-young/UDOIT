@@ -13,12 +13,12 @@ type RegisterRegistrationUseCase struct {
 }
 
 type RegisterRegistrationCommand struct {
-	Issuer                string
-	ClientID              string
-	TenantID              int64
-	LoginAuthEndpoint     string
-	JWKEndpoint           string
-	ServiceAuthEndpoint   string
+	Issuer               string
+	ClientID             string
+	TenantID             int64
+	LoginAuthEndpoint    string
+	JWKEndpoint          string
+	ServiceAuthEndpoint  string
 	ServiceLoginEndpoint string
 }
 

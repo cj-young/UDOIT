@@ -5,9 +5,9 @@ package domain
 type ScanIssueStatus string
 
 const (
-	ScanIssueStatusActive 						ScanIssueStatus = "active"
-	ScanIssueStatusFixed 							ScanIssueStatus = "fixed"
-	ScanIssueStatusMarkedAsResolved 	ScanIssueStatus = "marked_as_resolved"
+	ScanIssueStatusActive           ScanIssueStatus = "active"
+	ScanIssueStatusFixed            ScanIssueStatus = "fixed"
+	ScanIssueStatusMarkedAsResolved ScanIssueStatus = "marked_as_resolved"
 )
 
 func (s ScanIssueStatus) String() string {

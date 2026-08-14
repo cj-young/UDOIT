@@ -9,10 +9,10 @@ import (
 )
 
 type TenantLMSProviderResolver struct {
-	configRepository					domain.LMSProviderConfigRepository
-	lmsCredentialRepository		domain.LMSCredentialRepository
-	authAttemptRepository			domain.AuthAttemptRepository
-	oAuthRedirectURI					string
+	configRepository        domain.LMSProviderConfigRepository
+	lmsCredentialRepository domain.LMSCredentialRepository
+	authAttemptRepository   domain.AuthAttemptRepository
+	oAuthRedirectURI        string
 }
 
 func NewTenantLMSProviderResolver(
@@ -22,10 +22,10 @@ func NewTenantLMSProviderResolver(
 	oAuthRedirectURI string,
 ) *TenantLMSProviderResolver {
 	return &TenantLMSProviderResolver{
-		configRepository:       configRepository,
+		configRepository:        configRepository,
 		lmsCredentialRepository: lmsCredentialRepository,
-		authAttemptRepository:  authAttemptRepository,
-		oAuthRedirectURI:       oAuthRedirectURI,
+		authAttemptRepository:   authAttemptRepository,
+		oAuthRedirectURI:        oAuthRedirectURI,
 	}
 }
 
@@ -41,7 +41,6 @@ func (r *TenantLMSProviderResolver) GetByTenant(ctx context.Context, tenantID in
 	case domain.LMSTypeCanvas:
 		return canvas.NewCanvasLMSProvider(r.lmsCredentialRepository, r.authAttemptRepository, r.oAuthRedirectURI, *config)
 	}
-
 
 	return zero, apperr.Internal("An invalid provider key was supplied.")
 }
