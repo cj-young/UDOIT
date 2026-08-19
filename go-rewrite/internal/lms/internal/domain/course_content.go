@@ -10,6 +10,7 @@ type CourseContent struct {
 type CourseContentType string
 
 const (
-	CourseContentTypePage CourseContentType = "page"
+	CourseContentTypePage       CourseContentType = "page"
 	CourseContentTypeAssignment CourseContentType = "assignment"
+	CourseContentTypeSyllabus   CourseContentType = "syllabus"
 )

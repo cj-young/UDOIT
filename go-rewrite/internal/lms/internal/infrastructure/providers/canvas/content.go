@@ -18,6 +18,7 @@ type canvasContentType string
 const (
 	canvasContentTypePage       canvasContentType = "page"
 	canvasContentTypeAssignment canvasContentType = "assignment"
+	canvasContentTypeSyllabus   canvasContentType = "syllabus"
 )
 
 func ParseCanvasContentType(s string) (canvasContentType, error) {
@@ -26,6 +27,8 @@ func ParseCanvasContentType(s string) (canvasContentType, error) {
 		return canvasContentTypePage, nil
 	case string(canvasContentTypeAssignment):
 		return canvasContentTypeAssignment, nil
+	case string(canvasContentTypeSyllabus):
+		return canvasContentTypeSyllabus, nil
 	default:
 		return "", apperr.Internal("Invalid content type")
 	}
@@ -56,9 +59,19 @@ func (p *CanvasLMSProvider) GetContent(
 		return nil, err
 	}
 
-	courseContents := make([]domain.CourseContent, len(pages)+len(assignments))
-	for i, page := range pages {
-		courseContents[i] = domain.CourseContent{
+	syllabus, err := p.getSyllabus(ctx, canvasCourse.courseID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalContent := len(pages) + len(assignments)
+	if syllabus != nil {
+		totalContent++
+	}
+
+	courseContents := make([]domain.CourseContent, 0, totalContent)
+	for _, page := range pages {
+		courseContents = append(courseContents, domain.CourseContent{
 			ExternalID: page.URL, // TODO: evaluate whether this is the best external ID
 			ExternalData: map[string]any{
 				"content_id":   page.PageID,
@@ -67,12 +80,12 @@ func (p *CanvasLMSProvider) GetContent(
 			},
 			HTML: page.Body,
 			Type: domain.CourseContentTypePage,
-		}
+		})
 	}
 
-	for i, assignment := range assignments {
+	for _, assignment := range assignments {
 		assignmentID := strconv.FormatInt(assignment.ID, 10)
-		courseContents[len(pages)+i] = domain.CourseContent{
+		courseContents = append(courseContents, domain.CourseContent{
 			ExternalID: "assignment:" + assignmentID,
 			ExternalData: map[string]any{
 				"content_id":   assignmentID,
@@ -81,7 +94,21 @@ func (p *CanvasLMSProvider) GetContent(
 			},
 			HTML: assignment.Description,
 			Type: domain.CourseContentTypeAssignment,
-		}
+		})
+	}
+
+	if syllabus != nil {
+		syllabusID := strconv.FormatInt(syllabus.ID, 10)
+		courseContents = append(courseContents, domain.CourseContent{
+			ExternalID: "syllabus",
+			ExternalData: map[string]any{
+				"content_id":   syllabusID,
+				"updated_at":   time.Time{}.Format(time.RFC3339),
+				"content_type": string(canvasContentTypeSyllabus),
+			},
+			HTML: syllabus.SyllabusBody,
+			Type: domain.CourseContentTypeSyllabus,
+		})
 	}
 
 	return courseContents, nil
@@ -108,9 +135,15 @@ func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasCo
 		return canvasContent{}, apperr.Internal("Invalid content type in content mapping data")
 	}
 
-	updatedAt, ok := content.ExternalData["updated_at"].(time.Time)
+	updatedAtStr, ok := content.ExternalData["updated_at"].(string)
 	if !ok {
 		return canvasContent{}, apperr.Internal("Missing or invalid updated timestamp in content mapping data")
+	}
+
+	var updatedAt time.Time
+	updatedAt, err = time.Parse(time.RFC3339, updatedAtStr)
+	if err != nil {
+		return canvasContent{}, apperr.Internal("Invalid updated timestamp in content mapping data")
 	}
 
 	return canvasContent{
@@ -133,6 +166,11 @@ type AssignmentResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	UpdatedAt   string `json:"updated_at"`
+}
+
+type SyllabusResponse struct {
+	ID           int64  `json:"id"`
+	SyllabusBody string `json:"syllabus_body"`
 }
 
 func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string, userID int64) ([]PageResponse, error) {
@@ -223,6 +261,39 @@ func (p *CanvasLMSProvider) getAssignments(ctx context.Context, canvasCourseID s
 	}
 
 	return assignments, nil
+}
+
+func (p *CanvasLMSProvider) getSyllabus(ctx context.Context, canvasCourseID string, userID int64) (*SyllabusResponse, error) {
+	path := "/api/v1/courses/" + canvasCourseID + "?include[]=syllabus_body"
+
+	resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
+		Path:   path,
+		Body:   nil,
+		Method: http.MethodGet,
+		Config: p.config,
+		UserID: userID,
+	})
+	if err != nil {
+		slog.Info("failed to send request", "path", path, "error", err)
+		return nil, apperr.Internal("Failed to send HTTP request")
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, apperr.Internal("Unexpected status code: " + resp.Status)
+	}
+
+	var syllabus SyllabusResponse
+	if err := json.NewDecoder(resp.Body).Decode(&syllabus); err != nil {
+		return nil, apperr.Internal("Failed to decode response body")
+	}
+
+	if strings.TrimSpace(syllabus.SyllabusBody) == "" {
+		return nil, nil
+	}
+
+	return &syllabus, nil
 }
 
 // Pagination in Canvas works through a "Link" header.
