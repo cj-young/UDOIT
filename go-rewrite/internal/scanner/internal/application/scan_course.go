@@ -34,9 +34,10 @@ type ContentHasher interface {
 }
 
 type HashedContentItem struct {
-	ExternalID  string
-	ContentHash string
-	Type        string
+	ExternalID   string
+	ExternalData map[string]any
+	ContentHash  string
+	Type         string
 }
 
 type ScanCourseUseCase struct {
@@ -67,10 +68,11 @@ func NewScanCourseUseCase(
 }
 
 type FullContentItem struct {
-	ExternalID  string
-	HTML        string
-	ContentHash string
-	Type        string
+	ExternalID   string
+	ExternalData map[string]any
+	HTML         string
+	ContentHash  string
+	Type         string
 }
 
 func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principal, courseID int64) error {
@@ -103,10 +105,11 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 	changedContentItemsHashed := make([]content.ContentItem, len(changedContentItems))
 	for i, item := range changedContentItems {
 		changedContentItemsHashed[i] = content.ContentItem{
-			ID:          item.ID,
-			ExternalID:  item.ExternalID,
-			ContentHash: item.ContentHash,
-			CourseID:    item.CourseID,
+			ID:           item.ID,
+			ExternalID:   item.ExternalID,
+			ExternalData: item.ExternalData,
+			ContentHash:  item.ContentHash,
+			CourseID:     item.CourseID,
 		}
 	}
 	idMap, err := u.contentItemService.CreateManyContentItems(ctx, changedContentItemsHashed)
@@ -165,12 +168,13 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 }
 
 type ChangedContentItem struct {
-	ID          int64
-	CourseID    int64
-	ExternalID  string
-	ContentHash string
-	Type        string
-	HTML        string
+	ID           int64
+	CourseID     int64
+	ExternalID   string
+	ExternalData map[string]any
+	ContentHash  string
+	Type         string
+	HTML         string
 }
 
 func (u *ScanCourseUseCase) getChangedContentItems(
@@ -195,12 +199,13 @@ func (u *ScanCourseUseCase) getChangedContentItems(
 				id = currentItem.ID
 			}
 			changedContentItems = append(changedContentItems, &ChangedContentItem{
-				ID:          id,
-				CourseID:    courseID,
-				ExternalID:  item.ExternalID,
-				ContentHash: contentHash,
-				Type:        item.Type,
-				HTML:        item.HTML,
+				ID:           id,
+				CourseID:     courseID,
+				ExternalID:   item.ExternalID,
+				ExternalData: item.ExternalData,
+				ContentHash:  contentHash,
+				Type:         item.Type,
+				HTML:         item.HTML,
 			})
 		}
 	}

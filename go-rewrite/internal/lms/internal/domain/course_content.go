@@ -1,9 +1,10 @@
 package domain
 
 type CourseContent struct {
-	ExternalID string
-	HTML       string
-	Type       CourseContentType
+	ExternalID   string
+	ExternalData map[string]any
+	HTML         string
+	Type         CourseContentType
 }
 
 type CourseContentType string

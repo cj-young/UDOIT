@@ -31,7 +31,7 @@ func (f *fakeI18NService) GetLabels(_ context.Context, lang string) (map[string]
 
 func TestUpdatePreferencesUseCase_Unauthorized(t *testing.T) {
 	repo := &infrastructure.MockUserRepository{
-		UpdateFunc: func(ctx context.Context, user *domain.User) error { 
+		UpdateFunc: func(ctx context.Context, user *domain.User) error {
 			require.FailNow(t, "User repo update function should not be called")
 			return nil
 		},

@@ -3,32 +3,35 @@ package domain
 import "time"
 
 type ContentItem struct {
-	id          int64
-	courseID    int64
-	contentHash string
-	externalID  string
-	createdAt   time.Time
-	updatedAt   time.Time
+	id           int64
+	courseID     int64
+	contentHash  string
+	externalID   string
+	externalData map[string]any
+	createdAt    time.Time
+	updatedAt    time.Time
 }
 
-func NewContentItem(courseID int64, contentHash string, externalID string) *ContentItem {
+func NewContentItem(courseID int64, contentHash string, externalID string, externalData map[string]any) *ContentItem {
 	return &ContentItem{
-		courseID:    courseID,
-		contentHash: contentHash,
-		externalID:  externalID,
-		createdAt:   time.Now(),
-		updatedAt:   time.Now(),
+		courseID:     courseID,
+		contentHash:  contentHash,
+		externalID:   externalID,
+		externalData: externalData,
+		createdAt:    time.Now(),
+		updatedAt:    time.Now(),
 	}
 }
 
-func RehydrateContentItem(id int64, courseID int64, contentHash string, externalID string, createdAt time.Time, updatedAt time.Time) *ContentItem {
+func RehydrateContentItem(id int64, courseID int64, contentHash string, externalID string, externalData map[string]any, createdAt time.Time, updatedAt time.Time) *ContentItem {
 	return &ContentItem{
-		id:          id,
-		courseID:    courseID,
-		contentHash: contentHash,
-		externalID:  externalID,
-		createdAt:   createdAt,
-		updatedAt:   updatedAt,
+		id:           id,
+		courseID:     courseID,
+		contentHash:  contentHash,
+		externalID:   externalID,
+		externalData: externalData,
+		createdAt:    createdAt,
+		updatedAt:    updatedAt,
 	}
 }
 
@@ -54,4 +57,8 @@ func (c *ContentItem) ContentHash() string {
 
 func (c *ContentItem) ExternalID() string {
 	return c.externalID
+}
+
+func (c *ContentItem) ExternalData() map[string]any {
+	return c.externalData
 }

@@ -78,9 +78,10 @@ func (m *Module) ValidateProviderConfig(ctx context.Context, lmsKey string, conf
 }
 
 type ContentItemDTO struct {
-	ExternalID string
-	HTML       string
-	Type       string
+	ExternalID   string
+	ExternalData map[string]any
+	HTML         string
+	Type         string
 }
 
 type GetContentRequest struct {
@@ -109,9 +110,10 @@ func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]Conte
 	contentItemDTOs := make([]ContentItemDTO, len(contentItems))
 	for i, item := range contentItems {
 		contentItemDTOs[i] = ContentItemDTO{
-			ExternalID: item.ExternalID,
-			HTML:       item.HTML,
-			Type:       string(item.Type),
+			ExternalID:   item.ExternalID,
+			ExternalData: item.ExternalData,
+			HTML:         item.HTML,
+			Type:         string(item.Type),
 		}
 	}
 	return contentItemDTOs, nil

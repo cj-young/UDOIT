@@ -2,13 +2,14 @@ package infrastructure
 
 import (
 	"context"
+
 	"rewritetest/internal/users/internal/domain"
 )
 
 type MockUserRepository struct {
 	GetByIDFunc func(ctx context.Context, id int64) (*domain.User, error)
-	CreateFunc func(ctx context.Context, user *domain.User) error
-	UpdateFunc func(ctx context.Context, user *domain.User) error
+	CreateFunc  func(ctx context.Context, user *domain.User) error
+	UpdateFunc  func(ctx context.Context, user *domain.User) error
 
 	GetByIDCallCount int
 	CreateCallCount  int
@@ -20,7 +21,7 @@ func (m *MockUserRepository) GetByID(ctx context.Context, id int64) (*domain.Use
 	if m.GetByIDFunc != nil {
 		return m.GetByIDFunc(ctx, id)
 	}
-	
+
 	panic("GetByID function not implemented in MockUserRepository")
 }
 
@@ -42,12 +43,11 @@ func (m *MockUserRepository) Update(ctx context.Context, user *domain.User) erro
 
 var _ domain.UserRepository = &MockUserRepository{}
 
-
 // Helper implementations
 
 func NewMapMockUserRepository() *MockUserRepository {
 	userMap := make(map[int64]*domain.User)
-	
+
 	return &MockUserRepository{
 		GetByIDFunc: func(ctx context.Context, id int64) (*domain.User, error) {
 			user, exists := userMap[id]

@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"rewritetest/internal/content/internal/domain"
 	contentsqlc "rewritetest/internal/content/internal/infrastructure/sqlc"
@@ -26,11 +27,18 @@ func (r *MySQLContentItemRepository) GetByID(ctx context.Context, id int64) (*do
 		return nil, err
 	}
 
+	var externalData map[string]any
+	err = json.Unmarshal(row.ExternalData, &externalData)
+	if err != nil {
+		return nil, err
+	}
+
 	contentItem := domain.RehydrateContentItem(
 		int64(row.ID),
 		int64(row.CourseID),
 		row.ContentHash,
 		row.ExternalID,
+		externalData,
 		row.CreatedAt,
 		row.UpdatedAt,
 	)
@@ -45,11 +53,19 @@ func (r *MySQLContentItemRepository) GetByCourseID(ctx context.Context, courseID
 
 	contentItems := make([]*domain.ContentItem, 0, len(rows))
 	for _, row := range rows {
+
+		var externalData map[string]any
+		err := json.Unmarshal(row.ExternalData, &externalData)
+		if err != nil {
+			return nil, err
+		}
+
 		contentItem := domain.RehydrateContentItem(
 			int64(row.ID),
 			int64(row.CourseID),
 			row.ContentHash,
 			row.ExternalID,
+			externalData,
 			row.CreatedAt,
 			row.UpdatedAt,
 		)
@@ -60,10 +76,15 @@ func (r *MySQLContentItemRepository) GetByCourseID(ctx context.Context, courseID
 }
 
 func (r *MySQLContentItemRepository) Create(ctx context.Context, contentItem *domain.ContentItem) error {
-	_, err := r.queries.CreateContentItem(ctx, contentsqlc.CreateContentItemParams{
-		CourseID:    uint64(contentItem.CourseID()),
-		ContentHash: contentItem.ContentHash(),
-		ExternalID:  contentItem.ExternalID(),
+	externalData, err := json.Marshal(contentItem.ExternalData())
+	if err != nil {
+		return err
+	}
+	_, err = r.queries.CreateContentItem(ctx, contentsqlc.CreateContentItemParams{
+		CourseID:     uint64(contentItem.CourseID()),
+		ContentHash:  contentItem.ContentHash(),
+		ExternalID:   contentItem.ExternalID(),
+		ExternalData: externalData,
 	})
 
 	return err
@@ -80,10 +101,17 @@ func (r *MySQLContentItemRepository) CreateMany(ctx context.Context, contentItem
 
 	domainContentItemsParams := make([]contentsqlc.CreateContentItemParams, len(contentItems))
 	for i, item := range contentItems {
+
+		externalData, err := json.Marshal(item.ExternalData())
+		if err != nil {
+			return nil, err
+		}
+
 		domainContentItemsParams[i] = contentsqlc.CreateContentItemParams{
-			CourseID:    uint64(item.CourseID()),
-			ContentHash: item.ContentHash(),
-			ExternalID:  item.ExternalID(),
+			CourseID:     uint64(item.CourseID()),
+			ContentHash:  item.ContentHash(),
+			ExternalID:   item.ExternalID(),
+			ExternalData: externalData,
 		}
 	}
 

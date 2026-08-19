@@ -12,6 +12,25 @@ import (
 	"rewritetest/internal/shared/apperr"
 )
 
+type canvasContentType string
+
+const (
+	canvasContentTypePage canvasContentType = "page"
+)
+
+func ParseCanvasContentType(s string) (canvasContentType, error) {
+	switch s {
+	case string(canvasContentTypePage):
+		return canvasContentTypePage, nil
+	default:
+		return "", apperr.Internal("Invalid content type")
+	}
+}
+
+func (p canvasContentType) String() string {
+	return string(p)
+}
+
 func (p *CanvasLMSProvider) GetContent(
 	ctx context.Context,
 	course domain.LMSCourse,
@@ -33,8 +52,13 @@ func (p *CanvasLMSProvider) GetContent(
 	for i, page := range pages {
 		courseContents[i] = domain.CourseContent{
 			ExternalID: page.URL, // TODO: evaluate whether this is the best external ID
-			HTML:       page.Body,
-			Type:       domain.CourseContentTypePage,
+			ExternalData: map[string]any{
+				"content_id":   page.PageID,
+				"updated_at":   page.UpdatedAt,
+				"content_type": string(canvasContentTypePage),
+			},
+			HTML: page.Body,
+			Type: domain.CourseContentTypePage,
 		}
 	}
 
@@ -42,8 +66,9 @@ func (p *CanvasLMSProvider) GetContent(
 }
 
 type canvasContent struct {
-	contentID string
-	updatedAt time.Time
+	contentID   string
+	contentType canvasContentType
+	updatedAt   time.Time
 }
 
 func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasContent, error) {
@@ -52,14 +77,24 @@ func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasCo
 		return canvasContent{}, apperr.Internal("Missing or invalid content ID in content mapping data")
 	}
 
+	contentTypeStr, ok := content.ExternalData["content_type"].(string)
+	if !ok {
+		return canvasContent{}, apperr.Internal("Missing or invalid content type in content mapping data")
+	}
+	contentType, err := ParseCanvasContentType(contentTypeStr)
+	if err != nil {
+		return canvasContent{}, apperr.Internal("Invalid content type in content mapping data")
+	}
+
 	updatedAt, ok := content.ExternalData["updated_at"].(time.Time)
 	if !ok {
 		return canvasContent{}, apperr.Internal("Missing or invalid updated timestamp in content mapping data")
 	}
 
 	return canvasContent{
-		contentID: contentID,
-		updatedAt: updatedAt,
+		contentID:   contentID,
+		contentType: contentType,
+		updatedAt:   updatedAt,
 	}, nil
 }
 

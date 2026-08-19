@@ -13,10 +13,11 @@ type Module struct {
 }
 
 type ContentItem struct {
-	ID          int64
-	ExternalID  string
-	ContentHash string
-	CourseID    int64
+	ID           int64
+	ExternalID   string
+	ExternalData map[string]any
+	ContentHash  string
+	CourseID     int64
 }
 
 func New(db *sql.DB) *Module {
@@ -36,10 +37,11 @@ func (m *Module) GetByCourse(ctx context.Context, courseID int64) ([]ContentItem
 	contentItemsResult := make([]ContentItem, len(contentItems))
 	for i, item := range contentItems {
 		contentItemsResult[i] = ContentItem{
-			ID:          item.ID(),
-			ExternalID:  item.ExternalID(),
-			ContentHash: item.ContentHash(),
-			CourseID:    item.CourseID(),
+			ID:           item.ID(),
+			ExternalID:   item.ExternalID(),
+			ContentHash:  item.ContentHash(),
+			CourseID:     item.CourseID(),
+			ExternalData: item.ExternalData(),
 		}
 	}
 	return contentItemsResult, nil
@@ -50,6 +52,7 @@ func (m *Module) CreateContentItem(ctx context.Context, contentItem ContentItem)
 		contentItem.CourseID,
 		contentItem.ContentHash,
 		contentItem.ExternalID,
+		contentItem.ExternalData,
 	))
 }
 
@@ -62,6 +65,7 @@ func (m *Module) CreateManyContentItems(ctx context.Context, contentItems []Cont
 			item.CourseID,
 			item.ContentHash,
 			item.ExternalID,
+			item.ExternalData,
 		)
 	}
 
