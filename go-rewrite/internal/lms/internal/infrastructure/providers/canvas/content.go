@@ -16,9 +16,10 @@ import (
 type canvasContentType string
 
 const (
-	canvasContentTypePage       canvasContentType = "page"
-	canvasContentTypeAssignment canvasContentType = "assignment"
-	canvasContentTypeSyllabus   canvasContentType = "syllabus"
+	canvasContentTypePage            canvasContentType = "page"
+	canvasContentTypeAssignment      canvasContentType = "assignment"
+	canvasContentTypeDiscussionTopic canvasContentType = "discussion_topic"
+	canvasContentTypeSyllabus        canvasContentType = "syllabus"
 )
 
 func ParseCanvasContentType(s string) (canvasContentType, error) {
@@ -27,6 +28,8 @@ func ParseCanvasContentType(s string) (canvasContentType, error) {
 		return canvasContentTypePage, nil
 	case string(canvasContentTypeAssignment):
 		return canvasContentTypeAssignment, nil
+	case string(canvasContentTypeDiscussionTopic):
+		return canvasContentTypeDiscussionTopic, nil
 	case string(canvasContentTypeSyllabus):
 		return canvasContentTypeSyllabus, nil
 	default:
@@ -58,13 +61,18 @@ func (p *CanvasLMSProvider) GetContent(
 	if err != nil {
 		return nil, err
 	}
+ 
+	discussionTopics, err := p.getDiscussionTopics(ctx, canvasCourse.courseID, userID)
+	if err != nil {
+		return nil, err
+	}
 
 	syllabus, err := p.getSyllabus(ctx, canvasCourse.courseID, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	totalContent := len(pages) + len(assignments)
+	totalContent := len(pages) + len(assignments) + len(discussionTopics)
 	if syllabus != nil {
 		totalContent++
 	}
@@ -97,6 +105,20 @@ func (p *CanvasLMSProvider) GetContent(
 		})
 	}
 
+	for _, discussionTopic := range discussionTopics {
+		discussionTopicIDStr := strconv.FormatInt(discussionTopic.ID, 10)
+		courseContents = append(courseContents, domain.CourseContent{
+			ExternalID: "discussion_topic:" + discussionTopicIDStr,
+			ExternalData: map[string]any{
+				"content_id":   discussionTopic.ID,
+				"updated_at":   discussionTopic.UpdatedAt,
+				"content_type": string(canvasContentTypeDiscussionTopic),
+			},
+			HTML: discussionTopic.Message,
+			Type: domain.CourseContentTypeDiscussionTopic,
+		})
+	}
+
 	if syllabus != nil {
 		syllabusIDStr := strconv.FormatInt(syllabus.ID, 10)
 		courseContents = append(courseContents, domain.CourseContent{
@@ -121,8 +143,22 @@ type canvasContent struct {
 }
 
 func (p *CanvasLMSProvider) asCanvasContent(content domain.LMSContent) (canvasContent, error) {
-	contentID, ok := content.ExternalData["content_id"].(string)
-	if !ok {
+	var contentID string
+	switch v := content.ExternalData["content_id"].(type) {
+	case string:
+		contentID = v
+	case int:
+		contentID = strconv.Itoa(v)
+	case int32:
+		contentID = strconv.FormatInt(int64(v), 10)
+	case int64:
+		contentID = strconv.FormatInt(v, 10)
+	case float64:
+		if v != float64(int64(v)) {
+			return canvasContent{}, apperr.Internal("Missing or invalid content ID in content mapping data")
+		}
+		contentID = strconv.FormatInt(int64(v), 10)
+	default:
 		return canvasContent{}, apperr.Internal("Missing or invalid content ID in content mapping data")
 	}
 
@@ -171,6 +207,15 @@ type AssignmentResponse struct {
 type SyllabusResponse struct {
 	ID           int64  `json:"id"`
 	SyllabusBody string `json:"syllabus_body"`
+}
+
+type DiscussionTopicResponse struct {
+	ID             int64  `json:"id"`
+	Message        string `json:"message"`
+	UpdatedAt      string
+	LastReplyAt    string `json:"last_reply_at"`
+	PostedAt       string `json:"posted_at"`
+	IsAnnouncement bool   `json:"is_announcement"`
 }
 
 func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string, userID int64) ([]PageResponse, error) {
@@ -261,6 +306,67 @@ func (p *CanvasLMSProvider) getAssignments(ctx context.Context, canvasCourseID s
 	}
 
 	return assignments, nil
+}
+
+func (p *CanvasLMSProvider) getDiscussionTopics(ctx context.Context, canvasCourseID string, userID int64) ([]DiscussionTopicResponse, error) {
+	path := "/api/v1/courses/" + canvasCourseID + "/discussion_topics?per_page=100"
+	url := ""
+
+	var discussionTopics []DiscussionTopicResponse
+
+	for url != "" || path != "" {
+		err := func() error {
+			resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
+				Path:   path,
+				URL:    url,
+				Body:   nil,
+				Method: http.MethodGet,
+				Config: p.config,
+				UserID: userID,
+			})
+			if err != nil {
+				slog.Info("failed to send request", "url", url, "error", err)
+				return apperr.Internal("Failed to send HTTP request")
+			}
+
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				return apperr.Internal("Unexpected status code: " + resp.Status)
+			}
+
+			var pageTopics []DiscussionTopicResponse
+			if err := json.NewDecoder(resp.Body).Decode(&pageTopics); err != nil {
+				return apperr.Internal("Failed to decode response body")
+			}
+
+			for _, topic := range pageTopics {
+				if topic.IsAnnouncement {
+					continue
+				}
+
+				updatedAt := topic.LastReplyAt
+				if updatedAt == "" {
+					updatedAt = topic.PostedAt
+				}
+				if updatedAt == "" {
+					updatedAt = time.Time{}.Format(time.RFC3339)
+				}
+
+				topic.UpdatedAt = updatedAt
+				discussionTopics = append(discussionTopics, topic)
+			}
+
+			url = p.getNextPageLink(resp)
+			path = ""
+			return nil
+		}()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return discussionTopics, nil
 }
 
 func (p *CanvasLMSProvider) getSyllabus(ctx context.Context, canvasCourseID string, userID int64) (*SyllabusResponse, error) {
