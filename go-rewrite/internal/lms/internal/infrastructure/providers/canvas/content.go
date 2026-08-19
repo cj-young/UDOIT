@@ -2,9 +2,6 @@ package canvas
 
 import (
 	"context"
-	"encoding/json"
-	"log/slog"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -249,236 +246,40 @@ type AnnouncementResponse struct {
 
 func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string, userID int64) ([]PageResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/pages?include[]=body&per_page=100"
-	url := ""
-
-	var pages []PageResponse
-
-	for url != "" || path != "" {
-		err := func() error {
-			resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
-				Path:   path,
-				URL:    url,
-				Body:   nil,
-				Method: http.MethodGet,
-				Config: p.config,
-				UserID: userID,
-			})
-			if err != nil {
-				slog.Info("failed to send request", "url", url, "error", err)
-				return apperr.Internal("Failed to send HTTP request")
-			}
-
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				return apperr.Internal("Unexpected status code: " + resp.Status)
-			}
-
-			var newPages []PageResponse
-			if err := json.NewDecoder(resp.Body).Decode(&newPages); err != nil {
-				return apperr.Internal("Failed to decode response body")
-			}
-			pages = append(pages, newPages...)
-
-			url = p.getNextPageLink(resp)
-			path = "" // Clear the path since we are now using the URL for the next request
-			return nil
-		}()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return pages, nil
+	return fetchPaginated[PageResponse](p, ctx, userID, path, nil)
 }
 
 func (p *CanvasLMSProvider) getAssignments(ctx context.Context, canvasCourseID string, userID int64) ([]AssignmentResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/assignments?per_page=100"
-	url := ""
-
-	var assignments []AssignmentResponse
-
-	for url != "" || path != "" {
-		err := func() error {
-			resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
-				Path:   path,
-				URL:    url,
-				Body:   nil,
-				Method: http.MethodGet,
-				Config: p.config,
-				UserID: userID,
-			})
-			if err != nil {
-				slog.Info("failed to send request", "url", url, "error", err)
-				return apperr.Internal("Failed to send HTTP request")
-			}
-
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				return apperr.Internal("Unexpected status code: " + resp.Status)
-			}
-
-			var newAssignments []AssignmentResponse
-			if err := json.NewDecoder(resp.Body).Decode(&newAssignments); err != nil {
-				return apperr.Internal("Failed to decode response body")
-			}
-			assignments = append(assignments, newAssignments...)
-
-			url = p.getNextPageLink(resp)
-			path = ""
-			return nil
-		}()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return assignments, nil
+	return fetchPaginated[AssignmentResponse](p, ctx, userID, path, nil)
 }
 
 func (p *CanvasLMSProvider) getDiscussionTopics(ctx context.Context, canvasCourseID string, userID int64) ([]DiscussionTopicResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/discussion_topics?per_page=100"
-	url := ""
-
-	var discussionTopics []DiscussionTopicResponse
-
-	for url != "" || path != "" {
-		err := func() error {
-			resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
-				Path:   path,
-				URL:    url,
-				Body:   nil,
-				Method: http.MethodGet,
-				Config: p.config,
-				UserID: userID,
-			})
-			if err != nil {
-				slog.Info("failed to send request", "url", url, "error", err)
-				return apperr.Internal("Failed to send HTTP request")
-			}
-
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				return apperr.Internal("Unexpected status code: " + resp.Status)
-			}
-
-			var pageTopics []DiscussionTopicResponse
-			if err := json.NewDecoder(resp.Body).Decode(&pageTopics); err != nil {
-				return apperr.Internal("Failed to decode response body")
-			}
-
-			for _, topic := range pageTopics {
-				if topic.IsAnnouncement {
-					continue
-				}
-
-				updatedAt := topic.LastReplyAt
-				if updatedAt == "" {
-					updatedAt = topic.PostedAt
-				}
-				if updatedAt == "" {
-					updatedAt = time.Time{}.Format(time.RFC3339)
-				}
-
-				topic.UpdatedAt = updatedAt
-				discussionTopics = append(discussionTopics, topic)
-			}
-
-			url = p.getNextPageLink(resp)
-			path = ""
-			return nil
-		}()
-		if err != nil {
-			return nil, err
+	return fetchPaginated[DiscussionTopicResponse](p, ctx, userID, path, func(topic DiscussionTopicResponse) (DiscussionTopicResponse, bool) {
+		if topic.IsAnnouncement {
+			return DiscussionTopicResponse{}, false
 		}
-	}
 
-	return discussionTopics, nil
+		topic.UpdatedAt = normalizeCanvasUpdatedAt(topic.LastReplyAt, topic.PostedAt)
+		return topic, true
+	})
 }
 
 func (p *CanvasLMSProvider) getAnnouncements(ctx context.Context, canvasCourseID string, userID int64) ([]AnnouncementResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/discussion_topics?only_announcements=true&per_page=100"
-	url := ""
-
-	var announcements []AnnouncementResponse
-
-	for url != "" || path != "" {
-		err := func() error {
-			resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
-				Path:   path,
-				URL:    url,
-				Body:   nil,
-				Method: http.MethodGet,
-				Config: p.config,
-				UserID: userID,
-			})
-			if err != nil {
-				slog.Info("failed to send request", "url", url, "error", err)
-				return apperr.Internal("Failed to send HTTP request")
-			}
-
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				return apperr.Internal("Unexpected status code: " + resp.Status)
-			}
-
-			var pageAnnouncements []AnnouncementResponse
-			if err := json.NewDecoder(resp.Body).Decode(&pageAnnouncements); err != nil {
-				return apperr.Internal("Failed to decode response body")
-			}
-
-			for _, announcement := range pageAnnouncements {
-				updatedAt := announcement.LastReplyAt
-				if updatedAt == "" {
-					updatedAt = announcement.PostedAt
-				}
-				if updatedAt == "" {
-					updatedAt = time.Time{}.Format(time.RFC3339)
-				}
-
-				announcement.UpdatedAt = updatedAt
-				announcements = append(announcements, announcement)
-			}
-
-			url = p.getNextPageLink(resp)
-			path = ""
-			return nil
-		}()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return announcements, nil
+	return fetchPaginated[AnnouncementResponse](p, ctx, userID, path, func(announcement AnnouncementResponse) (AnnouncementResponse, bool) {
+		announcement.UpdatedAt = normalizeCanvasUpdatedAt(announcement.LastReplyAt, announcement.PostedAt)
+		return announcement, true
+	})
 }
 
 func (p *CanvasLMSProvider) getSyllabus(ctx context.Context, canvasCourseID string, userID int64) (*SyllabusResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "?include[]=syllabus_body"
 
-	resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
-		Path:   path,
-		Body:   nil,
-		Method: http.MethodGet,
-		Config: p.config,
-		UserID: userID,
-	})
+	syllabus, err := fetchOne[SyllabusResponse](p, ctx, userID, path)
 	if err != nil {
-		slog.Info("failed to send request", "path", path, "error", err)
-		return nil, apperr.Internal("Failed to send HTTP request")
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, apperr.Internal("Unexpected status code: " + resp.Status)
-	}
-
-	var syllabus SyllabusResponse
-	if err := json.NewDecoder(resp.Body).Decode(&syllabus); err != nil {
-		return nil, apperr.Internal("Failed to decode response body")
+		return nil, err
 	}
 
 	if strings.TrimSpace(syllabus.SyllabusBody) == "" {
@@ -488,19 +289,12 @@ func (p *CanvasLMSProvider) getSyllabus(ctx context.Context, canvasCourseID stri
 	return &syllabus, nil
 }
 
-// Pagination in Canvas works through a "Link" header.
-// https://developerdocs.instructure.com/services/canvas/basics/file.pagination
-func (p *CanvasLMSProvider) getNextPageLink(resp *http.Response) string {
-	link := resp.Header.Get("Link")
-
-	for part := range strings.SplitSeq(link, ",") {
-		if strings.Contains(part, `rel="next"`) {
-			start := strings.Index(part, "<")
-			end := strings.Index(part, ">")
-			if start != -1 && end != -1 && start < end {
-				return part[start+1 : end]
-			}
-		}
+func normalizeCanvasUpdatedAt(primary, fallback string) string {
+	if primary != "" {
+		return primary
 	}
-	return ""
+	if fallback != "" {
+		return fallback
+	}
+	return time.Time{}.Format(time.RFC3339)
 }
