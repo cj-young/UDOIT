@@ -12,6 +12,7 @@ type CourseContentType string
 const (
 	CourseContentTypePage       CourseContentType = "page"
 	CourseContentTypeAssignment CourseContentType = "assignment"
+	CourseContentTypeAnnouncement CourseContentType = "announcement"
 	CourseContentTypeDiscussionTopic CourseContentType = "discussion_topic"
 	CourseContentTypeSyllabus   CourseContentType = "syllabus"
 )
