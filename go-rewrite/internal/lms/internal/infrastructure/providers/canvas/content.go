@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,13 +16,16 @@ import (
 type canvasContentType string
 
 const (
-	canvasContentTypePage canvasContentType = "page"
+	canvasContentTypePage       canvasContentType = "page"
+	canvasContentTypeAssignment canvasContentType = "assignment"
 )
 
 func ParseCanvasContentType(s string) (canvasContentType, error) {
 	switch s {
 	case string(canvasContentTypePage):
 		return canvasContentTypePage, nil
+	case string(canvasContentTypeAssignment):
+		return canvasContentTypeAssignment, nil
 	default:
 		return "", apperr.Internal("Invalid content type")
 	}
@@ -47,8 +51,12 @@ func (p *CanvasLMSProvider) GetContent(
 	if err != nil {
 		return nil, err
 	}
+	assignments, err := p.getAssignments(ctx, canvasCourse.courseID, userID)
+	if err != nil {
+		return nil, err
+	}
 
-	courseContents := make([]domain.CourseContent, len(pages))
+	courseContents := make([]domain.CourseContent, len(pages)+len(assignments))
 	for i, page := range pages {
 		courseContents[i] = domain.CourseContent{
 			ExternalID: page.URL, // TODO: evaluate whether this is the best external ID
@@ -59,6 +67,20 @@ func (p *CanvasLMSProvider) GetContent(
 			},
 			HTML: page.Body,
 			Type: domain.CourseContentTypePage,
+		}
+	}
+
+	for i, assignment := range assignments {
+		assignmentID := strconv.FormatInt(assignment.ID, 10)
+		courseContents[len(pages)+i] = domain.CourseContent{
+			ExternalID: "assignment:" + assignmentID,
+			ExternalData: map[string]any{
+				"content_id":   assignmentID,
+				"updated_at":   assignment.UpdatedAt,
+				"content_type": string(canvasContentTypeAssignment),
+			},
+			HTML: assignment.Description,
+			Type: domain.CourseContentTypeAssignment,
 		}
 	}
 
@@ -106,6 +128,13 @@ type PageResponse struct {
 	Body      string `json:"body"`
 }
 
+type AssignmentResponse struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
 func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string, userID int64) ([]PageResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/pages?include[]=body&per_page=100"
 	url := ""
@@ -149,6 +178,51 @@ func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string,
 	}
 
 	return pages, nil
+}
+
+func (p *CanvasLMSProvider) getAssignments(ctx context.Context, canvasCourseID string, userID int64) ([]AssignmentResponse, error) {
+	path := "/api/v1/courses/" + canvasCourseID + "/assignments?per_page=100"
+	url := ""
+
+	var assignments []AssignmentResponse
+
+	for url != "" || path != "" {
+		err := func() error {
+			resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
+				Path:   path,
+				URL:    url,
+				Body:   nil,
+				Method: http.MethodGet,
+				Config: p.config,
+				UserID: userID,
+			})
+			if err != nil {
+				slog.Info("failed to send request", "url", url, "error", err)
+				return apperr.Internal("Failed to send HTTP request")
+			}
+
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				return apperr.Internal("Unexpected status code: " + resp.Status)
+			}
+
+			var newAssignments []AssignmentResponse
+			if err := json.NewDecoder(resp.Body).Decode(&newAssignments); err != nil {
+				return apperr.Internal("Failed to decode response body")
+			}
+			assignments = append(assignments, newAssignments...)
+
+			url = p.getNextPageLink(resp)
+			path = ""
+			return nil
+		}()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return assignments, nil
 }
 
 // Pagination in Canvas works through a "Link" header.
