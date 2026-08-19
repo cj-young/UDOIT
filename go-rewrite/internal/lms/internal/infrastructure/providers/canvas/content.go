@@ -17,6 +17,8 @@ const (
 	canvasContentTypeAssignment      canvasContentType = "assignment"
 	canvasContentTypeAnnouncement    canvasContentType = "announcement"
 	canvasContentTypeDiscussionTopic canvasContentType = "discussion_topic"
+	canvasContentTypeQuiz            canvasContentType = "quiz"
+	canvasContentTypeQuizQuestion    canvasContentType = "quiz_question"
 	canvasContentTypeSyllabus        canvasContentType = "syllabus"
 )
 
@@ -30,6 +32,10 @@ func ParseCanvasContentType(s string) (canvasContentType, error) {
 		return canvasContentTypeAnnouncement, nil
 	case string(canvasContentTypeDiscussionTopic):
 		return canvasContentTypeDiscussionTopic, nil
+	case string(canvasContentTypeQuiz):
+		return canvasContentTypeQuiz, nil
+	case string(canvasContentTypeQuizQuestion):
+		return canvasContentTypeQuizQuestion, nil
 	case string(canvasContentTypeSyllabus):
 		return canvasContentTypeSyllabus, nil
 	default:
@@ -61,12 +67,16 @@ func (p *CanvasLMSProvider) GetContent(
 	if err != nil {
 		return nil, err
 	}
- 
+
 	discussionTopics, err := p.getDiscussionTopics(ctx, canvasCourse.courseID, userID)
 	if err != nil {
 		return nil, err
 	}
 	announcements, err := p.getAnnouncements(ctx, canvasCourse.courseID, userID)
+	if err != nil {
+		return nil, err
+	}
+	quizzes, err := p.getQuizzes(ctx, canvasCourse.courseID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +86,12 @@ func (p *CanvasLMSProvider) GetContent(
 		return nil, err
 	}
 
-	totalContent := len(pages) + len(assignments) + len(discussionTopics) + len(announcements)
+	quizQuestionsCount := 0
+	for _, quiz := range quizzes {
+		quizQuestionsCount += len(quiz.Questions)
+	}
+
+	totalContent := len(pages) + len(assignments) + len(discussionTopics) + len(announcements) + len(quizzes) + quizQuestionsCount
 	if syllabus != nil {
 		totalContent++
 	}
@@ -135,6 +150,35 @@ func (p *CanvasLMSProvider) GetContent(
 			HTML: announcement.Message,
 			Type: domain.CourseContentTypeAnnouncement,
 		})
+	}
+
+	for _, quiz := range quizzes {
+		quizIDStr := strconv.FormatInt(quiz.ID, 10)
+		courseContents = append(courseContents, domain.CourseContent{
+			ExternalID: "quiz:" + quizIDStr,
+			ExternalData: map[string]any{
+				"content_id":   quiz.ID,
+				"updated_at":   quiz.UpdatedAt,
+				"content_type": string(canvasContentTypeQuiz),
+			},
+			HTML: quiz.Description,
+			Type: domain.CourseContentTypeQuiz,
+		})
+
+		for _, question := range quiz.Questions {
+			questionIDStr := strconv.FormatInt(question.ID, 10)
+			courseContents = append(courseContents, domain.CourseContent{
+				ExternalID: "quiz_question:" + questionIDStr,
+				ExternalData: map[string]any{
+					"content_id":   question.ID,
+					"updated_at":   question.UpdatedAt,
+					"content_type": string(canvasContentTypeQuizQuestion),
+					"quiz_id":      quiz.ID,
+				},
+				HTML: question.QuestionText,
+				Type: domain.CourseContentTypeQuizQuestion,
+			})
+		}
 	}
 
 	if syllabus != nil {
@@ -244,6 +288,19 @@ type AnnouncementResponse struct {
 	PostedAt    string `json:"posted_at"`
 }
 
+type QuizResponse struct {
+	ID          int64  `json:"id"`
+	Description string `json:"description"`
+	UpdatedAt   string `json:"updated_at"`
+	Questions   []QuizQuestionResponse
+}
+
+type QuizQuestionResponse struct {
+	ID           int64  `json:"id"`
+	QuestionText string `json:"question_text"`
+	UpdatedAt    string
+}
+
 func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string, userID int64) ([]PageResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/pages?include[]=body&per_page=100"
 	return fetchPaginated[PageResponse](p, ctx, userID, path, nil)
@@ -272,6 +329,42 @@ func (p *CanvasLMSProvider) getAnnouncements(ctx context.Context, canvasCourseID
 		announcement.UpdatedAt = normalizeCanvasUpdatedAt(announcement.LastReplyAt, announcement.PostedAt)
 		return announcement, true
 	})
+}
+
+func (p *CanvasLMSProvider) getQuizzes(ctx context.Context, canvasCourseID string, userID int64) ([]QuizResponse, error) {
+	path := "/api/v1/courses/" + canvasCourseID + "/quizzes?per_page=100"
+
+	quizzes, err := fetchPaginated[QuizResponse](p, ctx, userID, path, func(quiz QuizResponse) (QuizResponse, bool) {
+		quiz.UpdatedAt = normalizeCanvasUpdatedAt(quiz.UpdatedAt, "")
+		return quiz, true
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for i, quiz := range quizzes {
+		questions, err := p.getQuizQuestions(ctx, canvasCourseID, quiz.ID, userID)
+		if err != nil {
+			return nil, err
+		}
+		quizzes[i].Questions = questions
+	}
+
+	return quizzes, nil
+}
+
+func (p *CanvasLMSProvider) getQuizQuestions(ctx context.Context, canvasCourseID string, quizID int64, userID int64) ([]QuizQuestionResponse, error) {
+	path := "/api/v1/courses/" + canvasCourseID + "/quizzes/" + strconv.FormatInt(quizID, 10) + "/questions?per_page=100"
+
+	questions, err := fetchPaginated[QuizQuestionResponse](p, ctx, userID, path, func(question QuizQuestionResponse) (QuizQuestionResponse, bool) {
+		question.UpdatedAt = time.Time{}.Format(time.RFC3339)
+		return question, true
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return questions, nil
 }
 
 func (p *CanvasLMSProvider) getSyllabus(ctx context.Context, canvasCourseID string, userID int64) (*SyllabusResponse, error) {
