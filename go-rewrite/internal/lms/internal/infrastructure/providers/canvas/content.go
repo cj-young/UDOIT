@@ -72,7 +72,7 @@ func (p *CanvasLMSProvider) GetContent(
 	courseContents := make([]domain.CourseContent, 0, totalContent)
 	for _, page := range pages {
 		courseContents = append(courseContents, domain.CourseContent{
-			ExternalID: page.URL, // TODO: evaluate whether this is the best external ID
+			ExternalID: "page:" + page.URL, // TODO: evaluate whether this is the best external ID
 			ExternalData: map[string]any{
 				"content_id":   page.PageID,
 				"updated_at":   page.UpdatedAt,
@@ -84,11 +84,11 @@ func (p *CanvasLMSProvider) GetContent(
 	}
 
 	for _, assignment := range assignments {
-		assignmentID := strconv.FormatInt(assignment.ID, 10)
+		assignmentIDStr := strconv.FormatInt(assignment.ID, 10)
 		courseContents = append(courseContents, domain.CourseContent{
-			ExternalID: "assignment:" + assignmentID,
+			ExternalID: "assignment:" + assignmentIDStr,
 			ExternalData: map[string]any{
-				"content_id":   assignmentID,
+				"content_id":   assignment.ID,
 				"updated_at":   assignment.UpdatedAt,
 				"content_type": string(canvasContentTypeAssignment),
 			},
@@ -98,11 +98,11 @@ func (p *CanvasLMSProvider) GetContent(
 	}
 
 	if syllabus != nil {
-		syllabusID := strconv.FormatInt(syllabus.ID, 10)
+		syllabusIDStr := strconv.FormatInt(syllabus.ID, 10)
 		courseContents = append(courseContents, domain.CourseContent{
-			ExternalID: "syllabus",
+			ExternalID: "syllabus:" + syllabusIDStr,
 			ExternalData: map[string]any{
-				"content_id":   syllabusID,
+				"content_id":   syllabus.ID,
 				"updated_at":   time.Time{}.Format(time.RFC3339),
 				"content_type": string(canvasContentTypeSyllabus),
 			},
