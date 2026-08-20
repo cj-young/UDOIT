@@ -166,9 +166,11 @@ func (p *CanvasLMSProvider) GetContent(
 		})
 
 		for _, question := range quiz.Questions {
+			// Include quiz ID because Canvas question IDs may only be unique within a quiz.
 			questionIDStr := strconv.FormatInt(question.ID, 10)
+			quizIDStr := strconv.FormatInt(quiz.ID, 10)
 			courseContents = append(courseContents, domain.CourseContent{
-				ExternalID: "quiz_question:" + questionIDStr,
+				ExternalID: "quiz_question:" + quizIDStr + ":" + questionIDStr,
 				ExternalData: map[string]any{
 					"content_id":   question.ID,
 					"updated_at":   question.UpdatedAt,
