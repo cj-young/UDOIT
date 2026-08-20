@@ -1331,7 +1331,7 @@ export default function ReviewFilesPage({
 
   return (
     <>
-      {widgetState === WIDGET_STATE.LOADING ?
+      {widgetState === WIDGET_STATE.LOADING ? (
         <></>
       ) : (
         <div
@@ -1398,7 +1398,7 @@ export default function ReviewFilesPage({
                   {t("report.msg.no_results")}
                 </div>
               </div>
-            }
+            )}
           </div>
         </div>
       )}
