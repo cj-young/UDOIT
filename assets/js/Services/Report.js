@@ -1,6 +1,6 @@
 import * as Html from "./Html";
-import { ISSUE_STATE } from "./Constants";
-import { MEDIA_FILE_TYPES } from "./Settings";
+import { ISSUE_STATE, MEDIA_FILE_TYPES } from "./Constants";
+import { groupListIssues } from './Lists' 
 
 /** With all of the data inconsistency between the old and new issues, we need to double-check some things:
  *    1. If the issue is ACTIVE (found in the scan) but should be ignored, either because of the old
@@ -103,7 +103,7 @@ const checkTextContrastSufficient = (issue, element, parsedDocument) => {
 
   // Find ancestors
   const bgAncestor = findBgAncestor(element);
-  const textAncestor = findTextAncestor(element);
+  const textAncestor = element;
 
   // Set the issue's xpath and sourceHtml to the background color element
   if (bgAncestor) {
@@ -299,6 +299,7 @@ export function analyzeReport(report) {
   let sessionFiles = {};
   let currentTime = new Date();
   let millisecondsInADay = 86400000; // 1000 * 60 * 60 * 24
+  let tempContentResolved = 0;
 
   const parser = new DOMParser()
   const fileReferences = {}
@@ -427,12 +428,26 @@ export function analyzeReport(report) {
     if (!issueIgnored) {
       activeIssues.push(issue);
 
-      if (issue.type === "error") {
-        scanCounts.errors += 1;
-      } else if (issue.type === "potential") {
-        scanCounts.potentials += 1;
-      } else if (issue.type === "suggestion") {
-        scanCounts.suggestions += 1;
+      if(issue.status === 0) {
+        if(issue.type === 'error') {
+          scanCounts.errors += 1
+        }
+        else if(issue.type === 'potential') {
+          scanCounts.potentials += 1
+        }
+        else if(issue.type === 'suggestion') {
+          scanCounts.suggestions += 1
+        }
+
+        if(!(issue.scanRuleId in scanRules)) {
+          scanRules[issue.scanRuleId] = 1
+        }
+        else {
+          scanRules[issue.scanRuleId] += 1
+        }
+      }
+      else {
+        tempContentResolved += 1
       }
 
       if (
@@ -441,12 +456,6 @@ export function analyzeReport(report) {
       ) {
         usedContentItems[issue.contentItemId] =
           report.contentItems[issue.contentItemId];
-      }
-
-      if (!(issue.scanRuleId in scanRules)) {
-        scanRules[issue.scanRuleId] = 1;
-      } else {
-        scanRules[issue.scanRuleId] += 1;
       }
     } else {
       ignoredIssues.push(issue);
@@ -501,17 +510,21 @@ export function analyzeReport(report) {
           : ISSUE_STATE.RESOLVED;
       }
     }
-  });
+  })
+  scanCounts.resolved = tempContentResolved
 
-  tempReport.issues = activeIssues;
-  tempReport.ignoredIssues = ignoredIssues;
-  tempReport.scanCounts = scanCounts;
-  tempReport.scanRules = scanRules;
-  tempReport.files = { ...report.files };
-  tempReport.contentItems = usedContentItems;
-  tempReport.sessionIssues = sessionIssues;
-  tempReport.sessionFiles = sessionFiles;
-  tempReport.filesReviewed = tempFilesReviewed;
+  
+  activeIssues = groupListIssues(activeIssues, parsedDocuments);
+  
+  tempReport.issues = activeIssues
+  tempReport.scanCounts = scanCounts
+  tempReport.scanRules = scanRules
+  tempReport.files = {...report.files}
+  tempReport.contentItems = usedContentItems
+  tempReport.sessionIssues = sessionIssues
+  tempReport.sessionFiles = sessionFiles
+  tempReport.filesReviewed = tempFilesReviewed
+  tempReport.contentHandled = tempContentResolved
 
-  return tempReport;
+  return tempReport
 }

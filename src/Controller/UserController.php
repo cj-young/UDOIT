@@ -35,6 +35,7 @@ class UserController extends AbstractController
         try {
             // Check if user is updating their own info
             $userIdFromSession = $sessionService->getSession()->get('userId');
+
             if ($user->getId() !== $userIdFromSession) {
                 throw new \Exception("msg.no_permissions");
             }

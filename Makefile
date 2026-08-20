@@ -23,7 +23,7 @@ down:
 	$(COMPOSE) down
 
 ## Rebuild the containers from the ground up
-build:
+rebuild:
 	$(COMPOSE) up --build
 
 # ──────────────────────────────────────────────

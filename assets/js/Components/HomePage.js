@@ -7,6 +7,7 @@ import ProgressIcon from './Icons/ProgressIcon'
 import RightArrowIcon from './Icons/RightArrowIcon'
 import SeverityIcon from './Icons/SeverityIcon'
 import SummaryIcon from './Icons/SummaryIcon'
+import CheckIcon from './Icons/CheckIcon'
 import * as Html from '../Services/Html'
 import './HomePage.css'
 import { ISSUE_FILTER, ISSUE_STATE } from '../Services/Constants'
@@ -164,9 +165,17 @@ export default function HomePage({
           <div className={`resolution-container flex-column type-` + `${panel.type.toLowerCase()}` + `${emphasis === panel.type ? ' emphasis' : ''}`} key={"panel-" + panel.type}>
             
             <div className="flex-row gap-3 w-100">
-              <div className='summary-icon-container' aria-hidden="true">
-                <SeverityIcon type={panel.type} className='icon-lg' />
-              </div>
+              {panel.counter.percent === 100 ? (
+                <div className='summary-icon-container completed' aria-hidden="true">
+                  <CheckIcon className="icon-lg color-success"/>
+                 
+                </div>
+                ) : 
+                <div className='summary-icon-container' aria-hidden="true">
+                  <SeverityIcon type={panel.type} className='icon-lg' />
+                   
+                </div>
+              }
               <div className="summary-text-container">
                 <h2 className="mt-0">{t('summary.label.' + panel.translationKey)}</h2>
                 <div aria-label={Html.getTextContent('<p>' + t('summary.' + panel.translationKey + '.description', {count: panel.counter.total}) + '</p>')}>
@@ -183,9 +192,9 @@ export default function HomePage({
                 </div>
 
                 <div className="progress-bar-container mt-1">
-                  <div className="progress-bar-fill" style={{width: `${panel.counter.percent}%`}}></div>
+                  <div className={`progress-bar-fill ${panel.counter.percent === 100 ? `completed` : ``}`} style={{width: `${panel.counter.percent}%`}}></div>
                 </div>
-
+                      
                 <button className="btn-secondary btn-icon-right justify-content-center mt-2"
                   aria-label={t('summary.label.' + panel.translationKey)}
                   disabled={!syncComplete}
@@ -225,7 +234,7 @@ export default function HomePage({
           </div>
         </div>
 
-        <div className="callout-container filled-container feedback-container flex-column p-4 h-fit flex-grow-1 align-self-end">
+        <div className="callout-container feedback-container flex-column p-4 h-fit flex-grow-1 align-self-end">
           <h2 className="mt-0 mb-4">Help & Feedback</h2>
           <div className="flex-row mb-3">
             <InfoIcon className="icon-md me-2 link-color align-self-center" aria-hidden="true" />

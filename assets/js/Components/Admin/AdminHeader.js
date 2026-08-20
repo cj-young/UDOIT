@@ -11,7 +11,7 @@ export default function AdminHeader({
   handleNavigation,
 }) {
   return (
-    <header role="banner">
+    <header id="udoit-header" role="banner">
       <nav aria-label={t("menu.nav.label")}>
         <div
           className="flex-row justify-content-start gap-2"

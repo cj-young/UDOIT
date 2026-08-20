@@ -198,7 +198,7 @@ class CanvasLms implements LmsInterface
         }
 
         /* get page content */
-        if ('page' === $contentType) {
+        if ('page' === $contentType && $lmsContent["body"] === '') {
             $url = "courses/{$course->getLmsCourseId()}/pages/{$lmsContent['id']}";
             $pageResponse = $canvasApi->apiGet($url);
             $pageObj = $pageResponse->getContent();
@@ -629,15 +629,19 @@ class CanvasLms implements LmsInterface
         $sectionPostResponse = $canvasApi->apiPostBatch($sectionPaths, $sectionOptionsBuild);
         $sectionDeleteResponse = $canvasApi->apiDeleteBatch($deletePaths);
         $normalizedResponses = [];
-        foreach ($responses as $response) {
+        foreach($responses as $response){
             $contentItem = $this->contentItemRepo->findOneBy([
                 'contentType' => $response['type'],
                 'lmsContentId' => $response['id'],
             ]);
-            if ($contentItem) {
+            if($contentItem){
                 $normalizedContent = [];
-                if ($response['status'] == 200) {
-                    $normalizedContent = $this->normalizeLmsContent($contentItem->getCourse(), $response['type'], json_decode(json_encode($response['content']), true));
+                if($response['status'] == 200){
+                    $lmsContentNew = json_decode(json_encode($response['content']), true);
+                    if ($response['type'] == 'syllabus') {
+                        $lmsContentNew['syllabus_body'] = $option['fullPageHtml'];
+                    }
+                    $normalizedContent = $this->normalizeLmsContent($contentItem->getCourse(), $response['type'], $lmsContentNew);
                     $contentItem->update($normalizedContent);
                     $this->entityManager->flush();
                 }
@@ -645,7 +649,7 @@ class CanvasLms implements LmsInterface
                     'content' => $normalizedContent,
                     'id' => $contentItem->getId(),
                     'status' => $response['status'],
-                    'type' => $response['type'],
+                    'type' => $response['type']
                 ];
                 $normalizedResponses[] = $normalizedResponse;
             }
@@ -895,8 +899,15 @@ class CanvasLms implements LmsInterface
     protected function createLmsPostOptionsWithHtml($type, $fullPageHtml)
     {
         $options = [];
-        switch ($type) {
-            case ('page'):
+        switch($type){
+            case('syllabus'):
+                $options = [
+                    'course' => [
+                        'syllabus_body' => $fullPageHtml,
+                    ],
+                ];
+                break;
+            case('page'):
                 $options = [
                     'wiki_page' => [
                         'body' => $fullPageHtml,
@@ -1063,7 +1074,7 @@ class CanvasLms implements LmsInterface
             'discussion_topic' =>   "courses/{$courseId}/discussion_topics",
             'file' =>               "courses/{$courseId}/files",
             'module' =>             "courses/{$courseId}/modules?include[]=items",
-            'page' =>               "courses/{$courseId}/pages",
+            'page' =>               "courses/{$courseId}/pages?include[]=body",
             'quiz' =>               "courses/{$courseId}/quizzes",
         ];
     }

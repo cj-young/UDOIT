@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import FixIssuesFilters from './Widgets/FixIssuesFilters'
 import FixIssuesList from './Widgets/FixIssuesList'
 import LearnMore from './Widgets/LearnMore'
@@ -7,11 +7,11 @@ import FixIssuesContentPreview from './Widgets/FixIssuesContentPreview'
 import LeftArrowIcon from './Icons/LeftArrowIcon'
 import RightArrowIcon from './Icons/RightArrowIcon'
 import CloseIcon from './Icons/CloseIcon'
-import { formNameFromRule } from '../Services/Ufixit'
+import { FORM_CLASSIFICATIONS, formNameFromRule } from '../Services/Ufixit'
 import * as Html from '../Services/Html'
 
 import './FixIssuesPage.css'
-import { ISSUE_STATE, WIDGET_STATE, ISSUE_FILTER as FILTER } from '../Services/Constants'
+import { ISSUE_STATE, UFIXIT_OPTIONS, WIDGET_STATE, ISSUE_FILTER } from '../Services/Constants'
 import { api } from '../Services/Api'
 
 /** The data for this component can be a bit confusing, so here's a breakdown:
@@ -48,24 +48,25 @@ export default function FixIssuesPage({
 
   // Define the kinds of filters that will be available to the user
   const defaultFilters = {
-    [FILTER.TYPE.SEVERITY]: FILTER.ALL,
-    [FILTER.TYPE.PUBLISHED]: FILTER.PUBLISHED,
-    [FILTER.TYPE.CONTENT_TYPE]: FILTER.ALL,
-    [FILTER.TYPE.RESOLUTION]: FILTER.ACTIVE,
-    [FILTER.TYPE.MODULE]: FILTER.ALL,
+    [ISSUE_FILTER.TYPE.SEVERITY]: ISSUE_FILTER.ALL,
+    [ISSUE_FILTER.TYPE.PUBLISHED]: ISSUE_FILTER.PUBLISHED,
+    [ISSUE_FILTER.TYPE.CONTENT_TYPE]: ISSUE_FILTER.ALL,
+    [ISSUE_FILTER.TYPE.RESOLUTION]: ISSUE_FILTER.ACTIVE,
+    [ISSUE_FILTER.TYPE.MODULE]: ISSUE_FILTER.ALL,
   }
 
   const defaultNoFilters = {
-    [FILTER.TYPE.SEVERITY]: FILTER.ALL,
-    [FILTER.TYPE.PUBLISHED]: FILTER.ALL,
-    [FILTER.TYPE.CONTENT_TYPE]: FILTER.ALL,
-    [FILTER.TYPE.RESOLUTION]: FILTER.ALL,
-    [FILTER.TYPE.MODULE]: FILTER.ALL,
+    [ISSUE_FILTER.TYPE.SEVERITY]: ISSUE_FILTER.ALL,
+    [ISSUE_FILTER.TYPE.PUBLISHED]: ISSUE_FILTER.ALL,
+    [ISSUE_FILTER.TYPE.CONTENT_TYPE]: ISSUE_FILTER.ALL,
+    [ISSUE_FILTER.TYPE.RESOLUTION]: ISSUE_FILTER.ALL,
+    [ISSUE_FILTER.TYPE.MODULE]: ISSUE_FILTER.ALL,
   }
 
   const dialogId = "udoit-issue-dialog"
 
   const [activeIssue, setActiveIssue] = useState(null)
+  const [activeOption, setActiveOption] = useState('')
   const [mostRecentIssueId, setMostRecentIssueId] = useState(null)
   const [tempActiveIssue, setTempActiveIssue] = useState(null)
   const [activeContentItem, setActiveContentItem] = useState(null)
@@ -81,10 +82,12 @@ export default function FixIssuesPage({
   const [filteredIssues, setFilteredIssues] = useState([])
   const [groupedList, setGroupedList] = useState([])
   const [widgetState, setWidgetState] = useState(WIDGET_STATE.LOADING)
-  const [liveUpdateToggle, setLiveUpdateToggle] = useState(true)
   const [clickedInfo, setClickedInfo] = useState({})
-
+  const [previewData, setPreviewData] = useState(null)
   const [elementFocus, setElementFocus] = useState(true)
+
+  // Ref to track grouped save in progress - prevents report useEffect from closing dialog
+  const groupedSaveRef = useRef({ inProgress: false, nextIssueToShow: null })
 
   const getSectionTitles = () => {
     let sectionTitles = {}
@@ -101,14 +104,14 @@ export default function FixIssuesPage({
   // information in the "issue" attribute.
   const formatIssueData = (issue) => {
 
-    let issueSeverity = FILTER.ISSUE
+    let issueSeverity = ISSUE_FILTER.ISSUE
     let issueType = issue.type.toLowerCase()
 
     if(issueType === 'suggestion' || issueType === 'potential' || issueType === 'manual') {
-      issueSeverity = FILTER.POTENTIAL
+      issueSeverity = ISSUE_FILTER.POTENTIAL
     }
     
-    let issueContentType = FILTER.ALL
+    let issueContentType = ISSUE_FILTER.ALL
     let issueSectionIds = []
     let issueSectionNames = []
     let published = true
@@ -119,16 +122,16 @@ export default function FixIssuesPage({
       let tempContentType = tempContentItem.contentType
 
       const contentTypeMap = {
-        'page': FILTER.PAGE,
-        'assignment': FILTER.ASSIGNMENT,
-        'announcement': FILTER.ANNOUNCEMENT,
-        'discussion_topic': FILTER.DISCUSSION_TOPIC,
-        'discussion_forum': FILTER.DISCUSSION_FORUM,
-        'file': FILTER.FILE,
-        'quiz': FILTER.QUIZ,
-        'quiz_question': FILTER.QUIZ,
-        'syllabus': FILTER.SYLLABUS,
-        'module': FILTER.MODULE,
+        'page': ISSUE_FILTER.PAGE,
+        'assignment': ISSUE_FILTER.ASSIGNMENT,
+        'announcement': ISSUE_FILTER.ANNOUNCEMENT,
+        'discussion_topic': ISSUE_FILTER.DISCUSSION_TOPIC,
+        'discussion_forum': ISSUE_FILTER.DISCUSSION_FORUM,
+        'file': ISSUE_FILTER.FILE,
+        'quiz': ISSUE_FILTER.QUIZ,
+        'quiz_question': ISSUE_FILTER.QUIZ,
+        'syllabus': ISSUE_FILTER.SYLLABUS,
+        'module': ISSUE_FILTER.MODULE,
       }
 
       if(contentTypeMap[tempContentType]) {
@@ -153,16 +156,16 @@ export default function FixIssuesPage({
     }
 
     // A status of 0 in the database means "active" (unresolved barriers and unreviewed files).
-    let issueResolution = FILTER.ACTIVE
+    let issueResolution = ISSUE_FILTER.ACTIVE
     
     if(issue.status == 1) {
-      issueResolution = FILTER.FIXED
+      issueResolution = ISSUE_FILTER.FIXED
     }
     else if(issue.status == 2) {
-      issueResolution = FILTER.RESOLVED
+      issueResolution = ISSUE_FILTER.RESOLVED
     }
     else if(issue.status === 3) {
-      issueResolution = FILTER.FIXEDANDRESOLVED
+      issueResolution = ISSUE_FILTER.FIXEDANDRESOLVED
     }
 
     let currentState = ISSUE_STATE.UNCHANGED
@@ -236,13 +239,13 @@ export default function FixIssuesPage({
 
   // The initialSeverity prop is used when clicking a "Fix Issues" button from the main dashboard.
   useEffect(() => {
-    let tempSeverity = initialSeverity || FILTER.ALL
+    let tempSeverity = initialSeverity || ISSUE_FILTER.ALL
     if(initialSearchTerm) {
       setSearchTerm(initialSearchTerm)
       setActiveFilters(Object.assign({}, defaultNoFilters))
     }
     else {
-      setActiveFilters(Object.assign({}, defaultFilters, {[FILTER.TYPE.SEVERITY]: tempSeverity}))
+      setActiveFilters(Object.assign({}, defaultFilters, {[ISSUE_FILTER.TYPE.SEVERITY]: tempSeverity}))
     }
   }, [])
 
@@ -294,7 +297,7 @@ export default function FixIssuesPage({
   // needs to be rebuilt and the activeIssue may need to be updated. For instance, if an issue is marked as
   // unreviewed then it will be deleted during the rescan and a new issue with a new id will take its place.
   useEffect(() => {
-    let tempIssues = Object.assign({}, report.issues)
+    let tempIssues = Object.assign({}, report?.issues)
     let tempUnfilteredIssues = []
 
     for (const [key, value] of Object.entries(tempIssues)) {
@@ -302,37 +305,54 @@ export default function FixIssuesPage({
       tempUnfilteredIssues.push(tempIssue)
     }
 
-    // let tempFiles = Object.assign({}, report.files)
-    // for (const [key, value] of Object.entries(tempFiles)) {
-    //   let tempFile = formatFileData(value)
-    //   tempUnfilteredIssues.push(tempFile)
-    // }
-
     tempUnfilteredIssues.sort((a, b) => {
       return (a.formLabel.toLowerCase() < b.formLabel.toLowerCase()) ? -1 : 1
     })
 
-    // Every time the list changes, we need to reload the activeContentItem. This will come from the
-    // cache (contentItemCache) or from the database, if not in the cache.
     setActiveContentItem(null)
 
-    // The filtered list should ALWAYS include the current activeIssue, even if it no longer matches
-    // the filters. For instance, if I'm only looking through "Unreviewed" issues, and I click on the
-    // "Mark as Reviewed" button, that newly-reviewed issue should be available to stay on screen.
+    // If a grouped save is in progress, skip the normal holdover logic
+    // and navigate to the next issue instead
+    if (groupedSaveRef.current.inProgress) {
+      groupedSaveRef.current.inProgress = false
+
+      setUnfilteredIssues(tempUnfilteredIssues)
+      let tempFilteredContent = getFilteredContent(tempUnfilteredIssues)
+      setFilteredIssues(tempFilteredContent)
+      setGroupedList(groupList(tempFilteredContent))
+
+      const targetIndex = groupedSaveRef.current.nextIssueIndex
+      let newActiveIssue = null
+
+      if (tempFilteredContent.length > 0) {
+        // Use the same index position, clamped to the new list length
+        const clampedIndex = Math.min(targetIndex, tempFilteredContent.length - 1)
+        newActiveIssue = tempFilteredContent[clampedIndex >= 0 ? clampedIndex : 0]
+      }
+
+      if (newActiveIssue) {
+        handleActiveIssue(newActiveIssue)
+        setWidgetState(WIDGET_STATE.FIXIT)
+      } else {
+        handleActiveIssue(null)
+        setWidgetState(WIDGET_STATE.LIST)
+      }
+
+      groupedSaveRef.current.nextIssueIndex = null
+      return
+    }
+
     let holdoverActiveIssue = null
 
-    // If there is an activeIssue, we need to connect it to something in the new list of issues.
     if(activeIssue) {  
-      // Quick check: is the old activeIssue still in the list?
       tempUnfilteredIssues.forEach((issue) => {
         if(issue.id === activeIssue.id) {
           holdoverActiveIssue = issue
         }
       })
 
-      // If not, we need to do a more thorough check.
       if(holdoverActiveIssue === null) {
-        if(activeIssue.contentType === FILTER.FILE_OBJECT) {
+        if(activeIssue.contentType === ISSUE_FILTER.FILE_OBJECT) {
           tempUnfilteredIssues.forEach((issue) => {
             if(issue.contentId === activeIssue.contentId) {
               holdoverActiveIssue = issue
@@ -344,7 +364,7 @@ export default function FixIssuesPage({
             if(issue.scanRuleId === activeIssue.scanRuleId &&
                 issue.contentId === activeIssue.contentId &&
                 issue.issueData.xpath === activeIssue.issueData.xpath) {
-              updateActiveSessionIssue(issue.id, null, issue.issueData.contentItemId)
+              updateActiveSessionIssue(issue.id, null)
               holdoverActiveIssue = issue
             }
           })
@@ -362,15 +382,84 @@ export default function FixIssuesPage({
     setFilteredIssues(tempFilteredContent)
     setGroupedList(groupList(tempFilteredContent))
     if(holdoverActiveIssue) {
-      setActiveIssue(holdoverActiveIssue)
+      handleActiveIssue(holdoverActiveIssue)
     }
     
   }, [report])
 
+  // Based on the current option and the issueData, generate new HTML for the activeContentItem.
+  // If the contentItem is passed in, that means that the specific form has done all the work already. This is
+  // particularly true with the List form, where the form modifies the contentItem to group content.
+  const updateTempContentItem = (
+    issue = tempActiveIssue,
+    option = activeOption,
+    contentItem = null
+  ) => {
+    
+    if(!issue || !issue.issueData) {
+      return
+    }
 
-  // When a new activeIssue is set, get the content for that issue
-  useEffect(() => {
-    if(activeIssue === null) {
+    if(contentItem && contentItem.body) {
+      setTempActiveIssue(issue)
+      setTempActiveContentItem(Object.assign({}, contentItem))
+      return
+    }
+
+    // Always begin with the original activeContentItem, not a previously modified version, to prevent compounding
+    // changes and to ensure that all changes are based on the current issue state.
+    let fullPageHtml = activeContentItem.body
+    let fullPageDoc = new DOMParser().parseFromString(fullPageHtml, 'text/html')
+    
+    // Find the target element from the original page and also create a replacement element from the issue data.
+    let originalElement = Html.findElementWithIssue(fullPageDoc, issue.issueData)
+    let editedElement = Html.toElement(Html.getIssueHtml(issue.issueData))
+    const originalElementTag = Html.getTagName(originalElement)
+    const editedElementTag = Html.getTagName(editedElement)
+
+    const specificClassName = `udoit-ignore-${issue.issueData.scanRuleId.replaceAll("_", "-")}`
+    if (option === UFIXIT_OPTIONS.MARK_AS_REVIEWED || FORM_CLASSIFICATIONS.AUTO_REVIEW_RELATED.includes(formNameFromRule(issue.issueData.scanRuleId))) {
+      editedElement = Html.addClass(editedElement, specificClassName)
+    }
+    else {
+      editedElement = Html.removeClass(editedElement, specificClassName)
+    }
+
+    if(!originalElement) {
+      setIsErrorFoundInContent(false)
+    }
+    else {
+      if(option === UFIXIT_OPTIONS.DELETE_ELEMENT) {
+        originalElement.remove()
+      }
+      else if(editedElement) { 
+        originalElement.insertAdjacentElement('afterend', editedElement)
+        let tempElement = originalElement.nextSibling
+        originalElement.remove()
+        originalElement = tempElement
+      }
+      setIsErrorFoundInContent(true)
+    }
+
+    let updatedHtml = Html.toString(editedElement)
+    let newElement = Html.findElementWithError(fullPageDoc, updatedHtml)
+    if (editedElementTag && editedElementTag !== originalElementTag) {
+      issue.issueData.newXpath = Html.findXpathFromElement(newElement)
+    }
+    else {
+      issue.issueData.newXpath = undefined
+    }
+
+    issue.issueData.newHtml = updatedHtml
+    setTempActiveIssue(issue)
+
+    let newBody = fullPageDoc.body.innerHTML
+    setTempActiveContentItem(Object.assign({}, tempActiveContentItem, { body: newBody }))
+  }
+
+  const handleActiveIssue = (newIssue) => {
+    if(!newIssue) {
+      setActiveIssue(null)
       setActiveContentItem(null)
       setTempActiveIssue(null)
       setWidgetState(WIDGET_STATE.LIST)
@@ -378,29 +467,31 @@ export default function FixIssuesPage({
       closeDialog()
       return
     }
-  
-    setMostRecentIssueId(activeIssue.id)
+
+    setActiveIssue(newIssue)
+    setMostRecentIssueId(newIssue.id)
     
     // We ONLY want this to trigger events on a real change.
     if(widgetState !== WIDGET_STATE.FIXIT) {
       openDialog()
     }
 
-    const activeIssueClone = JSON.parse(JSON.stringify(activeIssue))
+    const activeIssueClone = JSON.parse(JSON.stringify(newIssue))
     activeIssueClone.issueData.initialHtml = Html.getIssueHtml(activeIssueClone.issueData)
     setTempActiveIssue(activeIssueClone)
     
     // If we already downloaded the content for this issue, use that
-    const contentItemId = activeIssue.issueData.contentItemId
+    const contentItemId = newIssue.issueData.contentItemId
     if(contentItemCache[contentItemId]) {
       setActiveContentItem(contentItemCache[contentItemId])
+      setTempActiveContentItem(contentItemCache[contentItemId])
     }
     else {
       setActiveContentItem(null)
+      setTempActiveContentItem(null)
     }
     setShowLearnMore(false)
-
-  }, [activeIssue])
+  }
 
   useEffect(() => {
     let tempContentItem = null
@@ -437,36 +528,36 @@ export default function FixIssuesPage({
       }
 
       // Do not include this issue if it doesn't match the severity filter
-      if (tempFilters[FILTER.TYPE.SEVERITY] !== FILTER.ALL && tempFilters[FILTER.TYPE.SEVERITY] !== issue.severity) {
+      if (tempFilters[ISSUE_FILTER.TYPE.SEVERITY] !== ISSUE_FILTER.ALL && tempFilters[ISSUE_FILTER.TYPE.SEVERITY] !== issue.severity) {
         continue
       }
 
       // Do not include this issue if it doesn't match the content type filter
       let tempContentType = issue.contentType
-      let tempStatus = issue.status === FILTER.FIXEDANDRESOLVED ? FILTER.FIXED : issue.status
-      if (tempContentType === FILTER.FILE_OBJECT) {
+      let tempStatus = issue.status === ISSUE_FILTER.FIXEDANDRESOLVED ? ISSUE_FILTER.FIXED : issue.status
+      if (tempContentType === ISSUE_FILTER.FILE_OBJECT) {
         // When the user selects "Files", show both "File" issues as well as external File objects
-        tempContentType = FILTER.FILE
+        tempContentType = ISSUE_FILTER.FILE
       }
-      if (tempFilters[FILTER.TYPE.CONTENT_TYPE] !== FILTER.ALL && tempFilters[FILTER.TYPE.CONTENT_TYPE] !== tempContentType) {
+      if (tempFilters[ISSUE_FILTER.TYPE.CONTENT_TYPE] !== ISSUE_FILTER.ALL && tempFilters[ISSUE_FILTER.TYPE.CONTENT_TYPE] !== tempContentType) {
         continue
       }
 
       // Do not include this issue if it doesn't match the status filter
-      if (tempFilters[FILTER.TYPE.RESOLUTION] !== FILTER.ALL && tempFilters[FILTER.TYPE.RESOLUTION] !== tempStatus) {
+      if (tempFilters[ISSUE_FILTER.TYPE.RESOLUTION] !== ISSUE_FILTER.ALL && tempFilters[ISSUE_FILTER.TYPE.RESOLUTION] !== tempStatus) {
         continue
       }
 
       // Do not include this issue if it doesn't match the module filter
-      if (tempFilters[FILTER.TYPE.MODULE] !== FILTER.ALL) {
-        let sectionId = tempFilters[FILTER.TYPE.MODULE].replace('section-', '')
+      if (tempFilters[ISSUE_FILTER.TYPE.MODULE] !== ISSUE_FILTER.ALL) {
+        let sectionId = tempFilters[ISSUE_FILTER.TYPE.MODULE].replace('section-', '')
         if (!issue.sectionIds.includes(sectionId)) {
           continue
         }
       }
 
       // Do not include this issue if it doesn't match the published filter
-      if (tempFilters[FILTER.TYPE.PUBLISHED] !== FILTER.ALL && (tempFilters[FILTER.TYPE.PUBLISHED] === FILTER.PUBLISHED) !== issue.published) {
+      if (tempFilters[ISSUE_FILTER.TYPE.PUBLISHED] !== ISSUE_FILTER.ALL && (tempFilters[ISSUE_FILTER.TYPE.PUBLISHED] === ISSUE_FILTER.PUBLISHED) !== issue.published) {
         continue
       }
 
@@ -502,14 +593,14 @@ export default function FixIssuesPage({
   // - unfilteredIssues
   // - filteredIssues
   // This does NOT change the report object, which updates when the issue's data changes.
-  const updateActiveSessionIssue = (issueId, state = null, contentItemId = null) => {
+  const updateActiveSessionIssue = (issueId, state = null) => {
     
     if(state === null) {
       state = ISSUE_STATE.UNCHANGED
     }
 
     // This updates the counter for the daily progress
-    updateSessionIssue(issueId, state, contentItemId)
+    updateSessionIssue(issueId, state)
 
     // Only update the whole list if the issue is saved, resolved, or marked as unresolved.
     if(state === ISSUE_STATE.SAVED
@@ -682,7 +773,7 @@ export default function FixIssuesPage({
 
   const handleIssueSave = async () => {
 
-    if(!activeContentItem || !activeContentItem?.body || !tempActiveIssue || !tempActiveIssue?.issueData) {
+    if(!tempActiveContentItem || !tempActiveContentItem?.body || !tempActiveIssue || !tempActiveIssue?.issueData) {
       return
     }
 
@@ -710,12 +801,16 @@ export default function FixIssuesPage({
       }
     }
 
-    let fullPageHtml = getNewFullPageHtml(activeContentItem, issue)
+    if (activeOption === UFIXIT_OPTIONS.DELETE_ELEMENT) {
+      issue.newHtml = ''
+    }
+
+    let fullPageHtml = tempActiveContentItem?.body || ''
     let fullPageDoc = new DOMParser().parseFromString(fullPageHtml, 'text/html')
     let newElement = Html.findElementWithError(fullPageDoc, issue?.newHtml)
     let newXpath = Html.findXpathFromElement(newElement)
     issue.xpath = newXpath || ''
-    
+
     // Save the updated issue using the LMS API
     try {
       const saveResponse = await api.saveIssue(issue, fullPageHtml, markAsReviewed)
@@ -731,13 +826,9 @@ export default function FixIssuesPage({
         updateActiveSessionIssue(issue.id, ISSUE_STATE.ERROR)
         removeItemFromBeingScanned(issue.contentItemId)
         saveResponseJson.messages.forEach((msg) => addMessage(msg))
-
         if (Array.isArray(saveResponseJson.errors)) {
           saveResponseJson.errors.forEach((error) => {
-            addMessage({
-              severity: 'error',
-              message: t(error)
-            })
+            addMessage({ severity: 'error', message: t(error) })
           })
         }
         throw Error('Save failed.')
@@ -757,12 +848,10 @@ export default function FixIssuesPage({
       }
 
       if(saveResponseJson?.data?.issue) {
-        // Update the report object by rescanning the content
         const newIssue = Object.assign({}, issue, saveResponseJson.data.issue)
         updateActiveSessionIssue(newIssue.id, ISSUE_STATE.SAVED)
 
         const scanResponse = await api.scanContent(newIssue.contentItemId)
-
         if(scanResponse.ok) {
           const scanResponseJson = await scanResponse.json()
           if(scanResponseJson.data) {
@@ -783,29 +872,39 @@ export default function FixIssuesPage({
     }
   }
 
-  const handleActiveContentItem = (newContentItem) => {
-    setTempActiveContentItem(newContentItem)
+  // When the issue data changes, this triggers the live preview update.
+  const handleTempActiveIssue = (newIssue, optionOverride = activeOption, contentItem = null) => {
+    updateTempContentItem(newIssue, optionOverride, contentItem)
   }
-  
+
   const updateActiveFilters = (filter, value) => {
     setActiveFilters(Object.assign({}, activeFilters, {[filter]: value}))
   }
 
   const nextIssue = (previous = false) => {
     if (!activeIssue || filteredIssues.length < 2) { return }
-    let activeIndex = filteredIssues.findIndex((issue) => issue.id === activeIssue.id)
 
-    if(activeIndex === -1) { return }
+    let orderedIssueIds = []
+    groupedList.forEach((group) => {
+      group.issues.forEach((issue) => {
+        orderedIssueIds.push(issue.id)
+      })
+    })
+
+    let activeIssueIndex = orderedIssueIds.findIndex((id) => id === activeIssue.id)
+
+    if(activeIssueIndex === -1) { return }
 
     // If we've reached the first or last issue, loop around
-    let newIndex = activeIndex + (previous ? -1 : 1)
+    let newIndex = activeIssueIndex + (previous ? -1 : 1)
     if (newIndex < 0) {
-      newIndex = filteredIssues.length - 1
+      newIndex = orderedIssueIds.length - 1
     }
-    else if (newIndex >= filteredIssues.length) {
+    else if (newIndex >= orderedIssueIds.length) {
       newIndex = 0
     }
-    setActiveIssue(filteredIssues[newIndex])
+    const newIssueId = orderedIssueIds[newIndex]
+    handleActiveIssue(filteredIssues.find((issue) => issue.id === newIssueId))
   }
 
   const getContentById = (contentId) => {
@@ -834,10 +933,6 @@ export default function FixIssuesPage({
     return keywords.join(' ')
   }
 
-  const triggerLiveUpdate = () => {
-    setLiveUpdateToggle(!liveUpdateToggle)
-  }
-
   const openDialog = () => {
     setWidgetState(WIDGET_STATE.FIXIT)
     setModalActive(true)
@@ -849,18 +944,16 @@ export default function FixIssuesPage({
     setActiveIssue(null)
   }
 
+  const noChanges = tempActiveIssue?.issueData?.initialHtml && tempActiveIssue?.issueData?.newHtml && tempActiveIssue.issueData.initialHtml === tempActiveIssue.issueData.newHtml
+
   return (
     <>
       { widgetState === WIDGET_STATE.LOADING ? (
         <></>
       ) : (
-        <div
-          inert={widgetState === WIDGET_STATE.FIXIT ? "inert" : undefined}
-          aria-hidden={widgetState === WIDGET_STATE.FIXIT}
-          >
+        <div inert={widgetState === WIDGET_STATE.FIXIT ? "inert" : undefined}>
           <h1 className="pageTitle">{t('barriers.title')}</h1>
           <p className="pageSubtitle">{t('barriers.subtitle')}</p>
-
           <FixIssuesFilters
             t={t}
             preferences={preferences}
@@ -873,11 +966,14 @@ export default function FixIssuesPage({
           <div className="mt-1 subtext align-self-end">{t('fix.label.barriers_shown_count', { shown: filteredIssues?.length || 0, total: unfilteredIssues?.length || 0 })}</div>
           <FixIssuesList
             t={t}
+            unfilteredIssues={unfilteredIssues}
+            selectedSeverity={activeFilters[ISSUE_FILTER.TYPE.SEVERITY] || ISSUE_FILTER.ALL}
             groupedList={groupedList}
-            setActiveIssue={setActiveIssue}
+            setActiveIssue={handleActiveIssue}
           />
         </div>
       ) }
+      <div className={`dialog-backdrop ${widgetState === WIDGET_STATE.FIXIT ? 'open' : 'hidden'}`} />
       <div
         id={dialogId}
         role="dialog"
@@ -903,7 +999,7 @@ export default function FixIssuesPage({
               title={t('fix.button.close')} />
           </div>
           <div className="dialog-content">
-            <div className="flex-row w-100 h-100">
+            <div className="dialog-content-row-wrap">
               <section className='ufixit-widget-container'>
                 { tempActiveIssue && (
                   <>
@@ -918,25 +1014,27 @@ export default function FixIssuesPage({
                       t={t}
                       instanceInfo={instanceInfo}
                       activeContentItem={activeContentItem}
-                      handleActiveContentItem={handleActiveContentItem}
+                      activeOption={activeOption}
+                      setActiveOption={setActiveOption}
                       addMessage={addMessage}
                       handleIssueSave={handleIssueSave}
                       isContentLoading={contentItemsBeingScanned.includes(tempActiveIssue?.issueData?.contentItemId)}
                       isErrorFoundInContent={isErrorFoundInContent}
-                      sessionIssues={sessionIssues}
-                      setTempActiveIssue={setTempActiveIssue}
-                      severity={tempActiveIssue.severity}
+                      handleTempActiveIssue={handleTempActiveIssue}
                       tempActiveIssue={tempActiveIssue}
-                      triggerLiveUpdate={triggerLiveUpdate}
                       markAsReviewed={markAsReviewed}
                       setMarkAsReviewed={setMarkAsReviewed}
                       setFormInvalid={setFormInvalid}
                       handleLearnMoreClick={() => setShowLearnMore(true)}
-                      showLearnMore={showLearnMore}
+                      // sessionIssues={sessionIssues}
+                      // setTempActiveIssue={setTempActiveIssue}
+                      // severity={tempActiveIssue.severity}
+                      // showLearnMore={showLearnMore}
                       clickedInfo={clickedInfo}
                       setClickedInfo={setClickedInfo}
-                      handleContentIssueSave={handleContentIssueSave}
+                      // handleContentIssueSave={handleContentIssueSave}
                       setElementFocus={setElementFocus}
+                      setPreviewData={setPreviewData}
                     />
                   </>
                 )}
@@ -945,13 +1043,15 @@ export default function FixIssuesPage({
                 {filteredIssues.length > 0 && (
                   <FixIssuesContentPreview
                     t={t}
-                    activeContentItem={activeContentItem}
+                    activeContentItem={tempActiveContentItem}
                     activeIssue={tempActiveIssue}
+                    activeOption={activeOption}
                     contentItemsBeingScanned={contentItemsBeingScanned}
-                    liveUpdateToggle={liveUpdateToggle}
+                    isErrorFoundInContent={isErrorFoundInContent}
                     setIsErrorFoundInContent={setIsErrorFoundInContent}
                     clickedInfo={clickedInfo}
                     setClickedInfo={setClickedInfo}
+                    previewData={previewData}
                     elementFocus={elementFocus}
                   />
                 )}
@@ -978,11 +1078,14 @@ export default function FixIssuesPage({
                 <RightArrowIcon className='icon-sm' />
               </button>
             </div>
-            <div className="align-self-center">
+            <div className="flex-row flex-end flex-grow-1 gap-2 align-items-center">
+              { noChanges && (
+                <div className="subtext">{t('fix.label.no_changes_to_save')}</div>
+              )}
               <button
                 onClick={handleIssueSave}
                 className="btn btn-primary btn-icon-left"
-                disabled={formInvalid || !isErrorFoundInContent || showLearnMore || contentItemsBeingScanned.includes(tempActiveIssue?.issueData?.contentItemId)}
+                disabled={formInvalid || !isErrorFoundInContent || noChanges || showLearnMore || contentItemsBeingScanned.includes(tempActiveIssue?.issueData?.contentItemId)}
                 tabIndex="0">
                 {t('form.submit')}
               </button>

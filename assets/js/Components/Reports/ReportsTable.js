@@ -61,7 +61,7 @@ export default function ReportsTable({ t, reports }) {
         potentials: latestReport.scanCounts?.potentials || 0,
         suggestions: latestReport.scanCounts?.suggestions || 0,
         contentFixed: latestReport.contentFixed || 0,
-        contentResolved: latestReport.contentResolved || 0,
+        contentResolved: latestReport.scanCounts?.resolved || latestReport.contentResolved || 0,
         filesReviewed: latestReport.filesReviewed || 0,
       });
     });
@@ -93,10 +93,10 @@ export default function ReportsTable({ t, reports }) {
         report.potentialBarriers = 0;
         report.filesUnreviewed = 0;
       }
-      report.contentHandled = report.contentFixed + report.contentResolved || 0;
-      return report;
-    });
-    const { sortBy, ascending } = tableSettings;
+      report.contentHandled = report.scanCounts?.resolved || (report.contentResolved + report.contentFixed) || 0
+      return report
+    })
+    const { sortBy, ascending } = tableSettings
 
     list.sort((a, b) => {
       if (isNaN(a[sortBy]) || isNaN(b[sortBy])) {
