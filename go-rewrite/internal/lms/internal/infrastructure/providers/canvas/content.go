@@ -262,10 +262,12 @@ type PageResponse struct {
 }
 
 type AssignmentResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	UpdatedAt   string `json:"updated_at"`
+	ID              int64  `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	UpdatedAt       string `json:"updated_at"`
+	QuizID          *int64 `json:"quiz_id"`
+	DiscussionTopic any    `json:"discussion_topic"`
 }
 
 type SyllabusResponse struct {
@@ -310,7 +312,19 @@ func (p *CanvasLMSProvider) getPages(ctx context.Context, canvasCourseID string,
 
 func (p *CanvasLMSProvider) getAssignments(ctx context.Context, canvasCourseID string, userID int64) ([]AssignmentResponse, error) {
 	path := "/api/v1/courses/" + canvasCourseID + "/assignments?per_page=100"
-	return fetchPaginated[AssignmentResponse](p, ctx, userID, path, nil)
+	return fetchPaginated[AssignmentResponse](p, ctx, userID, path, func(assignment AssignmentResponse) (AssignmentResponse, bool) {
+		// Skip quizzes and discussion topics, since they will be fetched elsewhere.
+		
+		if assignment.QuizID != nil {
+			return AssignmentResponse{}, false
+		}
+
+		if assignment.DiscussionTopic != nil {
+			return AssignmentResponse{}, false
+		}
+
+		return assignment, true
+	})
 }
 
 func (p *CanvasLMSProvider) getDiscussionTopics(ctx context.Context, canvasCourseID string, userID int64) ([]DiscussionTopicResponse, error) {
