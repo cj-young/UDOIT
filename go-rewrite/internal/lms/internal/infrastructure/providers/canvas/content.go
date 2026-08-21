@@ -2,6 +2,8 @@ package canvas
 
 import (
 	"context"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +19,7 @@ const (
 	canvasContentTypeAssignment      canvasContentType = "assignment"
 	canvasContentTypeAnnouncement    canvasContentType = "announcement"
 	canvasContentTypeDiscussionTopic canvasContentType = "discussion_topic"
+	canvasContentTypeFile            canvasContentType = "file"
 	canvasContentTypeQuiz            canvasContentType = "quiz"
 	canvasContentTypeQuizQuestion    canvasContentType = "quiz_question"
 	canvasContentTypeSyllabus        canvasContentType = "syllabus"
@@ -32,6 +35,8 @@ func ParseCanvasContentType(s string) (canvasContentType, error) {
 		return canvasContentTypeAnnouncement, nil
 	case string(canvasContentTypeDiscussionTopic):
 		return canvasContentTypeDiscussionTopic, nil
+	case string(canvasContentTypeFile):
+		return canvasContentTypeFile, nil
 	case string(canvasContentTypeQuiz):
 		return canvasContentTypeQuiz, nil
 	case string(canvasContentTypeQuizQuestion):
@@ -52,38 +57,43 @@ func (p *CanvasLMSProvider) GetContent(
 	course domain.LMSCourse,
 	currentContent []domain.LMSContent,
 	userID int64,
-) ([]domain.CourseContent, error) {
+) (domain.CourseSyncData, error) {
 	canvasCourse, err := p.asCanvasCourse(course)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
 	}
 
 	// TODO: use current content mappings to skip fetching content that is already up to date.
 	pages, err := p.getPages(ctx, canvasCourse.courseID, userID)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
 	}
 	assignments, err := p.getAssignments(ctx, canvasCourse.courseID, userID)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
 	}
 
 	discussionTopics, err := p.getDiscussionTopics(ctx, canvasCourse.courseID, userID)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
 	}
 	announcements, err := p.getAnnouncements(ctx, canvasCourse.courseID, userID)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
 	}
 	quizzes, err := p.getQuizzes(ctx, canvasCourse.courseID, userID)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
+	}
+
+	files, err := p.getFiles(ctx, canvasCourse.courseID, userID)
+	if err != nil {
+		return domain.CourseSyncData{}, err
 	}
 
 	syllabus, err := p.getSyllabus(ctx, canvasCourse.courseID, userID)
 	if err != nil {
-		return nil, err
+		return domain.CourseSyncData{}, err
 	}
 
 	quizQuestionsCount := 0
@@ -92,6 +102,11 @@ func (p *CanvasLMSProvider) GetContent(
 	}
 
 	totalContent := len(pages) + len(assignments) + len(discussionTopics) + len(announcements) + len(quizzes) + quizQuestionsCount
+	for _, file := range files {
+		if file.MimeClass == "html" {
+			totalContent++
+		}
+	}
 	if syllabus != nil {
 		totalContent++
 	}
@@ -183,6 +198,49 @@ func (p *CanvasLMSProvider) GetContent(
 		}
 	}
 
+	fileSyncItems := make([]domain.CourseFile, len(files))
+	for i, file := range files {
+		fileIDStr := strconv.FormatInt(file.ID, 10)
+		fileExternalData := map[string]any{
+			"file_id":      file.ID,
+			"context_type": file.ContextType,
+		}
+
+		fileSyncItems[i] = domain.CourseFile{
+			FileName:     file.DisplayName,
+			FileType:     file.MimeClass,
+			UpdatedAt:    parseCanvasUpdatedAt(file.UpdatedAt),
+			IsActive:     true,
+			IsAvailable:  !file.Locked,
+			IsHidden:     file.Hidden,
+			FileSize:     file.Size,
+			DownloadURL:  file.URL,
+			ExternalID:   "file:" + fileIDStr,
+			ExternalData: fileExternalData,
+		}
+
+		if file.MimeClass != "html" {
+			continue
+		}
+
+		html, err := p.getFileHTML(ctx, file.URL, userID)
+		if err != nil {
+			return domain.CourseSyncData{}, err
+		}
+
+		courseContents = append(courseContents, domain.CourseContent{
+			ExternalID: "file:" + fileIDStr,
+			ExternalData: map[string]any{
+				"content_id":   file.ID,
+				"updated_at":   normalizeCanvasUpdatedAt(file.UpdatedAt, ""),
+				"content_type": string(canvasContentTypeFile),
+				"mime_class":   file.MimeClass,
+			},
+			HTML: html,
+			Type: domain.CourseContentTypeFile,
+		})
+	}
+
 	if syllabus != nil {
 		syllabusIDStr := strconv.FormatInt(syllabus.ID, 10)
 		courseContents = append(courseContents, domain.CourseContent{
@@ -197,7 +255,10 @@ func (p *CanvasLMSProvider) GetContent(
 		})
 	}
 
-	return courseContents, nil
+	return domain.CourseSyncData{
+		ContentItems: courseContents,
+		Files:        fileSyncItems,
+	}, nil
 }
 
 type canvasContent struct {
@@ -292,6 +353,18 @@ type AnnouncementResponse struct {
 	PostedAt    string `json:"posted_at"`
 }
 
+type CanvasFileResponse struct {
+	ID          int64  `json:"id"`
+	ContextType string `json:"context_type"`
+	URL         string `json:"url"`
+	DisplayName string `json:"display_name"`
+	MimeClass   string `json:"mime_class"`
+	Size        int64  `json:"size"`
+	Locked      bool   `json:"locked"`
+	Hidden      bool   `json:"hidden"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
 type QuizResponse struct {
 	ID          int64  `json:"id"`
 	Description string `json:"description"`
@@ -314,7 +387,7 @@ func (p *CanvasLMSProvider) getAssignments(ctx context.Context, canvasCourseID s
 	path := "/api/v1/courses/" + canvasCourseID + "/assignments?per_page=100"
 	return fetchPaginated[AssignmentResponse](p, ctx, userID, path, func(assignment AssignmentResponse) (AssignmentResponse, bool) {
 		// Skip quizzes and discussion topics, since they will be fetched elsewhere.
-		
+
 		if assignment.QuizID != nil {
 			return AssignmentResponse{}, false
 		}
@@ -398,6 +471,36 @@ func (p *CanvasLMSProvider) getSyllabus(ctx context.Context, canvasCourseID stri
 	return &syllabus, nil
 }
 
+func (p *CanvasLMSProvider) getFiles(ctx context.Context, canvasCourseID string, userID int64) ([]CanvasFileResponse, error) {
+	path := "/api/v1/courses/" + canvasCourseID + "/files?per_page=100"
+	return fetchPaginated[CanvasFileResponse](p, ctx, userID, path, nil)
+}
+
+func (p *CanvasLMSProvider) getFileHTML(ctx context.Context, fileURL string, userID int64) (string, error) {
+	resp, err := p.doAuthenticatedRequest(ctx, CanvasRequest{
+		URL:    fileURL,
+		Body:   nil,
+		Method: http.MethodGet,
+		Config: p.config,
+		UserID: userID,
+	})
+	if err != nil {
+		return "", apperr.Internal("Failed to send HTTP request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", apperr.Internal("Unexpected status code: " + resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", apperr.Internal("Failed to decode response body")
+	}
+
+	return string(body), nil
+}
+
 func normalizeCanvasUpdatedAt(primary, fallback string) string {
 	if primary != "" {
 		return primary
@@ -406,4 +509,13 @@ func normalizeCanvasUpdatedAt(primary, fallback string) string {
 		return fallback
 	}
 	return time.Time{}.Format(time.RFC3339)
+}
+
+func parseCanvasUpdatedAt(updatedAt string) time.Time {
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, updatedAt)
+	if err == nil {
+		return parsedUpdatedAt
+	}
+
+	return time.Time{}
 }

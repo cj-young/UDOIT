@@ -7,10 +7,11 @@ import (
 )
 
 type MockFileRepository struct {
-	GetFileByIDFunc func(ctx context.Context, id int64) (*domain.File, error)
-	UpdateFileFunc  func(ctx context.Context, file *domain.File) error
-	DeleteFileFunc  func(ctx context.Context, id int64) error
-	SeedFilesFunc   func(seed ...*domain.File)
+	GetFileByIDFunc    func(ctx context.Context, id int64) (*domain.File, error)
+	UpdateFileFunc     func(ctx context.Context, file *domain.File) error
+	DeleteFileFunc     func(ctx context.Context, id int64) error
+	UpsertByCourseFunc func(ctx context.Context, courseID int64, records []domain.CourseFileSyncRecord) error
+	SeedFilesFunc      func(seed ...*domain.File)
 }
 
 var _ domain.FileRepository = (*MockFileRepository)(nil)
@@ -36,6 +37,14 @@ func (m *MockFileRepository) DeleteFile(ctx context.Context, id int64) error {
 		return m.DeleteFileFunc(ctx, id)
 	}
 	panic("DeleteFileFunc is not defined")
+}
+
+func (m *MockFileRepository) UpsertByCourse(ctx context.Context, courseID int64, records []domain.CourseFileSyncRecord) error {
+	if m.UpsertByCourseFunc != nil {
+		return m.UpsertByCourseFunc(ctx, courseID, records)
+	}
+
+	panic("UpsertByCourseFunc is not defined")
 }
 
 func (m *MockFileRepository) SeedFiles(seed ...*domain.File) {
@@ -77,6 +86,11 @@ func NewArrayMockFileRepository() *MockFileRepository {
 					return nil
 				}
 			}
+			return nil
+		},
+		UpsertByCourseFunc: func(ctx context.Context, courseID int64, records []domain.CourseFileSyncRecord) error {
+			_ = courseID
+			_ = records
 			return nil
 		},
 		SeedFilesFunc: func(seed ...*domain.File) {

@@ -37,6 +37,14 @@ CREATE TABLE course (
 CREATE TABLE file_item (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     course_id BIGINT UNSIGNED NOT NULL,
+    file_name VARCHAR(255) NULL,
+    file_type VARCHAR(64) NULL,
+    updated_at_lms DATETIME NULL,
+    is_available TINYINT(1) NULL,
+    is_hidden TINYINT(1) NULL,
+    file_size BIGINT NULL,
+    download_url TEXT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
     reviewed_by_id BIGINT UNSIGNED DEFAULT NULL,
     reviewed_on DATETIME DEFAULT NULL,
     reviewed TINYINT(1) NOT NULL DEFAULT 0,
@@ -52,7 +60,9 @@ CREATE TABLE file_item (
         ON DELETE SET NULL,
     CONSTRAINT fk_file_item_course_id
         FOREIGN KEY (course_id) REFERENCES course (id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT uniq_file_item_course_external
+        UNIQUE (course_id, external_id)
 );
 
 CREATE TABLE user_session (

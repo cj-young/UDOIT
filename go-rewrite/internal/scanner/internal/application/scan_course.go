@@ -26,7 +26,11 @@ type IssueService interface {
 }
 
 type ExternalContentRetriever interface {
-	GetContent(ctx context.Context, res lms.GetContentRequest) ([]lms.ContentItemDTO, error)
+	GetContent(ctx context.Context, res lms.GetContentRequest) (lms.CourseSyncDataDTO, error)
+}
+
+type CourseFileSyncService interface {
+	SyncCourseFiles(ctx context.Context, courseID int64, files []lms.FileItemDTO) error
 }
 
 type ContentHasher interface {
@@ -46,6 +50,7 @@ type ScanCourseUseCase struct {
 	externalContentRetriever ExternalContentRetriever
 	contentHasher            ContentHasher
 	issueService             IssueService
+	courseFileSyncService    CourseFileSyncService
 	scanner                  domain.Scanner
 }
 
@@ -55,6 +60,7 @@ func NewScanCourseUseCase(
 	externalContentRetriever ExternalContentRetriever,
 	contentHasher ContentHasher,
 	issueService IssueService,
+	courseFileSyncService CourseFileSyncService,
 	scanner domain.Scanner,
 ) *ScanCourseUseCase {
 	return &ScanCourseUseCase{
@@ -63,6 +69,7 @@ func NewScanCourseUseCase(
 		externalContentRetriever: externalContentRetriever,
 		contentHasher:            contentHasher,
 		issueService:             issueService,
+		courseFileSyncService:    courseFileSyncService,
 		scanner:                  scanner,
 	}
 }
@@ -86,7 +93,7 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 		return err
 	}
 
-	externalContentItems, err := u.externalContentRetriever.GetContent(ctx, lms.GetContentRequest{
+	externalCourseData, err := u.externalContentRetriever.GetContent(ctx, lms.GetContentRequest{
 		CourseID:           courseID,
 		TenantID:           principal.TenantID,
 		UserID:             principal.AgentID,
@@ -97,7 +104,12 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 		return err
 	}
 
-	changedContentItems, err := u.getChangedContentItems(currentContentItems, externalContentItems, courseID)
+	err = u.courseFileSyncService.SyncCourseFiles(ctx, courseID, externalCourseData.Files)
+	if err != nil {
+		return err
+	}
+
+	changedContentItems, err := u.getChangedContentItems(currentContentItems, externalCourseData.ContentItems, courseID)
 	if err != nil {
 		return err
 	}

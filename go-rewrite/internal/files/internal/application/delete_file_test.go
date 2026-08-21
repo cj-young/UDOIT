@@ -30,7 +30,7 @@ func TestDeleteFile_Success(t *testing.T) {
 	fileRepo := infrastructure.NewArrayMockFileRepository()
 	mockDeleter := &mockFileDeleter{}
 
-	file := domain.RehydrateFile(1, 1, 0, time.Now(), false, "", nil)
+	file := domain.RehydrateFile(1, 1, "", "", time.Now(), true, true, false, 0, "", 0, time.Now(), false, "", nil)
 	fileRepo.SeedFiles(file)
 
 	uc := NewDeleteFileUseCase(fileRepo, mockDeleter)
@@ -55,7 +55,7 @@ func TestDeleteFile_DeletesFileFailsWhenDeleterReturnsError(t *testing.T) {
 	fileRepo := infrastructure.NewArrayMockFileRepository()
 	mockDeleter := &mockFileDeleter{err: apperr.New(apperr.CodeInternal, "delete failed")}
 
-	file := domain.RehydrateFile(1, 1, 0, time.Now(), false, "", nil)
+	file := domain.RehydrateFile(1, 1, "", "", time.Now(), true, true, false, 0, "", 0, time.Now(), false, "", nil)
 	fileRepo.SeedFiles(file)
 
 	uc := NewDeleteFileUseCase(fileRepo, mockDeleter)

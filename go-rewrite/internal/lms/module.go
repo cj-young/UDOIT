@@ -84,6 +84,24 @@ type ContentItemDTO struct {
 	Type         string
 }
 
+type FileItemDTO struct {
+	FileName     string
+	FileType     string
+	UpdatedAt    time.Time
+	IsActive     bool
+	IsAvailable  bool
+	IsHidden     bool
+	FileSize     int64
+	DownloadURL  string
+	ExternalID   string
+	ExternalData map[string]any
+}
+
+type CourseSyncDataDTO struct {
+	ContentItems []ContentItemDTO
+	Files        []FileItemDTO
+}
+
 type GetContentRequest struct {
 	CourseID           int64
 	ExternalCourseID   string
@@ -92,23 +110,23 @@ type GetContentRequest struct {
 	UserID             int64
 }
 
-func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]ContentItemDTO, error) {
+func (m *Module) GetContent(ctx context.Context, req GetContentRequest) (CourseSyncDataDTO, error) {
 	lmsProvider, err := m.providerResolver.GetByTenant(ctx, req.TenantID)
 	if err != nil {
-		return nil, err
+		return CourseSyncDataDTO{}, err
 	}
 
-	contentItems, err := lmsProvider.GetContent(ctx, domain.LMSCourse{
+	syncData, err := lmsProvider.GetContent(ctx, domain.LMSCourse{
 		ID:           req.CourseID,
 		ExternalID:   req.ExternalCourseID,
 		ExternalData: req.ExternalCourseData,
 	}, []domain.LMSContent{}, req.UserID)
 	if err != nil {
-		return nil, err
+		return CourseSyncDataDTO{}, err
 	}
 
-	contentItemDTOs := make([]ContentItemDTO, len(contentItems))
-	for i, item := range contentItems {
+	contentItemDTOs := make([]ContentItemDTO, len(syncData.ContentItems))
+	for i, item := range syncData.ContentItems {
 		contentItemDTOs[i] = ContentItemDTO{
 			ExternalID:   item.ExternalID,
 			ExternalData: item.ExternalData,
@@ -116,5 +134,25 @@ func (m *Module) GetContent(ctx context.Context, req GetContentRequest) ([]Conte
 			Type:         string(item.Type),
 		}
 	}
-	return contentItemDTOs, nil
+
+	fileDTOs := make([]FileItemDTO, len(syncData.Files))
+	for i, file := range syncData.Files {
+		fileDTOs[i] = FileItemDTO{
+			FileName:     file.FileName,
+			FileType:     file.FileType,
+			UpdatedAt:    file.UpdatedAt,
+			IsActive:     file.IsActive,
+			IsAvailable:  file.IsAvailable,
+			IsHidden:     file.IsHidden,
+			FileSize:     file.FileSize,
+			DownloadURL:  file.DownloadURL,
+			ExternalID:   file.ExternalID,
+			ExternalData: file.ExternalData,
+		}
+	}
+
+	return CourseSyncDataDTO{
+		ContentItems: contentItemDTOs,
+		Files:        fileDTOs,
+	}, nil
 }

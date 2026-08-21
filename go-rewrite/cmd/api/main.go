@@ -67,7 +67,7 @@ func main() {
 	usersModule := users.New(db, i18nModule, authModule)
 	contentModule := content.New(db)
 	issuesModule := issues.New(db)
-	scannerModule := scanner.New(db, coursesModule, contentModule, lmsModule, issuesModule, issuesModule, authModule)
+	scannerModule := scanner.New(db, coursesModule, contentModule, lmsModule, filesModule, issuesModule, issuesModule, authModule)
 	tenantsModule := tenants.New(db, lmsModule)
 	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule, lmsModule, tenantsModule, lmsModule, os.Getenv("GO_BASE_URL"))
 

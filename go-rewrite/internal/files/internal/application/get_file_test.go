@@ -16,7 +16,7 @@ import (
 func TestGetFile_Success(t *testing.T) {
 	fileRepo := infrastructure.NewArrayMockFileRepository()
 
-	file := domain.RehydrateFile(1, 1, 0, time.Now(), false, "", nil)
+	file := domain.RehydrateFile(1, 1, "", "", time.Now(), true, true, false, 0, "", 0, time.Now(), false, "", nil)
 	fileRepo.SeedFiles(file)
 
 	uc := NewGetFileUseCase(fileRepo)

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"rewritetest/internal/shared/auth"
 
@@ -44,12 +45,30 @@ type LMSContent struct {
 	HTML         string
 }
 
+type CourseFile struct {
+	FileName     string
+	FileType     string
+	UpdatedAt    time.Time
+	IsActive     bool
+	IsAvailable  bool
+	IsHidden     bool
+	FileSize     int64
+	DownloadURL  string
+	ExternalID   string
+	ExternalData map[string]any
+}
+
+type CourseSyncData struct {
+	ContentItems []CourseContent
+	Files        []CourseFile
+}
+
 type ScanProvider interface {
 	// The current course content is sent to the LMS provider to allow it to skip
 	// fetching content that is already up to date. If new internal content items
 	// are created out of the return, the LMS provider expects them to be
 	// explicitly registered later.
-	GetContent(ctx context.Context, course LMSCourse, currentContent []LMSContent, userID int64) ([]CourseContent, error)
+	GetContent(ctx context.Context, course LMSCourse, currentContent []LMSContent, userID int64) (CourseSyncData, error)
 }
 
 type LTIProvider interface {

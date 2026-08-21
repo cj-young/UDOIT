@@ -21,6 +21,7 @@ func New(
 	courseRetriever application.CourseRetriever,
 	contentItemService application.ContentItemService,
 	externalContentReceiver application.ExternalContentRetriever,
+	courseFileSyncService application.CourseFileSyncService,
 	issueService application.IssueService,
 	issueRetriever application.IssueRetriever,
 	authenticator internal.Authenticator,
@@ -32,7 +33,7 @@ func New(
 	blake3Hasher := infrastructure.NewBlake3ContentHasher()
 	reportRepository := infrastructure.NewMySQLReportRepository(db)
 
-	scanCourseUseCase := application.NewScanCourseUseCase(courseRetriever, contentItemService, externalContentReceiver, blake3Hasher, issueService, scanner)
+	scanCourseUseCase := application.NewScanCourseUseCase(courseRetriever, contentItemService, externalContentReceiver, blake3Hasher, issueService, courseFileSyncService, scanner)
 	createReportUseCase := application.NewCreateReportUseCase(reportRepository, issueRetriever)
 	handler := internal.NewHandler(scanCourseUseCase, createReportUseCase)
 
