@@ -8,10 +8,10 @@ import FixIssuesPage from "./FixIssuesPage";
 import ReviewFilesPage from "./ReviewFilesPage";
 import ReportsPage from "./ReportsPage";
 import SettingsPage from "./SettingsPage";
-import Api from "../Services/Api";
 import MessageTray from "./Widgets/MessageTray";
 import { analyzeReport } from "../Services/Report";
 import { ISSUE_STATE } from "../Services/Constants";
+import { api } from "../Services/Api";
 
 export default function App(initialData) {
   const [nextMessage, setNextMessage] = useState("");
@@ -51,12 +51,10 @@ export default function App(initialData) {
   );
 
   const scanCourse = useCallback(() => {
-    let api = new Api(instanceInfo);
     return api.scanCourse(instanceInfo.course.id);
   }, [instanceInfo]);
 
   const fullRescan = useCallback(() => {
-    let api = new Api(instanceInfo);
     return api.fullRescan(instanceInfo.course.id);
   }, [instanceInfo]);
 
@@ -87,7 +85,6 @@ export default function App(initialData) {
     const oldPreferences = structuredClone(preferences);
     setPreferences((old) => ({ ...old, ...newUserPreferences }));
 
-    let api = new Api(instanceInfo);
     api
       .updatePreferences(newUserPreferences)
       .then((response) => response.json())
@@ -165,7 +162,6 @@ export default function App(initialData) {
     const tempReport = analyzeReport(rawReport, ISSUE_STATE);
     setReport(tempReport);
 
-    let api = new Api(instanceInfo);
     api
       .setReportData(tempReport.id, {
         scanCounts: tempReport.scanCounts,
@@ -270,6 +266,9 @@ export default function App(initialData) {
       case 404:
         errorMessage = t("msg.sync.error.not_found");
         break;
+      case 413:
+        errorMessage = t("msg.file.replace.file_size");
+        break;
       case 500:
         errorMessage = "Internal Server Error: Please try again later.";
         break;
@@ -321,7 +320,6 @@ export default function App(initialData) {
           .then((responseStr) => {
             // Check for HTTP errors before parsing JSON
             if (!responseStr.ok) {
-              processServerError(responseStr);
               return null;
             }
             return responseStr.json();
@@ -395,7 +393,6 @@ export default function App(initialData) {
         .then((responseStr) => {
           // Check for HTTP errors before parsing JSON
           if (!responseStr.ok) {
-            processServerError(responseStr);
             return null;
           }
           return responseStr.json();
@@ -410,6 +407,22 @@ export default function App(initialData) {
       console.error("Error scanning course:", error);
     }
   }, [initialData.report, scanCourse]);
+
+  useEffect(() => {
+    const processServerResponse = (response) => {
+      if (!response.ok) processServerError(response);
+    }
+
+    api.addResponseListener(processServerResponse);
+
+    return () => {
+      api.removeResponseListener(processServerResponse);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    api.setInstanceInfo(instanceInfo);
+  }, [instanceInfo]);
 
   return (
     <div
@@ -464,7 +477,6 @@ export default function App(initialData) {
                 handleNavigation={handleNavigation}
                 sessionIssues={sessionIssues}
                 updateSessionIssue={updateSessionIssue}
-                processServerError={processServerError}
                 setModalActive={setModalActive}
               />
             )}
@@ -482,7 +494,6 @@ export default function App(initialData) {
                 handleNavigation={handleNavigation}
                 sessionFiles={sessionFiles}
                 updateSessionFiles={updateSessionFiles}
-                processServerError={processServerError}
                 setModalActive={setModalActive}
               />
             )}
