@@ -194,7 +194,7 @@ export default class Api {
     let url = `${this.apiUrl}${this.endpoints.batchDelete}`;
     url = url.replace("{course}", this.getCourseId());
 
-    return fetch(url, {
+    return this.fetchWithListeners(url, {
       method: "DELETE",
       credentials: "include",
       body: JSON.stringify({

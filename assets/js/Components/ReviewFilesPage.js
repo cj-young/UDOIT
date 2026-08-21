@@ -1143,7 +1143,6 @@ export default function ReviewFilesPage({
     const reomovedFileId = [];
     const tempQueue = JSON.parse(JSON.stringify(deleteFileQueue));
     try {
-      const api = new Api(instanceInfo);
       while (tempQueue.length > 0) {
         let payloadTracker = 0;
         let paths = [];
