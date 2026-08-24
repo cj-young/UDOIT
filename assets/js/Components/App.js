@@ -79,9 +79,6 @@ export default function App(initialData) {
   }, [untranslatedMessage]);
 
   const updateUserPreferences = useCallback((newUserPreferences) => {
-    if (Object.hasOwn(newUserPreferences, "darkMode")) {
-      newUserPreferences.theme = newUserPreferences.darkMode ? "dark" : "light";
-    }
     const oldPreferences = structuredClone(preferences);
     setPreferences((old) => ({ ...old, ...newUserPreferences }));
 

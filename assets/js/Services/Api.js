@@ -29,7 +29,6 @@ export default class Api {
 
     if (instanceInfo && instanceInfo.apiUrl) {
       this.apiUrl = instanceInfo.apiUrl;
-      this.goApiUrl = instanceInfo.goApiUrl ?? this.apiUrl;
     }
 
     this.responseListeners = new Set();
@@ -330,7 +329,7 @@ export default class Api {
   }
 
   updatePreferences(newPreferences) {
-    let url = `${this.goApiUrl}${this.endpoints.updatePreferences}`;
+    let url = `${this.apiUrl}${this.endpoints.updatePreferences}`;
     url = url.replace("{user}", this.getUserId());
 
     return this.fetchWithListeners(url, {

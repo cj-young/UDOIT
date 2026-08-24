@@ -50,7 +50,6 @@ class InitialStateService
 
         return [
             'apiUrl'           => !empty($_ENV['BASE_URL']) ? $_ENV['BASE_URL'] : false,
-            'goApiUrl'         => !empty($_ENV['GO_BASE_URL']) ? $_ENV['GO_BASE_URL'] : false,
             'course'           => $course,
             'institution'      => $institution,
             'versionNumber'    => $_ENV['VERSION_NUMBER'] ?? '',
