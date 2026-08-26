@@ -11,15 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"rewritetest/internal/accessibility"
 	"rewritetest/internal/auth"
 	"rewritetest/internal/content"
 	"rewritetest/internal/courses"
 	"rewritetest/internal/files"
 	"rewritetest/internal/i18n"
-	"rewritetest/internal/issues"
 	"rewritetest/internal/lms"
 	"rewritetest/internal/lti"
-	"rewritetest/internal/scanner"
 	"rewritetest/internal/shared/http/middleware"
 	"rewritetest/internal/tenants"
 	"rewritetest/internal/users"
@@ -66,8 +65,7 @@ func main() {
 	i18nModule := i18n.New()
 	usersModule := users.New(db, i18nModule, authModule)
 	contentModule := content.New(db)
-	issuesModule := issues.New(db)
-	scannerModule := scanner.New(db, coursesModule, contentModule, lmsModule, filesModule, issuesModule, issuesModule, authModule)
+	accessibilityModule := accessibility.New(db, coursesModule, contentModule, lmsModule, filesModule, authModule)
 	tenantsModule := tenants.New(db, lmsModule)
 	ltiModule := lti.New(client, db, usersModule, authModule, coursesModule, lmsModule, tenantsModule, lmsModule, os.Getenv("GO_BASE_URL"))
 
@@ -76,7 +74,7 @@ func main() {
 	ltiModule.RegisterRoutes(router.Group("/lti"))
 	filesModule.RegisterRoutes(router.Group("/files"))
 	lmsModule.RegisterRoutes(router.Group("/lms"))
-	scannerModule.RegisterRoutes(router.Group("/scanner"))
+	accessibilityModule.RegisterRoutes(router.Group("/accessibility"))
 
 	mockToolDir := filepath.Clean("./mock-lti-tool")
 	serveMockTool := func(c *gin.Context) {

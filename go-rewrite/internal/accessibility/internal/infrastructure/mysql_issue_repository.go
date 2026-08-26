@@ -6,26 +6,37 @@ import (
 	"encoding/json"
 	"time"
 
-	"rewritetest/internal/issues/internal/domain"
-	issuessqlc "rewritetest/internal/issues/internal/infrastructure/sqlc"
+	"rewritetest/internal/accessibility/internal/domain"
+	accessibilitysqlc "rewritetest/internal/accessibility/internal/infrastructure/sqlc"
 )
 
 type MySQLIssueRepository struct {
-	db      *sql.DB
-	queries *issuessqlc.Queries
+	db *sql.DB
+	queries *accessibilitysqlc.Queries
 }
 
 func NewMySQLIssueRepository(db *sql.DB) *MySQLIssueRepository {
 	return &MySQLIssueRepository{
 		db:      db,
-		queries: issuessqlc.New(db),
+		queries: accessibilitysqlc.New(db),
 	}
 }
 
 func (r *MySQLIssueRepository) DeleteByContentItemIDs(ctx context.Context, contentItemIDs []int64) error {
+	if len(contentItemIDs) == 0 {
+		return nil
+	}
+
+	placeholders := make([]string, len(contentItemIDs))
+	args := make([]any, len(contentItemIDs))
+	for i, id := range contentItemIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
 	uintContentItemIDs := make([]uint64, len(contentItemIDs))
-	for i, v := range contentItemIDs {
-		uintContentItemIDs[i] = uint64(v)
+	for i, id := range contentItemIDs {
+		uintContentItemIDs[i] = uint64(id)
 	}
 
 	return r.queries.DeleteIssuesByContentItemIDs(ctx, uintContentItemIDs)
@@ -36,13 +47,11 @@ func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	qtx := r.queries.WithTx(tx)
 
-	domainIssuesParams := make([]issuessqlc.CreateIssueParams, len(issues))
-	for i, issue := range issues {
+	for _, issue := range issues {
 		var nullableFixedby sql.NullInt64
 		if issue.FixedBy() != 0 {
 			nullableFixedby = sql.NullInt64{
@@ -58,20 +67,16 @@ func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.
 			return err
 		}
 
-		domainIssuesParams[i] = issuessqlc.CreateIssueParams{
+		err = qtx.CreateIssue(ctx, accessibilitysqlc.CreateIssueParams{
 			ContentItemID: uint64(issue.ContentItemID()),
-			ScanRule:      issue.ScanRule().String(),
-			ContentXpath:  issue.ContentXPath(),
-			Status:        issue.Status().String(),
-			Severity:      issue.Severity().String(),
-			FixedBy:       nullableFixedby,
-			FixedAt:       nullTime(issue.FixedAt()),
-			Details:       detailsJSON,
-		}
-	}
-
-	for _, params := range domainIssuesParams {
-		err := qtx.CreateIssue(ctx, params)
+			ScanRule: issue.ScanRule().String(),
+			ContentXpath: issue.ContentXPath(),
+			Status: issue.Status().String(),
+			Severity: issue.Severity().String(),
+			FixedBy: nullableFixedby,
+			FixedAt: nullTime(issue.FixedAt()),
+			Details: detailsJSON,
+		})
 		if err != nil {
 			return err
 		}
@@ -90,8 +95,9 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 		return nil, err
 	}
 
-	domainIssues := make([]*domain.Issue, len(issues))
-	for i, issue := range issues {
+	
+	var domainIssues []*domain.Issue
+	for _, issue := range issues {
 		scanRule, err := domain.ParseScanRule(issue.ScanRule)
 		if err != nil {
 			return nil, err
@@ -112,23 +118,24 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 			return nil, err
 		}
 
-		domainIssues[i] = domain.RehydrateIssue(
-			int64(issue.ID),
-			int64(issue.ContentItemID),
-			scanRule,
-			issue.ContentXpath,
-			issueStatus,
-			issueSeverity,
-			int64(issue.FixedBy.Int64),
-			issue.FixedAt.Time,
-			detailsMap,
-			issue.CreatedAt,
-			issue.UpdatedAt,
-		)
+		domainIssues = append(domainIssues, domain.RehydrateIssue(
+				int64(issue.ID),
+				int64(issue.ContentItemID),
+				scanRule,
+				issue.ContentXpath,
+				issueStatus,
+				issueSeverity,
+				int64(issue.FixedBy.Int64),
+				issue.FixedAt.Time,
+				detailsMap,
+				issue.CreatedAt,
+				issue.UpdatedAt,
+			))
 	}
 
 	return domainIssues, nil
 }
+
 
 func nullTime(t time.Time) sql.NullTime {
 	if !t.IsZero() {

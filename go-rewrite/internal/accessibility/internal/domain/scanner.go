@@ -6,9 +6,9 @@ import (
 
 type ScanResult struct {
 	ContentItemID int64
-	ScanRule      string
+	ScanRule      ScanRule
 	ContentXPath  string
-	Severity      ScanIssueSeverity
+	Severity      IssueSeverity
 	Details       map[string]any
 }
 

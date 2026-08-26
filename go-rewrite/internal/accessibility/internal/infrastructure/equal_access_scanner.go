@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"rewritetest/internal/scanner/internal/domain"
+	"rewritetest/internal/accessibility/internal/domain"
 )
 
 type EqualAccessScanner struct {
@@ -21,28 +21,28 @@ func NewEqualAccessScanner(httpClient *http.Client, baseURL string) *EqualAccess
 	}
 }
 
-type ScanRequest struct {
+type contentScanRequest struct {
 	HTML         string   `json:"html"`
 	GuidelineIDs []string `json:"guidelineIds"`
 	ReportLevels []string `json:"reportLevels"`
 }
 
-// ScanResult represents the structure of the scan results returned by the
+// scanResponse represents the structure of the scan results returned by the
 // EqualAccess scanning service.
-type ScanResult struct {
-	Results []ScanIssue `json:"results"`
+type contentScanResponse struct {
+	Results []scanIssue `json:"results"`
 }
 
-type ScanIssue struct {
+type scanIssue struct {
 	Message     string   `json:"message"`
-	Path        ScanPath `json:"path"`
+	Path        scanPath `json:"path"`
 	ReasonID    string   `json:"reasonId"`
 	RuleID      string   `json:"ruleId"`
 	Value       []string `json:"value"`
 	MessageArgs []any    `json:"messageArgs"`
 }
 
-type ScanPath struct {
+type scanPath struct {
 	ARIA string `json:"aria"`
 	DOM  string `json:"dom"`
 }
@@ -51,7 +51,7 @@ func (e *EqualAccessScanner) ScanContent(ctx context.Context, items []domain.Sca
 	scanResults := make([]domain.ScanResult, 0)
 
 	for _, item := range items {
-		body := ScanRequest{
+		body := contentScanRequest{
 			HTML:         item.HTML,
 			GuidelineIDs: nil,
 			ReportLevels: nil,
@@ -68,32 +68,16 @@ func (e *EqualAccessScanner) ScanContent(ctx context.Context, items []domain.Sca
 		}
 		defer scanResponse.Body.Close()
 
-		var result ScanResult
+		var result contentScanResponse
 		err = json.NewDecoder(scanResponse.Body).Decode(&result)
 		if err != nil {
 			return nil, err
 		}
 
-		// for logging
-		{
-			respJSONBytes, err := json.Marshal(result)
-			if err != nil {
-				return nil, err
-			}
-
-			var prettyJSON bytes.Buffer
-			err = json.Indent(&prettyJSON, respJSONBytes, "", "  ")
-			if err != nil {
-				return make([]domain.ScanResult, 0), err
-			}
-
-			// fmt.Printf(prettyJSON.String() + "\n")
-		}
-
 		for _, issue := range result.Results {
 			domainResult := domain.ScanResult{
 				ContentItemID: item.ContentItemID,
-				ScanRule:      issue.RuleID,
+				ScanRule:      domain.ScanRule(issue.RuleID),
 				ContentXPath:  issue.Path.DOM,
 				Severity:      e.getScanIssueSeverity(issue),
 				Details: map[string]any{
@@ -110,26 +94,26 @@ func (e *EqualAccessScanner) ScanContent(ctx context.Context, items []domain.Sca
 	return scanResults, nil
 }
 
-func (e *EqualAccessScanner) getScanIssueSeverity(issue ScanIssue) domain.ScanIssueSeverity {
+func (e *EqualAccessScanner) getScanIssueSeverity(issue scanIssue) domain.IssueSeverity {
 	// TODO: handle "PASS"
 
 	if issue.Value[1] == "MANUAL" {
-		return domain.ScanIssueSeverityPotential
+		return domain.IssueSeverityPotential
 	}
 
 	if issue.Value[0] == "VIOLATION" {
 		if issue.Value[1] == "FAIL" {
-			return domain.ScanIssueSeverityError
+			return domain.IssueSeverityError
 		} else {
-			return domain.ScanIssueSeverityPotential
+			return domain.IssueSeverityPotential
 		}
 	}
 
 	if issue.Value[0] == "RECOMMENDATION" {
-		return domain.ScanIssueSeverityPotential
+		return domain.IssueSeverityPotential
 	}
 
-	return domain.ScanIssueSeverityError
+	return domain.IssueSeverityError
 }
 
 var _ domain.Scanner = (*EqualAccessScanner)(nil)

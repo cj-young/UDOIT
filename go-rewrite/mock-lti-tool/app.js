@@ -98,7 +98,7 @@ scanCourseBtn.addEventListener("click", async () => {
   await runRequest({
     label: "Scan course",
     method: "POST",
-    path: `/go/scanner/scan/courses/${courseIDInput.value || 1}`,
+    path: `/go/accessibility/scan/courses/${courseIDInput.value || 1}`,
   });
   console.log("scanned the course")
 });

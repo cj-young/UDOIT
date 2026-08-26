@@ -3,7 +3,7 @@ package internal
 import (
 	"strconv"
 
-	"rewritetest/internal/scanner/internal/application"
+	"rewritetest/internal/accessibility/internal/application"
 	"rewritetest/internal/shared/apperr"
 	"rewritetest/internal/shared/auth"
 

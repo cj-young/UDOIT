@@ -3,23 +3,19 @@ package application
 import (
 	"context"
 
-	"rewritetest/internal/issues"
-	"rewritetest/internal/scanner/internal/domain"
+	"rewritetest/internal/accessibility/internal/domain"
 )
 
 type CreateReportUseCase struct {
 	reportRepository domain.ReportRepository
-	issueRetriever   IssueRetriever
+	issueRepository   domain.IssueRepository
 }
 
-type IssueRetriever interface {
-	GetByCourseID(ctx context.Context, courseID int64) ([]issues.Issue, error)
-}
 
-func NewCreateReportUseCase(reportRepository domain.ReportRepository, issueRetriever IssueRetriever) *CreateReportUseCase {
+func NewCreateReportUseCase(reportRepository domain.ReportRepository, issueRepository domain.IssueRepository) *CreateReportUseCase {
 	return &CreateReportUseCase{
 		reportRepository: reportRepository,
-		issueRetriever:   issueRetriever,
+		issueRepository:   issueRepository,
 	}
 }
 
@@ -29,9 +25,9 @@ type CreateReportCommand struct {
 }
 
 func (u *CreateReportUseCase) Execute(ctx context.Context, cmd CreateReportCommand) error {
-	// TODO: add user-based authorization
+	// TODO: add user-based authoriza\ion
 
-	issues, err := u.issueRetriever.GetByCourseID(ctx, cmd.CourseID)
+	issues, err := u.issueRepository.GetByCourseID(ctx, cmd.CourseID)
 	if err != nil {
 		return err
 	}
@@ -39,13 +35,13 @@ func (u *CreateReportUseCase) Execute(ctx context.Context, cmd CreateReportComma
 	var errorCount, suggestionCount, fixedCount, resolvedCount, fileCount int
 
 	for _, issue := range issues {
-		switch issue.Status {
-		case "fixed":
+		switch issue.Status() {
+		case domain.IssueStatusFixed:
 			fixedCount++
-		case "marked_as_reviewed":
+		case domain.IssueStatusMarkedAsReviewed:
 			resolvedCount++
-		case "active":
-			if issue.Severity == "error" {
+		case domain.IssueStatusActive:
+			if issue.Severity() == domain.IssueSeverityError {
 				errorCount++
 			} else {
 				suggestionCount++

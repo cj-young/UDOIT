@@ -3,13 +3,21 @@ package application
 import (
 	"context"
 
+	"rewritetest/internal/accessibility/internal/domain"
 	"rewritetest/internal/content"
 	"rewritetest/internal/courses"
-	"rewritetest/internal/issues"
 	"rewritetest/internal/lms"
-	"rewritetest/internal/scanner/internal/domain"
 	"rewritetest/internal/shared/auth"
 )
+
+type ScanCourseIssue struct {
+	ContentItemID int64
+	ScanRule      string
+	Status        string
+	Severity      string
+	ContentXPath  string
+	Details       map[string]any
+}
 
 type CourseRetriever interface {
 	GetCourse(ctx context.Context, courseID int64) (courses.Course, error)
@@ -18,11 +26,6 @@ type CourseRetriever interface {
 type ContentItemService interface {
 	GetByCourse(ctx context.Context, courseID int64) ([]content.ContentItem, error)
 	CreateManyContentItems(ctx context.Context, contentItems []content.ContentItem) (map[string]int64, error)
-}
-
-type IssueService interface {
-	RegisterNewIssues(ctx context.Context, newIssues []issues.Issue, contentItemIDs []int64) error
-	DeleteByContentItemIDs(ctx context.Context, contentItemIDs []int64) error
 }
 
 type ExternalContentRetriever interface {
@@ -45,30 +48,30 @@ type HashedContentItem struct {
 }
 
 type ScanCourseUseCase struct {
+	issueRepository						domain.IssueRepository
 	courseRetriever          CourseRetriever
 	contentItemService       ContentItemService
 	externalContentRetriever ExternalContentRetriever
 	contentHasher            ContentHasher
-	issueService             IssueService
 	courseFileSyncService    CourseFileSyncService
 	scanner                  domain.Scanner
 }
 
 func NewScanCourseUseCase(
+	issueRepository	domain.IssueRepository,
 	courseRetriever CourseRetriever,
 	contentItemService ContentItemService,
 	externalContentRetriever ExternalContentRetriever,
 	contentHasher ContentHasher,
-	issueService IssueService,
 	courseFileSyncService CourseFileSyncService,
 	scanner domain.Scanner,
 ) *ScanCourseUseCase {
 	return &ScanCourseUseCase{
+		issueRepository: 					issueRepository,
 		courseRetriever:          courseRetriever,
 		contentItemService:       contentItemService,
 		externalContentRetriever: externalContentRetriever,
 		contentHasher:            contentHasher,
-		issueService:             issueService,
 		courseFileSyncService:    courseFileSyncService,
 		scanner:                  scanner,
 	}
@@ -145,33 +148,27 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 			Type:          item.Type,
 		}
 	}
+	
 	scanResults, err := u.scanner.ScanContent(ctx, scanItems)
 	if err != nil {
-		return err
+		return err 
 	}
 
 	changedContentItemIDs := make([]int64, len(changedContentItems))
 	for i, item := range changedContentItems {
 		changedContentItemIDs[i] = item.ID
 	}
-	err = u.issueService.DeleteByContentItemIDs(ctx, changedContentItemIDs)
+	err = u.issueRepository.DeleteByContentItemIDs(ctx, changedContentItemIDs)
 	if err != nil {
 		return err
 	}
 
-	newIssues := make([]issues.Issue, len(scanResults))
-	for i, result := range scanResults {
-		newIssues[i] = issues.Issue{
-			ContentItemID: result.ContentItemID,
-			ScanRule:      result.ScanRule,
-			Status:        domain.ScanIssueStatusActive.String(),
-			Severity:      result.Severity.String(),
-			ContentXPath:  result.ContentXPath,
-			Details:       result.Details,
-		}
+	var newIssues []*domain.Issue
+	for _, result := range scanResults {
+		newIssues = append(newIssues, domain.NewIssue(result.ContentItemID, result.ScanRule, result.ContentXPath, domain.IssueStatusActive, result.Severity, result.Details))
 	}
 
-	err = u.issueService.RegisterNewIssues(ctx, newIssues, changedContentItemIDs)
+	err = u.issueRepository.CreateMany(ctx, newIssues)
 	if err != nil {
 		return err
 	}
@@ -189,6 +186,10 @@ type ChangedContentItem struct {
 	HTML         string
 }
 
+
+// getChangedContentItems compares the current content items with the external
+// content items and returns a list of content items that have a different hash
+// (i.e., have changed)
 func (u *ScanCourseUseCase) getChangedContentItems(
 	currentContentItems []content.ContentItem,
 	externalContentItems []lms.ContentItemDTO,
