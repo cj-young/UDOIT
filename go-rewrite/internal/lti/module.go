@@ -1,3 +1,8 @@
+// Package lti provides the LTI module for handling the LTI launch.
+//
+// Because a higher level of authentication is typically required than LTI
+// launch provides itself, control is deferred to the LMS module at the end of
+// the launch for beginning a full authentication process.
 package lti
 
 import (

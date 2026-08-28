@@ -45,6 +45,24 @@ func NewGetLaunchRedirectUseCase(registrationRepository domain.RegistrationRepos
 	}
 }
 
+// This use case generates the launch redirect URL for the LTI login initiation request.
+//
+// Redirect Parameters:
+// From IMS Security Framework 1.0, Section 5.1.1.2
+// https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request
+// - client_id: The client ID of the tool.
+// - state: A unique state parameter to prevent CSRF attacks.
+// - nonce: A unique nonce parameter to associate the client session with the ID token.
+// - redirect_uri: The URI to which the response will be sent.
+// - scope: The scope of the authentication request. Must be "openid".
+// - response_type: The type of response expected. Must be "id_token".
+// - response_mode: The mode of the response Must be "form_post".
+// - prompt: The prompt parameter. Must be "none".
+// - login_hint: The login hint provided by the platform.
+//
+// From LTI 1.3, Section 4.1.1
+// https://www.imsglobal.org/spec/lti/v1p3#lti_message_hint-login-parameter
+// - lti_message_hint: An optional LTI message hint.
 func (u *GetLaunchRedirectUseCase) Execute(ctx context.Context, query GetLaunchRedirectQuery) (string, error) {
 	ttl := query.LTISessionTTL
 	if ttl <= 0 {
