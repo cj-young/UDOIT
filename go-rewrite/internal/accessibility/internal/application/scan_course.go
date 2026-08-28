@@ -145,7 +145,6 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 		scanItems[i] = domain.ScanItem{
 			ContentItemID: item.ID,
 			HTML:          item.HTML,
-			Type:          item.Type,
 		}
 	}
 	
@@ -217,7 +216,6 @@ func (u *ScanCourseUseCase) getChangedContentItems(
 				ExternalID:   item.ExternalID,
 				ExternalData: item.ExternalData,
 				ContentHash:  contentHash,
-				Type:         item.Type,
 				HTML:         item.HTML,
 			})
 		}

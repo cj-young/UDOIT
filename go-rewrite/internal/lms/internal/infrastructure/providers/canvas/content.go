@@ -121,7 +121,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"content_type": string(canvasContentTypePage),
 			},
 			HTML: page.Body,
-			Type: domain.CourseContentTypePage,
 		})
 	}
 
@@ -135,7 +134,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"content_type": string(canvasContentTypeAssignment),
 			},
 			HTML: assignment.Description,
-			Type: domain.CourseContentTypeAssignment,
 		})
 	}
 
@@ -149,7 +147,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"content_type": string(canvasContentTypeDiscussionTopic),
 			},
 			HTML: discussionTopic.Message,
-			Type: domain.CourseContentTypeDiscussionTopic,
 		})
 	}
 
@@ -163,7 +160,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"content_type": string(canvasContentTypeAnnouncement),
 			},
 			HTML: announcement.Message,
-			Type: domain.CourseContentTypeAnnouncement,
 		})
 	}
 
@@ -177,7 +173,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"content_type": string(canvasContentTypeQuiz),
 			},
 			HTML: quiz.Description,
-			Type: domain.CourseContentTypeQuiz,
 		})
 
 		for _, question := range quiz.Questions {
@@ -193,7 +188,6 @@ func (p *CanvasLMSProvider) GetContent(
 					"quiz_id":      quiz.ID,
 				},
 				HTML: question.QuestionText,
-				Type: domain.CourseContentTypeQuizQuestion,
 			})
 		}
 	}
@@ -237,7 +231,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"mime_class":   file.MimeClass,
 			},
 			HTML: html,
-			Type: domain.CourseContentTypeFile,
 		})
 	}
 
@@ -251,7 +244,6 @@ func (p *CanvasLMSProvider) GetContent(
 				"content_type": string(canvasContentTypeSyllabus),
 			},
 			HTML: syllabus.SyllabusBody,
-			Type: domain.CourseContentTypeSyllabus,
 		})
 	}
 

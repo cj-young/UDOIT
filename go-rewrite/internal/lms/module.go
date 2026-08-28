@@ -81,7 +81,6 @@ type ContentItemDTO struct {
 	ExternalID   string
 	ExternalData map[string]any
 	HTML         string
-	Type         string
 }
 
 type FileItemDTO struct {
@@ -131,7 +130,6 @@ func (m *Module) GetContent(ctx context.Context, req GetContentRequest) (CourseS
 			ExternalID:   item.ExternalID,
 			ExternalData: item.ExternalData,
 			HTML:         item.HTML,
-			Type:         string(item.Type),
 		}
 	}
 
