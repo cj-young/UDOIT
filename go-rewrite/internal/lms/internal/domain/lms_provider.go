@@ -9,9 +9,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// `FullLMSProvider` is split up into multiple smaller interfaces.
-// With the current implementation, this doesn't provide any functionality,
-// but it lays groundwork for better interface segregation and
+// `FullLMSProvider` is split up into multiple smaller interfaces. With the
+// current implementation, this doesn't provide any functionality, but it lays
+// groundwork for better interface segregation and testing in the future.
 type FullLMSProvider interface {
 	FileProvider
 	AuthenticationProvider
