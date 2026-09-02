@@ -8,6 +8,7 @@ import (
 
 type MockFileRepository struct {
 	GetFileByIDFunc    func(ctx context.Context, id int64) (*domain.File, error)
+	GetByCourseIDFunc  func(ctx context.Context, courseID int64) ([]*domain.File, error)
 	UpdateFileFunc     func(ctx context.Context, file *domain.File) error
 	DeleteFileFunc     func(ctx context.Context, id int64) error
 	UpsertByCourseFunc func(ctx context.Context, courseID int64, records []domain.CourseFileSyncRecord) error
@@ -22,6 +23,14 @@ func (m *MockFileRepository) GetFileByID(ctx context.Context, id int64) (*domain
 	}
 
 	panic("GetFileByIDFunc is not defined")
+}
+
+func (m *MockFileRepository) GetByCourseID(ctx context.Context, courseID int64) ([]*domain.File, error) {
+	if m.GetByCourseIDFunc != nil {
+		return m.GetByCourseIDFunc(ctx, courseID)
+	}
+
+	panic("GetByCourseIDFunc is not defined")
 }
 
 func (m *MockFileRepository) UpdateFile(ctx context.Context, file *domain.File) error {
@@ -69,6 +78,15 @@ func NewArrayMockFileRepository() *MockFileRepository {
 				}
 			}
 			return nil, nil
+		},
+		GetByCourseIDFunc: func(ctx context.Context, courseID int64) ([]*domain.File, error) {
+			var matches []*domain.File
+			for _, f := range files {
+				if f.CourseID() == courseID {
+					matches = append(matches, f)
+				}
+			}
+			return matches, nil
 		},
 		UpdateFileFunc: func(ctx context.Context, file *domain.File) error {
 			for i, f := range files {

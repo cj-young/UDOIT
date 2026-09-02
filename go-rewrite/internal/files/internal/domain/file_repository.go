@@ -6,9 +6,6 @@ type CourseFileSyncRecord struct {
 	FileName     string
 	FileType     string
 	UpdatedAt    string
-	IsActive     bool
-	IsAvailable  bool
-	IsHidden     bool
 	FileSize     int64
 	DownloadURL  string
 	ExternalID   string
@@ -17,6 +14,7 @@ type CourseFileSyncRecord struct {
 
 type FileRepository interface {
 	GetFileByID(ctx context.Context, fileID int64) (*File, error)
+	GetByCourseID(ctx context.Context, courseID int64) ([]*File, error)
 	UpdateFile(ctx context.Context, file *File) error
 	DeleteFile(ctx context.Context, fileID int64) error
 	UpsertByCourse(ctx context.Context, courseID int64, records []CourseFileSyncRecord) error

@@ -2,7 +2,7 @@ package domain
 
 import "time"
 
-type Issue struct {
+type HTMLIssue struct {
 	id            int64
 	contentItemID int64
 	scanRule      ScanRule
@@ -19,8 +19,8 @@ type Issue struct {
 	updatedAt time.Time
 }
 
-func NewIssue(contentItemID int64, scanRule ScanRule, contentXPath string, status IssueStatus, severity IssueSeverity, details map[string]any) *Issue {
-	return &Issue{
+func NewHTMLIssue(contentItemID int64, scanRule ScanRule, contentXPath string, status IssueStatus, severity IssueSeverity, details map[string]any) *HTMLIssue {
+	return &HTMLIssue{
 		contentItemID: contentItemID,
 		scanRule:      scanRule,
 		contentXPath:  contentXPath,
@@ -32,7 +32,7 @@ func NewIssue(contentItemID int64, scanRule ScanRule, contentXPath string, statu
 	}
 }
 
-func RehydrateIssue(
+func RehydrateHTMLIssue(
 	id int64,
 	contentItemID int64,
 	scanRule ScanRule,
@@ -44,8 +44,8 @@ func RehydrateIssue(
 	details map[string]any,
 	createdAt time.Time,
 	updatedAt time.Time,
-) *Issue {
-	return &Issue{
+) *HTMLIssue {
+	return &HTMLIssue{
 		id:            id,
 		contentItemID: contentItemID,
 		scanRule:      scanRule,
@@ -60,46 +60,46 @@ func RehydrateIssue(
 	}
 }
 
-func (i *Issue) ID() int64 {
+func (i *HTMLIssue) ID() int64 {
 	return i.id
 }
 
-func (i *Issue) ContentItemID() int64 {
+func (i *HTMLIssue) ContentItemID() int64 {
 	return i.contentItemID
 }
 
-func (i *Issue) ScanRule() ScanRule {
+func (i *HTMLIssue) ScanRule() ScanRule {
 	return i.scanRule
 }
 
-func (i *Issue) ContentXPath() string {
+func (i *HTMLIssue) ContentXPath() string {
 	return i.contentXPath
 }
 
-func (i *Issue) Status() IssueStatus {
+func (i *HTMLIssue) Status() IssueStatus {
 	return i.status
 }
 
-func (i *Issue) Severity() IssueSeverity {
+func (i *HTMLIssue) Severity() IssueSeverity {
 	return i.severity
 }
 
-func (i *Issue) FixedBy() int64 {
+func (i *HTMLIssue) FixedBy() int64 {
 	return i.fixedBy
 }
 
-func (i *Issue) FixedAt() time.Time {
+func (i *HTMLIssue) FixedAt() time.Time {
 	return i.fixedAt
 }
 
-func (i *Issue) Details() map[string]any {
+func (i *HTMLIssue) Details() map[string]any {
 	return i.details
 }
 
-func (i *Issue) CreatedAt() time.Time {
+func (i *HTMLIssue) CreatedAt() time.Time {
 	return i.createdAt
 }
 
-func (i *Issue) UpdatedAt() time.Time {
+func (i *HTMLIssue) UpdatedAt() time.Time {
 	return i.updatedAt
 }

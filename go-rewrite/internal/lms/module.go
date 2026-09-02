@@ -84,12 +84,10 @@ type ContentItemDTO struct {
 }
 
 type FileItemDTO struct {
+	ID           int64
 	FileName     string
 	FileType     string
 	UpdatedAt    time.Time
-	IsActive     bool
-	IsAvailable  bool
-	IsHidden     bool
 	FileSize     int64
 	DownloadURL  string
 	ExternalID   string
@@ -139,9 +137,6 @@ func (m *Module) GetContent(ctx context.Context, req GetContentRequest) (CourseS
 			FileName:     file.FileName,
 			FileType:     file.FileType,
 			UpdatedAt:    file.UpdatedAt,
-			IsActive:     file.IsActive,
-			IsAvailable:  file.IsAvailable,
-			IsHidden:     file.IsHidden,
 			FileSize:     file.FileSize,
 			DownloadURL:  file.DownloadURL,
 			ExternalID:   file.ExternalID,

@@ -44,14 +44,10 @@ type LMSContent struct {
 	ExternalData map[string]any
 	HTML         string
 }
-
 type CourseFile struct {
 	FileName     string
 	FileType     string
 	UpdatedAt    time.Time
-	IsActive     bool
-	IsAvailable  bool
-	IsHidden     bool
 	FileSize     int64
 	DownloadURL  string
 	ExternalID   string

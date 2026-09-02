@@ -34,6 +34,7 @@ type ExternalContentRetriever interface {
 
 type CourseFileSyncService interface {
 	SyncCourseFiles(ctx context.Context, courseID int64, files []lms.FileItemDTO) error
+	GetByCourseID(ctx context.Context, courseID int64) ([]lms.FileItemDTO, error)
 }
 
 type ContentHasher interface {
@@ -48,7 +49,8 @@ type HashedContentItem struct {
 }
 
 type ScanCourseUseCase struct {
-	issueRepository						domain.IssueRepository
+	htmlIssueRepository					domain.HTMLIssueRepository
+	fileIssueRepository					domain.FileIssueRepository
 	courseRetriever          CourseRetriever
 	contentItemService       ContentItemService
 	externalContentRetriever ExternalContentRetriever
@@ -58,7 +60,8 @@ type ScanCourseUseCase struct {
 }
 
 func NewScanCourseUseCase(
-	issueRepository	domain.IssueRepository,
+	htmlIssueRepository domain.HTMLIssueRepository,
+	fileIssueRepository domain.FileIssueRepository,
 	courseRetriever CourseRetriever,
 	contentItemService ContentItemService,
 	externalContentRetriever ExternalContentRetriever,
@@ -67,7 +70,8 @@ func NewScanCourseUseCase(
 	scanner domain.Scanner,
 ) *ScanCourseUseCase {
 	return &ScanCourseUseCase{
-		issueRepository: 					issueRepository,
+		htmlIssueRepository: 				htmlIssueRepository,
+		fileIssueRepository: 				fileIssueRepository,
 		courseRetriever:          courseRetriever,
 		contentItemService:       contentItemService,
 		externalContentRetriever: externalContentRetriever,
@@ -107,12 +111,21 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 		return err
 	}
 
-	err = u.courseFileSyncService.SyncCourseFiles(ctx, courseID, externalCourseData.Files)
+	err = u.scanAndSyncHTMLContent(ctx, externalCourseData.ContentItems, currentContentItems, courseID)
 	if err != nil {
 		return err
 	}
 
-	changedContentItems, err := u.getChangedContentItems(currentContentItems, externalCourseData.ContentItems, courseID)
+	err = u.scanAndSyncFiles(ctx, courseID, externalCourseData.Files)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *ScanCourseUseCase) scanAndSyncHTMLContent(ctx context.Context, externalContentItems []lms.ContentItemDTO, currentContentItems []content.ContentItem, courseID int64) error {
+	changedContentItems, err := u.getChangedContentItems(currentContentItems, externalContentItems, courseID)
 	if err != nil {
 		return err
 	}
@@ -157,23 +170,48 @@ func (u *ScanCourseUseCase) Execute(ctx context.Context, principal auth.Principa
 	for i, item := range changedContentItems {
 		changedContentItemIDs[i] = item.ID
 	}
-	err = u.issueRepository.DeleteByContentItemIDs(ctx, changedContentItemIDs)
+	err = u.htmlIssueRepository.DeleteByContentItemIDs(ctx, changedContentItemIDs)
 	if err != nil {
 		return err
 	}
 
-	var newIssues []*domain.Issue
+	var newIssues []*domain.HTMLIssue
 	for _, result := range scanResults {
-		newIssues = append(newIssues, domain.NewIssue(result.ContentItemID, result.ScanRule, result.ContentXPath, domain.IssueStatusActive, result.Severity, result.Details))
+		newIssues = append(newIssues, domain.NewHTMLIssue(result.ContentItemID, result.ScanRule, result.ContentXPath, domain.IssueStatusActive, result.Severity, result.Details))
 	}
 
-	err = u.issueRepository.CreateMany(ctx, newIssues)
+	err = u.htmlIssueRepository.CreateMany(ctx, newIssues)
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
+
+func (u *ScanCourseUseCase) scanAndSyncFiles(ctx context.Context, courseID int64, externalFiles []lms.FileItemDTO) error {
+	err := u.courseFileSyncService.SyncCourseFiles(ctx, courseID, externalFiles)
+	if err != nil {
+		return err
+	}
+
+	persistedFiles, err := u.courseFileSyncService.GetByCourseID(ctx, courseID)
+	if err != nil {
+		return err
+	}
+
+	fileIDs := make([]int64, len(persistedFiles))
+	for i, file := range persistedFiles {
+		fileIDs[i] = file.ID
+	}
+
+	err = u.fileIssueRepository.ReplaceForCourse(ctx, courseID, fileIDs)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 
 type ChangedContentItem struct {
 	ID           int64

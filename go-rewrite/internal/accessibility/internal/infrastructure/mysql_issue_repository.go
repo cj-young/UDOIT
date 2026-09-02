@@ -39,10 +39,10 @@ func (r *MySQLIssueRepository) DeleteByContentItemIDs(ctx context.Context, conte
 		uintContentItemIDs[i] = uint64(id)
 	}
 
-	return r.queries.DeleteIssuesByContentItemIDs(ctx, uintContentItemIDs)
+	return r.queries.DeleteHTMLIssuesByContentItemIDs(ctx, uintContentItemIDs)
 }
 
-func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.Issue) error {
+func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.HTMLIssue) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -89,14 +89,14 @@ func (r *MySQLIssueRepository) CreateMany(ctx context.Context, issues []*domain.
 	return nil
 }
 
-func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64) ([]*domain.Issue, error) {
-	issues, err := r.queries.GetIssuesByCourseID(ctx, uint64(courseID))
+func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64) ([]*domain.HTMLIssue, error) {
+	issues, err := r.queries.GetHTMLIssuesByCourseID(ctx, uint64(courseID))
 	if err != nil {
 		return nil, err
 	}
 
 	
-	var domainIssues []*domain.Issue
+	var domainHTMLIssues []*domain.HTMLIssue
 	for _, issue := range issues {
 		scanRule, err := domain.ParseScanRule(issue.ScanRule)
 		if err != nil {
@@ -118,7 +118,7 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 			return nil, err
 		}
 
-		domainIssues = append(domainIssues, domain.RehydrateIssue(
+		domainHTMLIssues = append(domainHTMLIssues, domain.RehydrateHTMLIssue(
 				int64(issue.ID),
 				int64(issue.ContentItemID),
 				scanRule,
@@ -133,7 +133,7 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 			))
 	}
 
-	return domainIssues, nil
+	return domainHTMLIssues, nil
 }
 
 
@@ -147,4 +147,4 @@ func nullTime(t time.Time) sql.NullTime {
 	return sql.NullTime{Valid: false}
 }
 
-var _ domain.IssueRepository = (*MySQLIssueRepository)(nil)
+var _ domain.HTMLIssueRepository = (*MySQLIssueRepository)(nil)

@@ -26,6 +26,7 @@ type ExternalContentRetriever interface {
 
 type CourseFileSyncService interface {
 	SyncCourseFiles(ctx context.Context, courseID int64, files []lms.FileItemDTO) error
+	GetByCourseID(ctx context.Context, courseID int64) ([]lms.FileItemDTO, error)
 }
 
 type Authenticator interface {
@@ -35,7 +36,8 @@ type Authenticator interface {
 type Module struct {
 	handler       *internal.Handler
 	authenticator internal.Authenticator
-	issueRepo     domain.IssueRepository
+	htmlIssueRepo domain.HTMLIssueRepository
+	fileIssueRepo domain.FileIssueRepository
 }
 
 func New(
@@ -51,10 +53,12 @@ func New(
 	contentScanner := infrastructure.NewEqualAccessScanner(httpClient, baseURL)
 	blake3Hasher := infrastructure.NewBlake3ContentHasher()
 	reportRepository := infrastructure.NewMySQLReportRepository(db)
-	issueRepository := infrastructure.NewMySQLIssueRepository(db)
+	htmlIssueRepository := infrastructure.NewMySQLIssueRepository(db)
+	fileIssueRepository := infrastructure.NewMySQLFileIssueRepository(db)
 
 	scanCourseUseCase := application.NewScanCourseUseCase(
-		issueRepository,
+		htmlIssueRepository,
+		fileIssueRepository,
 		courseRetriever,
 		contentItemService,
 		externalContentRetriever,
@@ -64,14 +68,15 @@ func New(
 	)
 	createReportUseCase := application.NewCreateReportUseCase(
 		reportRepository,
-		issueRepository,
+		htmlIssueRepository,
 	)
 	handler := internal.NewHandler(scanCourseUseCase, createReportUseCase)
 
 	return &Module{
 		handler:       handler,
 		authenticator: authenticator,
-		issueRepo:     issueRepository,
+		htmlIssueRepo: htmlIssueRepository,
+		fileIssueRepo: fileIssueRepository,
 	}
 }
 
