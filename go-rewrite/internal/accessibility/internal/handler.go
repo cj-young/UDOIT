@@ -11,14 +11,19 @@ import (
 )
 
 type Handler struct {
-	scanCourseUseCase   *application.ScanCourseUseCase
-	createReportUseCase *application.CreateReportUseCase
+	scanCourseUseCase         *application.ScanCourseUseCase
+	createReportUseCase       *application.CreateReportUseCase
+	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase
 }
 
-func NewHandler(scanCourseUseCase *application.ScanCourseUseCase, createReportUseCase *application.CreateReportUseCase) *Handler {
+func NewHandler(
+	scanCourseUseCase *application.ScanCourseUseCase,
+	createReportUseCase *application.CreateReportUseCase,
+	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase) *Handler {
 	return &Handler{
-		scanCourseUseCase:   scanCourseUseCase,
-		createReportUseCase: createReportUseCase,
+		scanCourseUseCase:         scanCourseUseCase,
+		createReportUseCase:       createReportUseCase,
+		MarkHtmlAsReviewedUseCase: MarkHtmlAsReviewedUseCase,
 	}
 }
 
@@ -29,6 +34,7 @@ type Authenticator interface {
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authenticator Authenticator) {
 	rg.Use(authenticator.WithAuth())
 	rg.POST("/scan/courses/:courseId", h.handleScanCourse)
+	rg.PATCH("/mark-reviewed/issues/:id", h.handleMarkHTMLIssueAsReviewed)
 }
 
 func (h *Handler) handleScanCourse(c *gin.Context) {
@@ -65,4 +71,24 @@ func (h *Handler) handleScanCourse(c *gin.Context) {
 	}
 
 	c.Status(200)
+}
+
+func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
+
+	issueIDParam := c.Param("id")
+	if issueIDParam == "" {
+		c.Error(apperr.Validation("issue ID is required"))
+		return
+	}
+	issueID, err := strconv.ParseInt(issueIDParam, 10, 64)
+	if err != nil {
+		c.Error(apperr.Validation("issue id must be a valid number"))
+		return
+	}
+
+	err = h.MarkHtmlAsReviewedUseCase.Execute(c.Request.Context(), issueID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
 }
