@@ -19,7 +19,8 @@ type Handler struct {
 func NewHandler(
 	scanCourseUseCase *application.ScanCourseUseCase,
 	createReportUseCase *application.CreateReportUseCase,
-	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase) *Handler {
+	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase,
+) *Handler {
 	return &Handler{
 		scanCourseUseCase:         scanCourseUseCase,
 		createReportUseCase:       createReportUseCase,
@@ -74,7 +75,6 @@ func (h *Handler) handleScanCourse(c *gin.Context) {
 }
 
 func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
-
 	issueIDParam := c.Param("id")
 	if issueIDParam == "" {
 		c.Error(apperr.Validation("issue ID is required"))
@@ -91,4 +91,6 @@ func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+
+	c.Status(200)
 }

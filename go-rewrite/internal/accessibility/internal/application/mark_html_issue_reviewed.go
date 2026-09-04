@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+
 	"rewritetest/internal/accessibility/internal/domain"
 )
 
@@ -22,5 +23,4 @@ func (u *MarkHtmlAsReviewedUseCase) Execute(ctx context.Context, issueID int64) 
 	issue.MarkAsReviewed()
 
 	return u.HTMLissueRepository.Update(ctx, issue)
-
 }

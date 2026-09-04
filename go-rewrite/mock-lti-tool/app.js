@@ -107,7 +107,6 @@ scanCourseBtn.addEventListener("click", async () => {
 });
 
 markIssueBtn.addEventListener("click", async () => {
-  
   if (!issueIDInput.value) console.log("Put a number");
 
   console.log("Marking issue");

@@ -184,8 +184,8 @@ func (r *MySQLIssueRepository) Update(ctx context.Context, issue *domain.HTMLIss
 			Status:    issue.Status().String(),
 			FixedAt:   sql.NullTime{Time: issue.FixedAt(), Valid: !issue.FixedAt().IsZero()},
 			UpdatedAt: issue.UpdatedAt(),
-		})
-
+		},
+	)
 }
 
 func nullTime(t time.Time) sql.NullTime {
