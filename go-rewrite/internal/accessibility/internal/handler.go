@@ -14,17 +14,20 @@ type Handler struct {
 	scanCourseUseCase         *application.ScanCourseUseCase
 	createReportUseCase       *application.CreateReportUseCase
 	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase
+	MarkFileAsReviewedUseCase *application.MarkFileAsReviewedUseCase
 }
 
 func NewHandler(
 	scanCourseUseCase *application.ScanCourseUseCase,
 	createReportUseCase *application.CreateReportUseCase,
 	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase,
+	MarkFileAsReviewedUseCase *application.MarkFileAsReviewedUseCase,
 ) *Handler {
 	return &Handler{
 		scanCourseUseCase:         scanCourseUseCase,
 		createReportUseCase:       createReportUseCase,
 		MarkHtmlAsReviewedUseCase: MarkHtmlAsReviewedUseCase,
+		MarkFileAsReviewedUseCase: MarkFileAsReviewedUseCase,
 	}
 }
 
@@ -36,6 +39,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authenticator Authenticato
 	rg.Use(authenticator.WithAuth())
 	rg.POST("/scan/courses/:courseId", h.handleScanCourse)
 	rg.PATCH("/mark-reviewed/issues/:id", h.handleMarkHTMLIssueAsReviewed)
+	rg.PATCH("/mark-file-reviewed/issues/:id", h.handleMarkFileIssueAsReviewed)
 }
 
 func (h *Handler) handleScanCourse(c *gin.Context) {
@@ -93,4 +97,26 @@ func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
 	}
 
 	c.Status(200)
+}
+
+func (h *Handler) handleMarkFileIssueAsReviewed(c *gin.Context) {
+	fileIssueIDParam := c.Param("id")
+	if fileIssueIDParam == "" {
+		c.Error(apperr.Validation("file issue ID is required"))
+		return
+	}
+
+	fileIssueID, err := strconv.ParseInt(fileIssueIDParam, 10, 64)
+	if err != nil {
+		c.Error(apperr.Validation("File issue id must be a valid number"))
+		return
+	}
+
+	err = h.MarkFileAsReviewedUseCase.Execute(c.Request.Context(), fileIssueID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Status(200) // OK
 }

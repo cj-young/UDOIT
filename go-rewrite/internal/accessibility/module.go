@@ -74,7 +74,11 @@ func New(
 		htmlIssueRepository,
 	)
 
-	handler := internal.NewHandler(scanCourseUseCase, createReportUseCase, MarkHtmlAsReviewedUseCase)
+	MarkFileAsReviewedUseCase := application.NewFileissueReviewedUseCase(
+		fileIssueRepository,
+	)
+
+	handler := internal.NewHandler(scanCourseUseCase, createReportUseCase, MarkHtmlAsReviewedUseCase, MarkFileAsReviewedUseCase)
 
 	return &Module{
 		handler:       handler,

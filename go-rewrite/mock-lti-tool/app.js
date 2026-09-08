@@ -19,6 +19,10 @@ const courseIDInput = document.getElementById("course-id-input");
 const markIssueBtn = document.getElementById("mark-issue");
 const issueIDInput = document.getElementById("issue-id-input");
 
+// consider rename? these are long
+const markFileIssueBtn = document.getElementById("mark-file-issue");
+const fileIssueIDInput = document.getElementById("file-issue-id-input");
+
 const storedDefaults = loadDefaults();
 applyDefaults(storedDefaults);
 
@@ -118,6 +122,18 @@ markIssueBtn.addEventListener("click", async () => {
   });
 
   console.log("Marked issue as reviewed");
+});
+
+markFileIssueBtn.addEventListener("click", async () => {
+  console.log("Marking file issue");
+
+  await runRequest({
+    label: "Marked File issue as reviewed",
+    method: "PATCH",
+    path: `/go/accessibility/mark-file-reviewed/issues/${fileIssueIDInput.value}`
+  });
+  
+  console.log("marked issue as reviewed")
 });
 
 saveDefaultsBtn.addEventListener("click", () => {
