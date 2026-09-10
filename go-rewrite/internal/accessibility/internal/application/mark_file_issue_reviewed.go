@@ -14,14 +14,13 @@ func NewFileissueReviewedUseCase(FileIssueRepository domain.FileIssueRepository)
 	return &MarkFileAsReviewedUseCase{FileIssueRepository: FileIssueRepository}
 }
 
-func (u *MarkFileAsReviewedUseCase) Execute(ctx context.Context, fileIssueID int64) error {
+func (u *MarkFileAsReviewedUseCase) Execute(ctx context.Context, fileIssueID int64, userID int64) error {
 	issue, err := u.FileIssueRepository.GetByID(ctx, fileIssueID)
 	if err != nil {
 		return err
 	}
 
-	// TODO: Properly handle reviewerID and remove hardcoded val
-	if err := issue.Review(1, time.Now()); err != nil {
+	if err := issue.Review(userID, time.Now()); err != nil {
 		return err
 	}
 

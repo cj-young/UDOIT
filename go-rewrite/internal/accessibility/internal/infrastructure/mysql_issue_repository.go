@@ -183,6 +183,7 @@ func (r *MySQLIssueRepository) Update(ctx context.Context, issue *domain.HTMLIss
 			ID:        uint64(issue.ID()),
 			Status:    issue.Status().String(),
 			FixedAt:   sql.NullTime{Time: issue.FixedAt(), Valid: !issue.FixedAt().IsZero()},
+			FixedBy:   sql.NullInt64{Int64: issue.FixedBy(), Valid: true},
 			UpdatedAt: issue.UpdatedAt(),
 		},
 	)

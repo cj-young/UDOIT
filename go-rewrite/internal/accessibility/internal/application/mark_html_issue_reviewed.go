@@ -14,13 +14,13 @@ func NewHtmlIssueReviewedUseCase(HTMLissueRepository domain.HTMLIssueRepository)
 	return &MarkHtmlAsReviewedUseCase{HTMLissueRepository: HTMLissueRepository}
 }
 
-func (u *MarkHtmlAsReviewedUseCase) Execute(ctx context.Context, issueID int64) error {
+func (u *MarkHtmlAsReviewedUseCase) Execute(ctx context.Context, issueID int64, userID int64) error {
 	issue, err := u.HTMLissueRepository.GetByID(ctx, issueID)
 	if err != nil {
 		return err
 	}
 
-	issue.MarkAsReviewed()
+	issue.MarkAsReviewed(userID)
 
 	return u.HTMLissueRepository.Update(ctx, issue)
 }

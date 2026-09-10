@@ -79,6 +79,12 @@ func (h *Handler) handleScanCourse(c *gin.Context) {
 }
 
 func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
+
+	principal, ok := auth.GetPrincipal(c)
+	if !ok {
+		c.Error(apperr.Unauthorized())
+		return
+	}
 	issueIDParam := c.Param("id")
 	if issueIDParam == "" {
 		c.Error(apperr.Validation("issue ID is required"))
@@ -90,7 +96,7 @@ func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
 		return
 	}
 
-	err = h.MarkHtmlAsReviewedUseCase.Execute(c.Request.Context(), issueID)
+	err = h.MarkHtmlAsReviewedUseCase.Execute(c.Request.Context(), issueID, principal.AgentID)
 	if err != nil {
 		c.Error(err)
 		return
@@ -100,6 +106,12 @@ func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
 }
 
 func (h *Handler) handleMarkFileIssueAsReviewed(c *gin.Context) {
+
+	principal, ok := auth.GetPrincipal(c)
+	if !ok {
+		c.Error(apperr.Unauthorized())
+		return
+	}
 	fileIssueIDParam := c.Param("id")
 	if fileIssueIDParam == "" {
 		c.Error(apperr.Validation("file issue ID is required"))
@@ -112,7 +124,7 @@ func (h *Handler) handleMarkFileIssueAsReviewed(c *gin.Context) {
 		return
 	}
 
-	err = h.MarkFileAsReviewedUseCase.Execute(c.Request.Context(), fileIssueID)
+	err = h.MarkFileAsReviewedUseCase.Execute(c.Request.Context(), fileIssueID, principal.AgentID)
 	if err != nil {
 		c.Error(err)
 		return

@@ -60,9 +60,9 @@ func RehydrateHTMLIssue(
 	}
 }
 
-func (i *HTMLIssue) MarkAsReviewed() {
+func (i *HTMLIssue) MarkAsReviewed(userID int64) {
 	i.status = IssueStatusMarkedAsReviewed
-	// i.fixedBy = TODO: add fixed by user
+	i.fixedBy = userID
 	i.updatedAt = time.Now()
 	i.fixedAt = time.Now()
 }
