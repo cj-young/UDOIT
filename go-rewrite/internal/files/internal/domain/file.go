@@ -12,6 +12,7 @@ type File struct {
 	downloadURL  string
 	externalID   string
 	externalData map[string]any
+	active       bool
 }
 
 func NewFile(courseID int64, fileName, fileType string, updatedAt time.Time, fileSize int64, downloadURL string, externalID string, externalData map[string]any) *File {
@@ -27,7 +28,7 @@ func NewFile(courseID int64, fileName, fileType string, updatedAt time.Time, fil
 	}
 }
 
-func RehydrateFile(id, courseID int64, fileName, fileType string, updatedAt time.Time, fileSize int64, downloadURL string, externalID string, externalData map[string]any) *File {
+func RehydrateFile(id, courseID int64, fileName, fileType string, updatedAt time.Time, fileSize int64, downloadURL string, externalID string, externalData map[string]any, active bool) *File {
 	return &File{
 		id:           id,
 		courseID:     courseID,
@@ -38,6 +39,7 @@ func RehydrateFile(id, courseID int64, fileName, fileType string, updatedAt time
 		downloadURL:  downloadURL,
 		externalID:   externalID,
 		externalData: externalData,
+		active:       active,
 	}
 }
 
@@ -59,6 +61,10 @@ func (f *File) FileType() string {
 
 func (f *File) UpdatedAt() time.Time {
 	return f.updatedAt
+}
+
+func (f *File) isActive() bool {
+	return f.active
 }
 
 func (f *File) FileSize() int64 {

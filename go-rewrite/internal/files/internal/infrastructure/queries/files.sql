@@ -1,11 +1,11 @@
 -- name: GetFileByID :one
-SELECT id, course_id, file_name, file_type, updated_at_lms, file_size, download_url, external_data, external_id
+SELECT id, course_id, file_name, file_type, updated_at_lms, file_size, download_url, external_data, external_id, active
 FROM file_item
 WHERE id = sqlc.arg(id)
 LIMIT 1;
 
 -- name: GetFilesByCourseID :many
-SELECT id, course_id, file_name, file_type, updated_at_lms, file_size, download_url, external_data, external_id
+SELECT id, course_id, file_name, file_type, updated_at_lms, file_size, download_url, external_data, external_id, active
 FROM file_item
 WHERE course_id = sqlc.arg(course_id);
 

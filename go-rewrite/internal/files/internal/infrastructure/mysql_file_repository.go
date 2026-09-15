@@ -46,6 +46,7 @@ func (r *MySQLFileRepository) GetFileByID(ctx context.Context, fileID int64) (*d
 		row.DownloadUrl.String,
 		row.ExternalID,
 		externalData,
+		row.Active,
 	)
 
 	return file, nil
@@ -76,6 +77,7 @@ func (r *MySQLFileRepository) GetByCourseID(ctx context.Context, courseID int64)
 			row.DownloadUrl.String,
 			row.ExternalID,
 			externalData,
+			row.Active,
 		)
 
 		files = append(files, file)
