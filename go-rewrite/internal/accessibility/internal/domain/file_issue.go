@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"fmt"
 	"rewritetest/internal/shared/apperr"
 	"time"
 )
@@ -64,9 +63,6 @@ func (f *FileIssue) IsReviewed() bool {
 
 func (f *FileIssue) Review(reviewerID int64, reviewedOn time.Time) error {
 	if f.IsReviewed() == true {
-		fmt.Println("Printing review fields for debug")
-		fmt.Println(f.review.reviewedOn)
-		fmt.Println(f.review.reviewerID)
 		return apperr.New(apperr.CodeInternal, "File issue has already been reviewed")
 	} else {
 		f.review = &review{

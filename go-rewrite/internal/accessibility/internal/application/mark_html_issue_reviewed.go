@@ -10,17 +10,22 @@ type MarkHtmlAsReviewedUseCase struct {
 	HTMLissueRepository domain.HTMLIssueRepository
 }
 
+type MarkHTMLReviewedCommand struct {
+	UserID  int64
+	IssueID int64
+}
+
 func NewHtmlIssueReviewedUseCase(HTMLissueRepository domain.HTMLIssueRepository) *MarkHtmlAsReviewedUseCase {
 	return &MarkHtmlAsReviewedUseCase{HTMLissueRepository: HTMLissueRepository}
 }
 
-func (u *MarkHtmlAsReviewedUseCase) Execute(ctx context.Context, issueID int64, userID int64) error {
-	issue, err := u.HTMLissueRepository.GetByID(ctx, issueID)
+func (u *MarkHtmlAsReviewedUseCase) Execute(ctx context.Context, cmd MarkHTMLReviewedCommand) error {
+	issue, err := u.HTMLissueRepository.GetByID(ctx, cmd.IssueID)
 	if err != nil {
 		return err
 	}
 
-	issue.MarkAsReviewed(userID)
+	issue.MarkAsReviewed(cmd.UserID)
 
 	return u.HTMLissueRepository.Update(ctx, issue)
 }

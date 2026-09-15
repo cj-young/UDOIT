@@ -96,7 +96,10 @@ func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
 		return
 	}
 
-	err = h.MarkHtmlAsReviewedUseCase.Execute(c.Request.Context(), issueID, principal.AgentID)
+	err = h.MarkHtmlAsReviewedUseCase.Execute(c.Request.Context(), application.MarkHTMLReviewedCommand{
+		UserID:  principal.AgentID,
+		IssueID: issueID,
+	})
 	if err != nil {
 		c.Error(err)
 		return
@@ -124,7 +127,10 @@ func (h *Handler) handleMarkFileIssueAsReviewed(c *gin.Context) {
 		return
 	}
 
-	err = h.MarkFileAsReviewedUseCase.Execute(c.Request.Context(), fileIssueID, principal.AgentID)
+	err = h.MarkFileAsReviewedUseCase.Execute(c.Request.Context(), application.MarkFileReviewedCommand{
+		UserID:      principal.AgentID,
+		FileIssueID: fileIssueID,
+	})
 	if err != nil {
 		c.Error(err)
 		return
