@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"rewritetest/internal/shared/apperr"
 	"time"
+
+	"rewritetest/internal/shared/apperr"
 )
 
 type review struct {
