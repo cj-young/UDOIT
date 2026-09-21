@@ -37,7 +37,8 @@ func RehydrateFileIssue(
 	reviewerID *int64,
 	reviewedOn *time.Time,
 	createdAt time.Time,
-	updatedAt time.Time) *FileIssue {
+	updatedAt time.Time,
+) *FileIssue {
 
 	fileIssue := &FileIssue{
 		id:        id,
