@@ -13,21 +13,21 @@ import (
 type Handler struct {
 	scanCourseUseCase         *application.ScanCourseUseCase
 	createReportUseCase       *application.CreateReportUseCase
-	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase
-	MarkFileAsReviewedUseCase *application.MarkFileAsReviewedUseCase
+	markHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase
+	markFileAsReviewedUseCase *application.MarkFileAsReviewedUseCase
 }
 
 func NewHandler(
 	scanCourseUseCase *application.ScanCourseUseCase,
 	createReportUseCase *application.CreateReportUseCase,
-	MarkHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase,
-	MarkFileAsReviewedUseCase *application.MarkFileAsReviewedUseCase,
+	markHtmlAsReviewedUseCase *application.MarkHtmlAsReviewedUseCase,
+	markFileAsReviewedUseCase *application.MarkFileAsReviewedUseCase,
 ) *Handler {
 	return &Handler{
 		scanCourseUseCase:         scanCourseUseCase,
 		createReportUseCase:       createReportUseCase,
-		MarkHtmlAsReviewedUseCase: MarkHtmlAsReviewedUseCase,
-		MarkFileAsReviewedUseCase: MarkFileAsReviewedUseCase,
+		markHtmlAsReviewedUseCase: markHtmlAsReviewedUseCase,
+		markFileAsReviewedUseCase: markFileAsReviewedUseCase,
 	}
 }
 
@@ -96,7 +96,7 @@ func (h *Handler) handleMarkHTMLIssueAsReviewed(c *gin.Context) {
 		return
 	}
 
-	err = h.MarkHtmlAsReviewedUseCase.Execute(c.Request.Context(), application.MarkHTMLReviewedCommand{
+	err = h.markHtmlAsReviewedUseCase.Execute(c.Request.Context(), application.MarkHTMLReviewedCommand{
 		UserID:  principal.AgentID,
 		IssueID: issueID,
 	})
@@ -127,7 +127,7 @@ func (h *Handler) handleMarkFileIssueAsReviewed(c *gin.Context) {
 		return
 	}
 
-	err = h.MarkFileAsReviewedUseCase.Execute(c.Request.Context(), application.MarkFileReviewedCommand{
+	err = h.markFileAsReviewedUseCase.Execute(c.Request.Context(), application.MarkFileReviewedCommand{
 		UserID:      principal.AgentID,
 		FileIssueID: fileIssueID,
 	})
