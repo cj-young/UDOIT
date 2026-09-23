@@ -2,8 +2,11 @@ package application
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"rewritetest/internal/accessibility/internal/domain"
+	"rewritetest/internal/shared/apperr"
 )
 
 type MarkHtmlAsReviewedUseCase struct {
@@ -21,8 +24,9 @@ func NewHtmlIssueReviewedUseCase(HTMLissueRepository domain.HTMLIssueRepository)
 
 func (u *MarkHtmlAsReviewedUseCase) Execute(ctx context.Context, cmd MarkHTMLReviewedCommand) error {
 	issue, err := u.HTMLissueRepository.GetByID(ctx, cmd.IssueID)
-	if err != nil {
-		return err
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return apperr.New(apperr.CodeNotFound, "HTML issue not found")
 	}
 
 	issue.MarkAsReviewed(cmd.UserID)
