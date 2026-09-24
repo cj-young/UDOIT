@@ -51,23 +51,36 @@ func (r *MySQLFileIssueRepository) GetByID(ctx context.Context, ID int64) (*doma
 		reviewedOn = &issue.ReviewedOn.Time
 	}
 
-	return domain.RehydrateFileIssue(
+	rehydratedFileIssue, err := domain.RehydrateFileIssue(
 		int64(issue.ID),
 		int64(issue.FileID),
 		reviewerID,
 		reviewedOn,
 		issue.CreatedAt,
 		issue.UpdatedAt,
-	), nil
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return rehydratedFileIssue, nil
 }
 
 func (r *MySQLFileIssueRepository) Update(ctx context.Context, issue *domain.FileIssue) error {
+	reviewerID, err := issue.ReviewerID()
+	if err != nil {
+		return err
+	}
+	reviewedOn, err := issue.ReviewedOn()
+	if err != nil {
+		return err
+	}
 	return r.queries.MarkFileReviewed(
 		ctx,
 		accessibilitysqlc.MarkFileReviewedParams{
 			ID:         uint64(issue.ID()),
-			ReviewerID: sql.NullInt64{Int64: issue.ReviewerID(), Valid: true},
-			ReviewedOn: sql.NullTime{Time: issue.ReviewedOn(), Valid: !issue.ReviewedOn().IsZero()},
+			ReviewerID: sql.NullInt64{Int64: reviewerID, Valid: true},
+			ReviewedOn: sql.NullTime{Time: reviewedOn, Valid: true},
 			UpdatedAt:  issue.UpdatedAt(),
 		},
 	)
