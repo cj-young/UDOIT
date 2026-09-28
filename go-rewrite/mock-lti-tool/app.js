@@ -16,6 +16,13 @@ const replayBtn = document.getElementById("replay");
 const fileIDInput = document.getElementById("file-id");
 const courseIDInput = document.getElementById("course-id-input");
 
+const markIssueBtn = document.getElementById("mark-issue");
+const issueIDInput = document.getElementById("issue-id-input");
+
+// consider rename? these are long
+const markFileIssueBtn = document.getElementById("mark-file-issue");
+const fileIssueIDInput = document.getElementById("file-issue-id-input");
+
 const storedDefaults = loadDefaults();
 applyDefaults(storedDefaults);
 
@@ -101,6 +108,32 @@ scanCourseBtn.addEventListener("click", async () => {
     path: `/go/accessibility/scan/courses/${courseIDInput.value || 1}`,
   });
   console.log("scanned the course")
+});
+
+markIssueBtn.addEventListener("click", async () => {
+  if (!issueIDInput.value) console.log("Put a number");
+
+  console.log("Marking issue");
+
+  await runRequest({
+    label: "Marked Issue as Reviewed",
+    method: "PATCH",
+    path: `/go/accessibility/mark-reviewed/issues/${issueIDInput.value}`,
+  });
+
+  console.log("Marked issue as reviewed");
+});
+
+markFileIssueBtn.addEventListener("click", async () => {
+  console.log("Marking file issue");
+
+  await runRequest({
+    label: "Marked File issue as reviewed",
+    method: "PATCH",
+    path: `/go/accessibility/mark-file-reviewed/issues/${fileIssueIDInput.value}`
+  });
+  
+  console.log("marked issue as reviewed")
 });
 
 saveDefaultsBtn.addEventListener("click", () => {

@@ -11,7 +11,7 @@ import (
 )
 
 type MySQLIssueRepository struct {
-	db      *sql.DB
+	db *sql.DB
 	queries *accessibilitysqlc.Queries
 }
 
@@ -133,6 +133,60 @@ func (r *MySQLIssueRepository) GetByCourseID(ctx context.Context, courseID int64
 	}
 
 	return domainHTMLIssues, nil
+}
+
+func (r *MySQLIssueRepository) GetByID(ctx context.Context, id int64) (*domain.HTMLIssue, error) {
+	issue, err := r.queries.GetHTMLIssueByID(ctx, uint64(id))
+	if err != nil {
+		return nil, err
+	}
+
+	scanRule, err := domain.ParseScanRule(issue.ScanRule)
+	if err != nil {
+		return nil, err
+	}
+
+	issueStatus, err := domain.ParseIssueStatus(issue.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	issueSeverity, err := domain.ParseIssueSeverity(issue.Severity)
+	if err != nil {
+		return nil, err
+	}
+
+	var detailsMap map[string]any
+	if err := json.Unmarshal(issue.Details, &detailsMap); err != nil {
+		return nil, err
+	}
+
+	return domain.RehydrateHTMLIssue(
+		int64(issue.ID),
+		int64(issue.ContentItemID),
+		scanRule,
+		issue.ContentXpath,
+		issueStatus,
+		issueSeverity,
+		int64(issue.FixedBy.Int64),
+		issue.FixedAt.Time,
+		detailsMap,
+		issue.CreatedAt,
+		issue.UpdatedAt,
+	), nil
+}
+
+func (r *MySQLIssueRepository) Update(ctx context.Context, issue *domain.HTMLIssue) error {
+	return r.queries.UpdateHTMLIssue(
+		ctx,
+		accessibilitysqlc.UpdateHTMLIssueParams{
+			ID:        uint64(issue.ID()),
+			Status:    issue.Status().String(),
+			FixedAt:   sql.NullTime{Time: issue.FixedAt(), Valid: !issue.FixedAt().IsZero()},
+			FixedBy:   sql.NullInt64{Int64: issue.FixedBy(), Valid: true},
+			UpdatedAt: issue.UpdatedAt(),
+		},
+	)
 }
 
 func nullTime(t time.Time) sql.NullTime {
