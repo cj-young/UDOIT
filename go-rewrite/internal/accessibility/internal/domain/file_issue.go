@@ -48,7 +48,7 @@ func RehydrateFileIssue(
 	}
 
 	if (reviewerID == nil) != (reviewedOn == nil) {
-		return nil, fmt.Errorf("ReviewerID and reviewedOn must either both be set or both be nil")
+		return nil, apperr.Internal("ReviewerID and reviewedOn must either both be set or both be nil")
 	}
 
 	if reviewedOn != nil && reviewerID != nil {
